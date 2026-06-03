@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-surface-primary: #f7f9fb;
+  --color-navy-base: #0d1b2a;
+  --color-navy-light: #1b263b;
+  --color-accent-emerald: #06d6a0;
+  --color-accent-emerald-alt: #2ec4b6;
+  --color-accent-gold: #eab308;
+  
+  --font-sans: var(--font-jakarta-sans), ui-sans-serif, system-ui, sans-serif;
+  
+  --shadow-ambient: 0 0 15px rgba(13, 27, 42, 0.05); /* Navy tint ambient shadow */
+  
+  --radius-sm: 0.5rem; /* 8px for standard components */
+  --radius-md: 0.75rem; /* 12px */
+  --radius-lg: 1rem; /* 16px for large cards */
+
+  /* Based on the DESIGN.md values */
+  --color-background: var(--color-surface-primary);
+  --color-foreground: var(--color-navy-base);
+}
+
+body {
+  background-color: var(--color-surface-primary);
+  color: var(--color-navy-base);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
