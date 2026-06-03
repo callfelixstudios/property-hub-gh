@@ -1,114 +1,291 @@
 import SearchWidget from "@/components/SearchWidget";
 import PropertyCard from "@/components/PropertyCard";
+import Footer from "@/components/Footer";
 import Link from "next/link";
+import Image from "next/image";
+
+const featuredListings = [
+  {
+    imageSrc: "/property-1.png",
+    title: "The Apex Residency",
+    price: "$2,500",
+    priceSuffix: "/mo",
+    location: "East Legon, Accra",
+    beds: 3,
+    baths: 2,
+    area: "1,200 sqft",
+    badge: "verified" as const,
+  },
+  {
+    imageSrc: "/property-2.png",
+    title: "Vista Heights",
+    price: "$1,800",
+    priceSuffix: "/mo",
+    location: "Cantonments, Accra",
+    beds: 2,
+    baths: 2,
+    area: "950 sqft",
+    badge: "safemove" as const,
+  },
+  {
+    imageSrc: "/property-3.png",
+    title: "Eco-Haven Estate",
+    price: "$450,000",
+    priceSuffix: "",
+    location: "Trasacco, East Legon",
+    beds: 5,
+    baths: 4,
+    area: "3,400 sqft",
+    badge: "verified" as const,
+  },
+];
 
 export default function Home() {
   return (
     <div className="w-full">
-      {/* BLOCK 1: Hero Section */}
-      <section className="w-full bg-surface-primary pt-16 pb-20 px-6">
-        <div className="max-w-container-max mx-auto text-center flex flex-col items-center">
-          <h1 className="text-4xl md:text-6xl font-extrabold text-navy-base leading-tight tracking-tight mb-6">
-            Secure Your Next Space in Ghana.
-          </h1>
-          <p className="text-lg md:text-xl text-gray-600 max-w-2xl mb-12 leading-relaxed">
-            Verified listings, transparent terms, and zero agent duplication. Search rentals and properties for sale across Accra, Kumasi, and beyond.
-          </p>
-          <div className="w-full max-w-3xl">
+      {/* ─── BLOCK 1: HERO ─── */}
+      <section className="relative w-full min-h-[540px] md:min-h-[600px] flex items-center overflow-hidden">
+        {/* Background Image */}
+        <Image
+          src="/hero-bg.png"
+          alt="Modern residential estate in Ghana"
+          fill
+          className="object-cover"
+          priority
+        />
+        {/* Dark Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-navy-base/90 via-navy-base/75 to-navy-base/50" />
+
+        {/* Content */}
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-6 py-20">
+          <div className="max-w-2xl">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-[1.1] tracking-tight mb-6">
+              Trust-First Real Estate
+              <br />
+              in Modern Ghana.
+            </h1>
+            <p className="text-lg text-white/80 leading-relaxed mb-10 max-w-xl">
+              Every space you see is verified. Own your property journey with
+              verified listings, transparent terms and zero agent duplication.
+            </p>
+
+            {/* Search Widget */}
             <SearchWidget />
           </div>
         </div>
       </section>
 
-      {/* BLOCK 2: Dual-Gateway Core */}
-      <section className="w-full bg-white py-16 px-6">
-        <div className="max-w-container-max mx-auto grid md:grid-cols-2 gap-6 md:gap-8">
-          
-          {/* Rent Gateway */}
-          <div className="bg-surface-primary p-8 md:p-10 rounded-md shadow-ambient border border-gray-100 flex flex-col items-start hover:shadow-lg transition-shadow">
-            <div className="w-12 h-12 bg-navy-base rounded-full flex items-center justify-center text-white mb-6">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-            </div>
-            <h2 className="text-2xl font-bold text-navy-base mb-4">Browse Spaces for Rent</h2>
-            <ul className="text-gray-600 space-y-3 mb-8 flex-grow">
-              <li className="flex items-center gap-2"><span className="text-accent-emerald">✓</span> Student Hostels & Single Rooms</li>
-              <li className="flex items-center gap-2"><span className="text-accent-emerald">✓</span> Chamber & Halls / Apartments</li>
-              <li className="flex items-center gap-2"><span className="text-accent-emerald">✓</span> Verified Rent Advances</li>
-            </ul>
-            <Link href="/rentals" className="mt-auto px-8 py-3 bg-navy-base text-white font-bold rounded-sm hover:bg-navy-light transition-colors shadow-sm inline-block">
-              View Rentals &rarr;
-            </Link>
-          </div>
-
-          {/* Sale Gateway */}
-          <div className="bg-surface-primary p-8 md:p-10 rounded-md shadow-ambient border border-gray-100 flex flex-col items-start hover:shadow-lg transition-shadow">
-            <div className="w-12 h-12 bg-accent-gold rounded-full flex items-center justify-center text-navy-base mb-6">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-            </div>
-            <h2 className="text-2xl font-bold text-navy-base mb-4">Browse Properties for Sale</h2>
-            <ul className="text-gray-600 space-y-3 mb-8 flex-grow">
-              <li className="flex items-center gap-2"><span className="text-accent-emerald">✓</span> Litigation-Free Land Plots</li>
-              <li className="flex items-center gap-2"><span className="text-accent-emerald">✓</span> Uncompleted & Complete Estates</li>
-              <li className="flex items-center gap-2"><span className="text-accent-emerald">✓</span> Direct Developer Access</li>
-            </ul>
-            <Link href="/sales" className="mt-auto px-8 py-3 bg-navy-base text-white font-bold rounded-sm hover:bg-navy-light transition-colors shadow-sm inline-block">
-              View Sales &rarr;
-            </Link>
-          </div>
-          
-        </div>
-      </section>
-
-      {/* BLOCK 3: SafeMove Value Proposition */}
-      <section className="w-full bg-accent-emerald/10 py-16 px-6 border-y border-accent-emerald/20">
-        <div className="max-w-container-max mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="md:w-2/3">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="bg-accent-emerald text-white text-xs font-bold px-2 py-1 rounded-sm uppercase tracking-wider">Trust Builder</span>
-              <h2 className="text-2xl md:text-3xl font-bold text-navy-base">Introducing SafeMove</h2>
-            </div>
-            <p className="text-lg text-navy-base/80 leading-relaxed">
-              Tired of fake agents and double-rented apartments? Look for the SafeMove badge. We hold your rent advance securely in escrow and only release it to the lister after you successfully move in.
-            </p>
-          </div>
-          <div className="md:w-1/3 flex md:justify-end w-full">
-            <Link href="/safemove" className="w-full md:w-auto text-center px-8 py-4 border-2 border-navy-base text-navy-base font-bold rounded-sm hover:bg-navy-base hover:text-white transition-colors">
-              How SafeMove Protects You
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* BLOCK 4: Dynamic Featured Grid */}
-      <section className="w-full bg-surface-primary py-20 px-6">
-        <div className="max-w-container-max mx-auto">
+      {/* ─── BLOCK 2: FEATURED VERIFIED LISTINGS ─── */}
+      <section className="w-full bg-white py-16 md:py-20 px-6">
+        <div className="max-w-7xl mx-auto">
           <div className="flex items-end justify-between mb-10">
             <div>
-              <h2 className="text-3xl font-bold text-navy-base mb-2">Freshly Added</h2>
-              <p className="text-gray-600">The latest verified listings across Ghana.</p>
+              <h2 className="text-2xl md:text-3xl font-bold text-navy-base mb-2">
+                Featured Verified Listings
+              </h2>
+              <p className="text-gray-500">
+                Properties that meet our highest standard of safety and transparency.
+              </p>
             </div>
-            <Link href="/search" className="hidden md:inline-flex items-center text-navy-base font-bold hover:underline">
-              View all listings &rarr;
+            <Link
+              href="/search"
+              className="hidden md:inline-flex items-center gap-1 text-sm font-semibold text-navy-base hover:underline"
+            >
+              View All Properties
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </Link>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-            {/* 6 Property Skeletons */}
-            <PropertyCard isFeatured={true} />
-            <PropertyCard />
-            <PropertyCard />
-            <PropertyCard isFeatured={true} />
-            <PropertyCard />
-            <PropertyCard />
           </div>
 
-          <div className="mt-8 text-center md:hidden">
-            <Link href="/search" className="inline-block px-6 py-3 bg-white border border-gray-200 text-navy-base font-bold rounded-sm shadow-sm">
-              View all listings
-            </Link>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+            {featuredListings.map((listing, i) => (
+              <PropertyCard key={i} {...listing} />
+            ))}
           </div>
         </div>
       </section>
+
+      {/* ─── BLOCK 3: LIST YOUR PROPERTY (CTA SPLIT) ─── */}
+      <section className="w-full bg-surface-primary py-16 md:py-20 px-6">
+        <div className="max-w-7xl mx-auto">
+          <p className="text-xs font-semibold tracking-[0.15em] text-gray-400 uppercase mb-2">
+            For Landlords &amp; Estate Owners
+          </p>
+          <div className="grid md:grid-cols-2 gap-10 md:gap-16 items-center">
+            {/* Left Copy */}
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold text-navy-base leading-tight mb-6">
+                List Your Property on Ghana&apos;s Most Trusted Network.
+              </h2>
+              <p className="text-gray-600 leading-relaxed mb-8">
+                Join the top echelon of verified property owners. Our
+                platform rewards transparency, smart marketplace dynamics,
+                and fraud-proof accountability with trust.
+              </p>
+
+              <ul className="space-y-4 mb-8">
+                <li className="flex items-start gap-3">
+                  <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-accent-emerald/20 flex items-center justify-center">
+                    <svg className="w-3 h-3 text-accent-emerald" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
+                  </span>
+                  <span className="text-navy-base font-medium">Real Verification — Documents cross-referenced offline.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-accent-emerald/20 flex items-center justify-center">
+                    <svg className="w-3 h-3 text-accent-emerald" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
+                  </span>
+                  <span className="text-navy-base font-medium">Full Instant Lead Access — No middleman billing per enquiry.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-accent-emerald/20 flex items-center justify-center">
+                    <svg className="w-3 h-3 text-accent-emerald" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
+                  </span>
+                  <span className="text-navy-base font-medium">Active search visibility and premium badge upgrades.</span>
+                </li>
+              </ul>
+
+              <Link
+                href="/post"
+                className="inline-flex items-center px-8 py-3.5 bg-navy-base text-white font-bold rounded-sm hover:bg-navy-light transition-colors"
+              >
+                List Your Property Now
+              </Link>
+            </div>
+
+            {/* Right: Feature Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-white rounded-md p-6 shadow-ambient border border-gray-100">
+                <div className="w-10 h-10 rounded-sm bg-navy-base flex items-center justify-center mb-4">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                </div>
+                <h3 className="font-bold text-navy-base mb-1">Safe Payments</h3>
+                <p className="text-sm text-gray-500">Every money exchange is independently tracked, verified and escrowed.</p>
+              </div>
+              <div className="bg-white rounded-md p-6 shadow-ambient border border-gray-100">
+                <div className="w-10 h-10 rounded-sm bg-accent-gold flex items-center justify-center mb-4">
+                  <svg className="w-5 h-5 text-navy-base" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
+                </div>
+                <h3 className="font-bold text-navy-base mb-1">Verified Profiles</h3>
+                <p className="text-sm text-gray-500">Ensure the agent or developer is properly digitally verified and validated.</p>
+              </div>
+              <div className="col-span-1 sm:col-span-2 bg-white rounded-md p-6 shadow-ambient border border-gray-100">
+                <div className="w-10 h-10 rounded-sm bg-accent-emerald flex items-center justify-center mb-4">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
+                </div>
+                <h3 className="font-bold text-navy-base mb-1">Manage All Properties in One Dashboard</h3>
+                <p className="text-sm text-gray-500">Manage all your active listings, enquiries and analytics from a single dashboard.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── BLOCK 4: EXPLORE NEIGHBORHOODS ─── */}
+      <section className="w-full bg-white py-16 md:py-20 px-6">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-2xl md:text-3xl font-bold text-navy-base text-center mb-12">
+            Explore Verified Neighbourhoods
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              { name: "East Legon", img: "/neighborhood-eastlegon.png", count: "124 listings" },
+              { name: "Cantonments", img: "/neighborhood-cantonments.png", count: "87 listings" },
+              { name: "Labone", img: "/neighborhood-labone.png", count: "63 listings" },
+            ].map((n) => (
+              <Link
+                key={n.name}
+                href={`/search?area=${encodeURIComponent(n.name)}`}
+                className="group relative h-64 md:h-72 rounded-md overflow-hidden"
+              >
+                <Image
+                  src={n.img}
+                  alt={n.name}
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-navy-base/80 via-navy-base/20 to-transparent" />
+                <div className="absolute bottom-0 left-0 p-6">
+                  <h3 className="text-xl font-bold text-white mb-1">{n.name}</h3>
+                  <p className="text-sm text-white/70">{n.count}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── BLOCK 5: MARKET INSIGHTS ─── */}
+      <section className="w-full bg-surface-primary py-16 md:py-20 px-6">
+        <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-start">
+          <div>
+            <h2 className="text-3xl md:text-4xl font-bold text-navy-base leading-tight mb-4">
+              Market Insights: Transact with Intelligence.
+            </h2>
+            <p className="text-gray-600 leading-relaxed mb-8">
+              Leading transparency to the Ghana market with data-driven
+              reports, trend analysis and real-time market updates.
+            </p>
+
+            <div className="bg-white rounded-md p-6 shadow-ambient border border-gray-100 mb-4">
+              <div className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-8 h-8 rounded-full bg-accent-emerald/20 flex items-center justify-center mt-0.5">
+                  <svg className="w-4 h-4 text-accent-emerald" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                </span>
+                <div>
+                  <p className="font-semibold text-navy-base">e-Portal Marketplace Analytics</p>
+                  <p className="text-sm text-gray-500 mt-1">Our market tracker aggregates real-time trends to ensure transparency, enabling smarter transactions and informed decisions.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-md p-6 shadow-ambient border border-gray-100">
+              <div className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-8 h-8 rounded-full bg-accent-gold/20 flex items-center justify-center mt-0.5">
+                  <svg className="w-4 h-4 text-accent-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </span>
+                <div>
+                  <p className="font-semibold text-navy-base">Broker-Free Gold Standard</p>
+                  <p className="text-sm text-gray-500 mt-1">Our system verifies and validates every listing, offering an un-brokered experience at scale via SafeMove protection.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Price Table */}
+          <div className="bg-white rounded-md shadow-ambient border border-gray-100 overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <p className="font-semibold text-navy-base">Your Rental Trend (GHS)</p>
+              <span className="text-xs font-bold bg-accent-emerald/10 text-accent-emerald px-3 py-1 rounded-full">
+                +5.7% avg growth
+              </span>
+            </div>
+            <div className="divide-y divide-gray-50">
+              {[
+                { label: "Top 1-Bed Apartments", range: "₵1,200 – ₵3,500" },
+                { label: "2-Bed Apartments, Rent", range: "₵2,000 – ₵6,200" },
+                { label: "Serviced Studios (Accra)", range: "₵900 – ₵2,800" },
+                { label: "3-Bed Detached Villa, Rent", range: "₵5,500 – ₵15,000" },
+              ].map((row) => (
+                <div key={row.label} className="flex items-center justify-between px-6 py-4">
+                  <span className="text-sm text-gray-600">{row.label}</span>
+                  <span className="text-sm font-semibold text-navy-base">{row.range}</span>
+                </div>
+              ))}
+            </div>
+            <div className="px-6 py-4 border-t border-gray-100">
+              <Link href="/insights" className="text-sm font-semibold text-navy-base hover:underline flex items-center gap-1">
+                View Full Q3 Market Report
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── FOOTER ─── */}
+      <Footer />
     </div>
   );
 }
