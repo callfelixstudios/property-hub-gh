@@ -3,7 +3,22 @@ import Link from "next/link";
 import { createClient } from '@/utils/supabase/server';
 
 // Fetch live rental listings from Supabase
-async function fetchRentalListings() {
+interface Listing {
+  id: string;
+  image_src?: string;
+  title: string;
+  location: string;
+  beds: number;
+  baths: number;
+  area: string;
+  price: string;
+  priceSuffix?: string;
+  serviceCharge?: string;
+  advance?: string;
+  badge?: string;
+}
+
+async function fetchRentalListings(): Promise<Listing[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('listings')
@@ -14,11 +29,11 @@ async function fetchRentalListings() {
     console.error('Error fetching rentals:', error);
     return [];
   }
-  return data;
+  return data as Listing[];
 }
 
 export default async function RentalsPage() {
-  const rentalListings = (await fetchRentalListings()) as any[];
+  const rentalListings = await fetchRentalListings();
   return (
     <div className="w-full min-h-screen bg-surface-primary pb-20">
       {/* Search Header */}
