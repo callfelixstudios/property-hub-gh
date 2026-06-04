@@ -1,55 +1,26 @@
 import Image from "next/image";
 import Link from "next/link";
+import { createClient } from '@/utils/supabase/server';
 
-const rentalListings = [
-  {
-    id: 1,
-    imageSrc: "/property-1.png",
-    title: "The Apex Residency",
-    price: "₵4,500",
-    priceSuffix: "/mo",
-    serviceCharge: "₵500/mo",
-    advance: "1 Year",
-    location: "East Legon, Accra",
-    beds: 3,
-    baths: 2,
-    area: "1,200 sqft",
-    badge: "verified" as const,
-  },
-  {
-    id: 2,
-    imageSrc: "/property-2.png",
-    title: "Vista Heights Studio",
-    price: "₵2,000",
-    priceSuffix: "/mo",
-    serviceCharge: "Inclusive",
-    advance: "6 Months",
-    location: "Cantonments, Accra",
-    beds: 1,
-    baths: 1,
-    area: "650 sqft",
-    badge: "safemove" as const,
-  },
-  {
-    id: 3,
-    imageSrc: "/property-3.png",
-    title: "Tranquil Oasis Villas",
-    price: "₵12,000",
-    priceSuffix: "/mo",
-    serviceCharge: "₵1,200/mo",
-    advance: "2 Years",
-    location: "Labone, Accra",
-    beds: 4,
-    baths: 4,
-    area: "2,800 sqft",
-    badge: "verified" as const,
+// Fetch live rental listings from Supabase
+async function fetchRentalListings() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('listings')
+    .select('*')
+    .eq('listing_type', 'rent')
+    .order('created_at', { ascending: false });
+  if (error) {
+    console.error('Error fetching rentals:', error);
+    return [];
   }
-];
+  return data;
+}
 
-export default function RentalsPage() {
+export default async function RentalsPage() {
+  const rentalListings = (await fetchRentalListings()) as any[];
   return (
     <div className="w-full min-h-screen bg-surface-primary pb-20">
-      
       {/* Search Header */}
       <div className="bg-navy-base py-10 px-6">
         <div className="max-w-7xl mx-auto">
@@ -63,14 +34,12 @@ export default function RentalsPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-10 flex flex-col md:flex-row gap-8 items-start">
-        
         {/* Left Filter Sidebar */}
         <aside className="w-full md:w-72 flex-shrink-0 bg-white rounded-md shadow-ambient border border-gray-100 p-6 sticky top-24">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-bold text-navy-base">Filters</h2>
             <button className="text-sm text-gray-500 hover:text-navy-base transition-colors">Reset</button>
           </div>
-
           {/* Price Range */}
           <div className="mb-8">
             <h3 className="text-sm font-semibold text-navy-base mb-4">Monthly Rent (GHS)</h3>
@@ -80,7 +49,6 @@ export default function RentalsPage() {
               <span>₵20,000+</span>
             </div>
           </div>
-
           {/* Rent Advance */}
           <div className="mb-8">
             <h3 className="text-sm font-semibold text-navy-base mb-4">Advance Duration</h3>
@@ -98,7 +66,6 @@ export default function RentalsPage() {
               ))}
             </div>
           </div>
-
           {/* Utilities & Features */}
           <div className="mb-6">
             <h3 className="text-sm font-semibold text-navy-base mb-4">Utilities & Features</h3>
@@ -121,7 +88,7 @@ export default function RentalsPage() {
         {/* Right Property Feed Grid */}
         <main className="flex-1 w-full">
           <div className="flex items-center justify-between mb-6">
-            <p className="text-sm text-gray-500 font-medium">Showing 124 properties</p>
+            <p className="text-sm text-gray-500 font-medium">Showing {rentalListings.length} properties</p>
             <select className="bg-white border border-gray-200 text-sm rounded-sm px-3 py-2 text-navy-base outline-none cursor-pointer hover:border-navy-light transition-colors">
               <option>Sort by: Newest</option>
               <option>Sort by: Lowest Price</option>
@@ -134,7 +101,7 @@ export default function RentalsPage() {
               <div key={prop.id} className="bg-white rounded-md overflow-hidden border border-gray-100 shadow-ambient hover:shadow-lg transition-shadow duration-300 flex flex-col">
                 {/* 3:2 Image */}
                 <div className="relative w-full pt-[66.66%]">
-                  <Image src={prop.imageSrc} alt={prop.title} fill className="object-cover" />
+                  <Image src={prop.image_src ?? '/placeholder.png'} alt={prop.title} fill className="object-cover" />
                   {prop.badge === 'verified' && (
                     <div className="absolute top-3 left-3 bg-navy-base text-white px-3 py-1 text-xs font-bold rounded-full flex items-center gap-1.5 shadow-sm">
                       <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
@@ -154,7 +121,7 @@ export default function RentalsPage() {
                     <div>
                       <h3 className="text-lg font-bold text-navy-base line-clamp-1 mb-1">{prop.title}</h3>
                       <div className="text-sm text-gray-500 flex items-center gap-1">
-                        <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 0 1111.314 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                         {prop.location}
                       </div>
                     </div>
@@ -190,7 +157,6 @@ export default function RentalsPage() {
               </div>
             ))}
           </div>
-
         </main>
       </div>
     </div>
