@@ -42,7 +42,7 @@ export default function NavigationHeader() {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled
-          ? "bg-white shadow-ambient"
+          ? "bg-slate-50/95 backdrop-blur-sm border-b border-slate-200 shadow-sm"
           : "bg-transparent"
       }`}
     >
@@ -98,27 +98,26 @@ export default function NavigationHeader() {
           </nav>
 
           {/* Desktop Auth & CTA */}
-          <div className="hidden md:flex items-center space-x-1">
+          <div className="hidden md:flex items-center space-x-3">
             {session ? null : (
               <>
                 <Link
                   href="/login"
-                  className={`relative px-3 py-1.5 text-sm font-medium tracking-wide uppercase transition-colors duration-200 ${
+                  className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-all duration-200 ${
                     isScrolled
-                      ? "text-slate-600 hover:text-navy-base"
-                      : "text-white/70 hover:text-white"
-                  } ${pathname === "/login" ? "after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-4/5 after:h-0.5 after:bg-accent-gold after:rounded-full" : ""}`}
+                      ? "bg-slate-800 text-white hover:bg-slate-900"
+                      : "bg-white/10 text-white backdrop-blur-sm hover:bg-white/20"
+                  }`}
                 >
                   Login
                 </Link>
-                <span className={`mx-1 text-xs select-none ${isScrolled ? "text-slate-300" : "text-white/30"}`}>•</span>
                 <Link
                   href="/register"
-                  className={`relative px-3 py-1.5 text-sm font-medium tracking-wide uppercase transition-colors duration-200 ${
+                  className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-all duration-200 ${
                     isScrolled
-                      ? "text-slate-600 hover:text-navy-base"
-                      : "text-white/70 hover:text-white"
-                  } ${pathname === "/register" ? "after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-4/5 after:h-0.5 after:bg-accent-gold after:rounded-full" : ""}`}
+                      ? "bg-slate-800 text-white hover:bg-slate-900"
+                      : "bg-white/10 text-white backdrop-blur-sm hover:bg-white/20"
+                  }`}
                 >
                   Register
                 </Link>
@@ -133,7 +132,7 @@ export default function NavigationHeader() {
                   router.push('/post-space');
                 }
               }}
-              className="ml-4 bg-accent-gold text-navy-base font-bold py-2 px-5 rounded-sm transition-all duration-200 hover:opacity-90 hover:shadow-md"
+              className="ml-1 bg-accent-gold text-navy-base font-bold py-2 px-5 rounded-full transition-all duration-200 hover:brightness-105 hover:shadow-md"
             >
               + Post a Space
             </button>
@@ -164,7 +163,7 @@ export default function NavigationHeader() {
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden bg-white border-t border-gray-100 shadow-ambient">
+        <div className="md:hidden bg-slate-50 border-t border-slate-200 shadow-sm">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
             <Link href="/rentals" className={`block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-navy-base hover:bg-gray-50 ${pathname === "/rentals" ? "bg-gray-100" : ""}`}>
               Rentals
@@ -176,8 +175,8 @@ export default function NavigationHeader() {
               SafeMove
               <span className="ml-2 bg-accent-emerald text-white text-xs font-bold px-2 py-0.5 rounded-full">New</span>
             </Link>
-            <Link href="/login" className={`block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-navy-base hover:bg-gray-50 ${pathname === "/login" ? "bg-gray-100 border-l-2 border-accent-gold" : ""}`}>Login</Link>
-            <Link href="/register" className={`block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-navy-base hover:bg-gray-50 ${pathname === "/register" ? "bg-gray-100 border-l-2 border-accent-gold" : ""}`}>Register</Link>
+            <Link href="/login" className={`block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-navy-base hover:bg-slate-100 ${pathname === "/login" ? "bg-slate-100 text-navy-base font-semibold" : ""}`}>Login</Link>
+            <Link href="/register" className={`block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-navy-base hover:bg-slate-100 ${pathname === "/register" ? "bg-slate-100 text-navy-base font-semibold" : ""}`}>Register</Link>
             <div className="px-3 py-2">
               <button
                 type="button"
