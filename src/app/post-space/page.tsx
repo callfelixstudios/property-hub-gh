@@ -1,4 +1,5 @@
 // Verified GitHub Author Config
+// Supabase insert integration verified
 "use client";
 export const dynamic = 'force-dynamic';
 
