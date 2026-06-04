@@ -1,3 +1,4 @@
+// Verified GitHub Author Config
 "use client";
 
 import { useState } from "react";
