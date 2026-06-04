@@ -146,7 +146,7 @@ export default function Home() {
               </ul>
 
               <Link
-                href="/post"
+                href="/post-space"
                 className="inline-flex items-center px-8 py-3.5 bg-navy-base text-white font-bold rounded-sm hover:bg-navy-light transition-colors"
               >
                 List Your Property Now

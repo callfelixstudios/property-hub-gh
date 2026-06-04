@@ -87,7 +87,7 @@ export default function NavigationHeader() {
               Login
             </Link>
             <Link
-              href="/post"
+              href="/post-space"
               className="bg-accent-gold text-navy-base font-bold py-2 px-4 rounded-sm transition-opacity hover:opacity-90"
             >
               + Post a Space
@@ -135,7 +135,7 @@ export default function NavigationHeader() {
               Login
             </Link>
             <div className="px-3 py-2">
-              <Link href="/post" className="block w-full text-center bg-accent-gold text-navy-base font-bold py-2 px-4 rounded-sm transition-opacity hover:opacity-90">
+              <Link href="/post-space" className="block w-full text-center bg-accent-gold text-navy-base font-bold py-2 px-4 rounded-sm transition-opacity hover:opacity-90">
                 + Post a Space
               </Link>
             </div>
