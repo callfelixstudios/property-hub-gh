@@ -103,20 +103,20 @@ export default function NavigationHeader() {
               <>
                 <Link
                   href="/login"
-                  className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-all duration-200 ${
+                  className={`text-sm font-semibold transition-colors duration-200 ${
                     isScrolled
-                      ? "bg-slate-800 text-white hover:bg-slate-900"
-                      : "bg-white/10 text-white backdrop-blur-sm hover:bg-white/20"
+                      ? "text-slate-700 hover:text-slate-900"
+                      : "text-white/80 hover:text-white"
                   }`}
                 >
                   Login
                 </Link>
                 <Link
                   href="/register"
-                  className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-all duration-200 ${
+                  className={`text-sm font-semibold transition-colors duration-200 ${
                     isScrolled
-                      ? "bg-slate-800 text-white hover:bg-slate-900"
-                      : "bg-white/10 text-white backdrop-blur-sm hover:bg-white/20"
+                      ? "text-slate-700 hover:text-slate-900"
+                      : "text-white/80 hover:text-white"
                   }`}
                 >
                   Register

@@ -97,13 +97,13 @@ export default function RegisterPage() {
           <div className="flex flex-col space-y-3">
             <button
               type="submit"
-              className="group relative flex w-full justify-center rounded-sm bg-accent-gold text-white font-medium py-2 px-4 hover:bg-accent-gold/90 focus:outline-none focus:ring-2 focus:ring-accent-gold focus:ring-offset-2 transition-colors"
+              className="group relative flex w-full justify-center rounded-sm bg-slate-900 text-white font-medium py-2 px-4 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 transition-colors"
             >
               Register
             </button>
           </div>
           <p className="mt-4 text-center text-sm text-navy-base">
-            Already have an account? <Link href="/login" className="font-medium text-accent-gold hover:underline">Login</Link>
+            Already have an account? <Link href="/login" className="font-medium text-slate-900 hover:underline">Login</Link>
           </p>
         </form>
       </div>
