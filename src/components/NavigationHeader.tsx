@@ -38,10 +38,12 @@ export default function NavigationHeader() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const isSolidHeader = isScrolled || pathname === '/login' || pathname === '/register' || pathname === '/post-space';
+
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled
+        isSolidHeader
           ? "bg-slate-50/95 backdrop-blur-sm border-b border-slate-200 shadow-sm"
           : "bg-transparent"
       }`}
@@ -53,7 +55,7 @@ export default function NavigationHeader() {
             <Link
               href="/"
               className={`text-xl font-bold transition-colors ${
-                isScrolled ? "text-navy-base" : "text-white"
+                isSolidHeader ? "text-navy-base" : "text-white"
               }`}
             >
               Property Hub
@@ -65,7 +67,7 @@ export default function NavigationHeader() {
             <Link
               href="/rentals"
               className={`font-medium transition-colors ${
-                isScrolled
+                isSolidHeader
                   ? "text-gray-700 hover:text-navy-base"
                   : "text-white/80 hover:text-white"
               } ${pathname === "/rentals" ? "border-b-2 border-accent-gold" : ""}`}
@@ -75,7 +77,7 @@ export default function NavigationHeader() {
             <Link
               href="/sales"
               className={`font-medium transition-colors ${
-                isScrolled
+                isSolidHeader
                   ? "text-gray-700 hover:text-navy-base"
                   : "text-white/80 hover:text-white"
               } ${pathname === "/sales" ? "border-b-2 border-accent-gold" : ""}`}
@@ -85,7 +87,7 @@ export default function NavigationHeader() {
             <Link
               href="/safemove"
               className={`flex items-center font-medium transition-colors ${
-                isScrolled
+                isSolidHeader
                   ? "text-gray-700 hover:text-navy-base"
                   : "text-white/80 hover:text-white"
               } ${pathname === "/safemove" ? "border-b-2 border-accent-gold" : ""}`}
@@ -104,7 +106,7 @@ export default function NavigationHeader() {
                 <Link
                   href="/login"
                   className={`text-sm font-semibold transition-colors duration-200 ${
-                    isScrolled
+                    isSolidHeader
                       ? "text-slate-700 hover:text-slate-900"
                       : "text-white/80 hover:text-white"
                   }`}
@@ -114,7 +116,7 @@ export default function NavigationHeader() {
                 <Link
                   href="/register"
                   className={`text-sm font-semibold transition-colors duration-200 ${
-                    isScrolled
+                    isSolidHeader
                       ? "text-slate-700 hover:text-slate-900"
                       : "text-white/80 hover:text-white"
                   }`}
@@ -143,7 +145,7 @@ export default function NavigationHeader() {
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className={`focus:outline-none cursor-pointer transition-colors ${
-                isScrolled ? "text-gray-700" : "text-white"
+                isSolidHeader ? "text-gray-700" : "text-white"
               }`}
               aria-label="Toggle menu"
             >
