@@ -72,9 +72,9 @@ export default function PostSpaceWizard() {
       } else {
         router.push("/sales");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Submission error:", error);
-      alert(error.message || "Failed to submit space");
+      alert(error instanceof Error ? error.message : "Failed to submit space");
     } finally {
       setIsSubmitting(false);
     }
@@ -261,7 +261,7 @@ export default function PostSpaceWizard() {
                         <option value="indenture">Indenture Only</option>
                         <option value="unregistered">Unregistered</option>
                       </select>
-                      <p className="text-xs text-gray-400 mt-1">Only 'Titled & Registered' properties receive the Verified Title Badge.</p>
+                      <p className="text-xs text-gray-400 mt-1">Only &apos;Titled &amp; Registered&apos; properties receive the Verified Title Badge.</p>
                     </div>
                   </>
                 )}
