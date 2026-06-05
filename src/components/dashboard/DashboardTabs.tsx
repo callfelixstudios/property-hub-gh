@@ -12,6 +12,7 @@ interface Listing {
   base_rent?: number;
   outright_price?: number;
   safemove_enabled?: boolean;
+  views?: number;
   [key: string]: any;
 }
 
@@ -88,7 +89,8 @@ export default function DashboardTabs({
       setProfile({ ...profile, whatsapp_link: finalWaLink || undefined });
       router.refresh();
     } else {
-      setProfileMessage('Error updating profile.');
+      console.error("Supabase update error:", error);
+      setProfileMessage(`Error updating profile: ${error.message || JSON.stringify(error)}`);
     }
   };
 
@@ -138,7 +140,7 @@ export default function DashboardTabs({
               </div>
               <div className="bg-slate-50 p-6 rounded-md border border-gray-100">
                 <p className="text-sm text-gray-500 font-medium mb-1">Total Views</p>
-                <p className="text-3xl font-bold text-navy-base">142</p>
+                <p className="text-3xl font-bold text-navy-base">{listings.reduce((sum, listing) => sum + (listing.views || 0), 0)}</p>
               </div>
             </div>
           </div>
