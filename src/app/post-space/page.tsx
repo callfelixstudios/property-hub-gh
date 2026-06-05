@@ -3,10 +3,9 @@
 "use client";
 export const dynamic = 'force-dynamic';
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { useEffect } from "react";
 
 export default function PostSpaceWizard() {
   const supabase = createClient();
@@ -42,6 +41,28 @@ export default function PostSpaceWizard() {
   const [generatorBackup, setGeneratorBackup] = useState(false);
   const [solarReady, setSolarReady] = useState(false);
   const [safeMoveActive, setSafeMoveActive] = useState(false);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFilesSelected = (files: FileList | null) => {
+    if (!files) return;
+    const newFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+    const combined = [...imageFiles, ...newFiles].slice(0, 6);
+    setImageFiles(combined);
+    // Generate previews
+    const previews = combined.map(f => URL.createObjectURL(f));
+    setImagePreviews(previews);
+  };
+
+  const removeImage = (index: number) => {
+    const updatedFiles = imageFiles.filter((_, i) => i !== index);
+    setImageFiles(updatedFiles);
+    // Revoke old blob URL
+    URL.revokeObjectURL(imagePreviews[index]);
+    setImagePreviews(updatedFiles.map(f => URL.createObjectURL(f)));
+  };
 
   const nextStep = () => setStep((prev) => Math.min(prev + 1, 3) as 1 | 2 | 3);
   const prevStep = () => setStep((prev) => Math.max(prev - 1, 1) as 1 | 2 | 3);
@@ -52,15 +73,38 @@ export default function PostSpaceWizard() {
       
       const { data: { user } } = await supabase.auth.getUser();
       
-      // If user isn't logged in, we shouldn't allow this, but for scaffolding we'll pass if not strictly required
-      // The DB requires poster_id. If no user, it will fail RLS unless we handle it.
-      // Assuming a logged in user for this flow.
       if (!user) {
         alert("You must be logged in to post a space.");
         router.push("/login");
         return;
       }
 
+      // --- Image Upload Pipeline ---
+      const uploadedUrls: string[] = [];
+
+      for (const file of imageFiles) {
+        const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const fileName = `${user.id}/${Date.now()}-${sanitizedName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('property-images')
+          .upload(fileName, file, { cacheControl: '3600', upsert: false });
+
+        if (uploadError) {
+          console.error('Image upload failed:', uploadError);
+          alert(`Failed to upload image "${file.name}": ${uploadError.message}`);
+          setIsSubmitting(false);
+          return;
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from('property-images')
+          .getPublicUrl(fileName);
+
+        uploadedUrls.push(publicUrlData.publicUrl);
+      }
+
+      // --- Database Insert ---
       const { error } = await supabase.from('listings').insert({
         poster_id: user.id,
         transaction_type: listingType,
@@ -75,6 +119,7 @@ export default function PostSpaceWizard() {
         generator_backup: generatorBackup,
         solar_ready: solarReady,
         safemove_active: safeMoveActive,
+        media_urls: uploadedUrls.length > 0 ? uploadedUrls : null,
         status: 'active'
       });
 
@@ -283,12 +328,71 @@ export default function PostSpaceWizard() {
             </div>
           )}
 
-          {/* STEP 3: Utilities & Escrow Integration */}
+          {/* STEP 3: Infrastructure & Trust */}
           {step === 3 && (
             <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-              <h2 className="text-2xl font-bold text-navy-base mb-6">Utilities & Escrow Integration</h2>
+              <h2 className="text-2xl font-bold text-navy-base mb-6">Infrastructure & Trust</h2>
               
               <div className="space-y-8">
+
+                {/* Property Images Dropzone */}
+                <div>
+                  <h3 className="text-sm font-bold text-navy-base mb-4">Property Images</h3>
+                  <div
+                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={(e) => { e.preventDefault(); setIsDragging(false); handleFilesSelected(e.dataTransfer.files); }}
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-200 ${
+                      isDragging
+                        ? 'border-navy-base bg-navy-base/5'
+                        : 'border-gray-300 bg-surface-primary hover:border-navy-light hover:bg-slate-50'
+                    }`}
+                  >
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={(e) => handleFilesSelected(e.target.files)}
+                      className="hidden"
+                    />
+                    <div className="flex flex-col items-center gap-3">
+                      <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${isDragging ? 'bg-navy-base/10' : 'bg-gray-100'}`}>
+                        <svg className={`w-7 h-7 ${isDragging ? 'text-navy-base' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-navy-base">Drag & drop images here</p>
+                        <p className="text-xs text-gray-400 mt-1">or click to browse • Up to 6 photos • JPG, PNG, WebP</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Image Previews */}
+                  {imagePreviews.length > 0 && (
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mt-4">
+                      {imagePreviews.map((src, i) => (
+                        <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200">
+                          <img src={src} alt={`Preview ${i + 1}`} className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); removeImage(i); }}
+                            className="absolute top-1 right-1 w-6 h-6 bg-black/60 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                          </button>
+                          {i === 0 && (
+                            <span className="absolute bottom-1 left-1 bg-navy-base text-white text-[10px] font-bold px-1.5 py-0.5 rounded">Cover</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Infrastructure Essentials */}
                 <div>
                   <h3 className="text-sm font-bold text-navy-base mb-4">Infrastructure Essentials</h3>
                   <div className="space-y-4">
