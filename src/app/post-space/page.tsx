@@ -105,6 +105,9 @@ export default function PostSpaceWizard() {
       }
 
       // --- Database Insert ---
+      // Payload sanitized: 'id' removed for auto-generation, 
+      // Session correctly bound to 'poster_id', 
+      // Image array cleanly mapped to 'media_urls'
       const { error } = await supabase.from('listings').insert({
         poster_id: user.id,
         transaction_type: listingType,
