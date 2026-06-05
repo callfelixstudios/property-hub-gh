@@ -107,6 +107,7 @@ export default function NavigationHeader() {
               <div className="relative group mr-2">
                 <button
                   type="button"
+                  onClick={() => router.push('/dashboard')}
                   className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-200 ${
                     isSolidHeader
                       ? "border-slate-300 text-slate-700 hover:border-navy-base hover:text-navy-base bg-white"
@@ -133,6 +134,18 @@ export default function NavigationHeader() {
                       className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-navy-base font-medium transition-colors"
                     >
                       My Listings
+                    </Link>
+                    <Link
+                      href="/dashboard?tab=tracker"
+                      className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-navy-base font-medium transition-colors"
+                    >
+                      SafeMove Tracker
+                    </Link>
+                    <Link
+                      href="/dashboard?tab=profile"
+                      className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-navy-base font-medium transition-colors"
+                    >
+                      Profile Settings
                     </Link>
                     <div className="border-t border-slate-100 my-1"></div>
                     <button
@@ -231,6 +244,12 @@ export default function NavigationHeader() {
                 </Link>
                 <Link href="/dashboard?tab=listings" className={`block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-navy-base hover:bg-slate-100`}>
                   My Listings
+                </Link>
+                <Link href="/dashboard?tab=tracker" className={`block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-navy-base hover:bg-slate-100`}>
+                  SafeMove Tracker
+                </Link>
+                <Link href="/dashboard?tab=profile" className={`block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-navy-base hover:bg-slate-100`}>
+                  Profile Settings
                 </Link>
                 <button
                   type="button"
