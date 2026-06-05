@@ -38,7 +38,7 @@ export default function NavigationHeader() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const isSolidHeader = isScrolled || pathname === '/login' || pathname === '/register' || pathname === '/post-space' || pathname === '/safemove';
+  const isSolidHeader = isScrolled || pathname === '/login' || pathname === '/register' || pathname === '/post-space' || pathname === '/safemove' || pathname === '/dashboard';
 
   return (
     <header
@@ -103,7 +103,18 @@ export default function NavigationHeader() {
 
           {/* Desktop Auth & CTA */}
           <div className="hidden md:flex items-center space-x-3">
-            {session ? null : (
+            {session ? (
+              <Link
+                href="/dashboard"
+                className={`text-sm font-semibold transition-colors duration-200 mr-2 ${
+                  isSolidHeader
+                    ? "text-slate-700 hover:text-navy-base"
+                    : "text-white/80 hover:text-white"
+                }`}
+              >
+                Dashboard
+              </Link>
+            ) : (
               <>
                 <Link
                   href="/login"
@@ -179,8 +190,16 @@ export default function NavigationHeader() {
               SafeMove
               <span className="ml-2 bg-accent-emerald text-white text-xs font-bold px-2 py-0.5 rounded-full">New</span>
             </Link>
-            <Link href="/login" className={`block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-navy-base hover:bg-slate-100 ${pathname === "/login" ? "bg-slate-100 text-navy-base font-semibold" : ""}`}>Login</Link>
-            <Link href="/register" className={`block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-navy-base hover:bg-slate-100 ${pathname === "/register" ? "bg-slate-100 text-navy-base font-semibold" : ""}`}>Register</Link>
+            {session ? (
+              <Link href="/dashboard" className={`block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-navy-base hover:bg-slate-100 ${pathname === "/dashboard" ? "bg-slate-100 text-navy-base font-semibold" : ""}`}>
+                Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link href="/login" className={`block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-navy-base hover:bg-slate-100 ${pathname === "/login" ? "bg-slate-100 text-navy-base font-semibold" : ""}`}>Login</Link>
+                <Link href="/register" className={`block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-navy-base hover:bg-slate-100 ${pathname === "/register" ? "bg-slate-100 text-navy-base font-semibold" : ""}`}>Register</Link>
+              </>
+            )}
             <div className="px-3 py-2">
               <button
                 type="button"
