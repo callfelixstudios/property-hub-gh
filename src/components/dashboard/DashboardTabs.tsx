@@ -11,6 +11,7 @@ interface Listing {
   transaction_type: 'rent' | 'sale';
   base_rent?: number;
   outright_price?: number;
+  safemove_enabled?: boolean;
   [key: string]: any;
 }
 
@@ -21,6 +22,12 @@ interface Profile {
   whatsapp_link?: string;
   [key: string]: any;
 }
+
+const extractPhoneFromWaLink = (link?: string) => {
+  if (!link) return '';
+  const match = link.match(/wa\.me\/(\d+)/);
+  return match ? match[1] : '';
+};
 
 export default function DashboardTabs({
   initialListings,
@@ -34,6 +41,7 @@ export default function DashboardTabs({
   const [activeTab, setActiveTab] = useState<'overview' | 'listings' | 'safemove' | 'profile'>('overview');
   const [listings, setListings] = useState<Listing[]>(initialListings);
   const [profile, setProfile] = useState<Profile>(initialProfile);
+  const [whatsappInput, setWhatsappInput] = useState(() => extractPhoneFromWaLink(initialProfile.whatsapp_link));
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [profileMessage, setProfileMessage] = useState('');
   
@@ -59,18 +67,25 @@ export default function DashboardTabs({
     setIsUpdatingProfile(true);
     setProfileMessage('');
 
+    let sanitizedNumber = whatsappInput.replace(/\D/g, '');
+    if (sanitizedNumber.startsWith('0')) {
+      sanitizedNumber = '233' + sanitizedNumber.slice(1);
+    }
+    const finalWaLink = sanitizedNumber ? `https://wa.me/${sanitizedNumber}` : null;
+
     const { error } = await supabase
       .from('profiles')
       .update({
         full_name: profile.full_name,
         contact_phone: profile.contact_phone,
-        whatsapp_link: profile.whatsapp_link
+        whatsapp_link: finalWaLink
       })
       .eq('id', userId);
 
     setIsUpdatingProfile(false);
     if (!error) {
       setProfileMessage('Profile updated successfully!');
+      setProfile({ ...profile, whatsapp_link: finalWaLink || undefined });
       router.refresh();
     } else {
       setProfileMessage('Error updating profile.');
@@ -114,12 +129,12 @@ export default function DashboardTabs({
             <h2 className="text-2xl font-bold text-navy-base mb-6">Overview</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               <div className="bg-slate-50 p-6 rounded-md border border-gray-100">
-                <p className="text-sm text-gray-500 font-medium mb-1">Active Listings</p>
+                <p className="text-sm text-gray-500 font-medium mb-1">Total Listings</p>
                 <p className="text-3xl font-bold text-navy-base">{listings.length}</p>
               </div>
               <div className="bg-slate-50 p-6 rounded-md border border-gray-100">
                 <p className="text-sm text-gray-500 font-medium mb-1">SafeMove Transactions</p>
-                <p className="text-3xl font-bold text-navy-base">1</p>
+                <p className="text-3xl font-bold text-navy-base">{listings.filter(l => l.safemove_enabled).length}</p>
               </div>
               <div className="bg-slate-50 p-6 rounded-md border border-gray-100">
                 <p className="text-sm text-gray-500 font-medium mb-1">Total Views</p>
@@ -246,15 +261,15 @@ export default function DashboardTabs({
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-navy-base mb-1">WhatsApp Baseline Link</label>
+                <label className="block text-sm font-semibold text-navy-base mb-1">WhatsApp Phone Number</label>
                 <input
-                  type="url"
-                  value={profile.whatsapp_link || ''}
-                  onChange={(e) => setProfile({ ...profile, whatsapp_link: e.target.value })}
+                  type="text"
+                  value={whatsappInput}
+                  onChange={(e) => setWhatsappInput(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-navy-base focus:ring-1 focus:ring-navy-base text-gray-900"
-                  placeholder="e.g. https://wa.me/233551234567"
+                  placeholder="e.g., 024 412 3456"
                 />
-                <p className="text-xs text-gray-500 mt-1">Buyers/Renters will use this link to contact you directly.</p>
+                <p className="text-xs text-gray-500 mt-1">Buyers/Renters will use this number to contact you via WhatsApp directly.</p>
               </div>
 
               <div className="pt-2 flex items-center gap-4">
