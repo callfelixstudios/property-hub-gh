@@ -104,16 +104,50 @@ export default function NavigationHeader() {
           {/* Desktop Auth & CTA */}
           <div className="hidden md:flex items-center space-x-3">
             {session ? (
-              <Link
-                href="/dashboard"
-                className={`text-sm font-semibold transition-colors duration-200 mr-2 ${
-                  isSolidHeader
-                    ? "text-slate-700 hover:text-navy-base"
-                    : "text-white/80 hover:text-white"
-                }`}
-              >
-                Dashboard
-              </Link>
+              <div className="relative group mr-2">
+                <button
+                  type="button"
+                  className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-200 ${
+                    isSolidHeader
+                      ? "border-slate-300 text-slate-700 hover:border-navy-base hover:text-navy-base bg-white"
+                      : "border-white/50 text-white hover:border-white hover:bg-white/10"
+                  }`}
+                  aria-label="User Menu"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </button>
+                
+                {/* Dropdown Menu */}
+                <div className="absolute right-0 top-full pt-2 w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right z-50">
+                  <div className="bg-white border border-slate-200 rounded-lg shadow-lg py-1 overflow-hidden">
+                    <Link
+                      href="/dashboard"
+                      className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-navy-base font-medium transition-colors"
+                    >
+                      Go to Dashboard
+                    </Link>
+                    <Link
+                      href="/dashboard?tab=listings"
+                      className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-navy-base font-medium transition-colors"
+                    >
+                      My Listings
+                    </Link>
+                    <div className="border-t border-slate-100 my-1"></div>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await supabase.auth.signOut();
+                        window.location.href = '/';
+                      }}
+                      className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 font-medium transition-colors"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
+              </div>
             ) : (
               <>
                 <Link
@@ -191,9 +225,24 @@ export default function NavigationHeader() {
               <span className="ml-2 bg-accent-emerald text-white text-xs font-bold px-2 py-0.5 rounded-full">New</span>
             </Link>
             {session ? (
-              <Link href="/dashboard" className={`block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-navy-base hover:bg-slate-100 ${pathname === "/dashboard" ? "bg-slate-100 text-navy-base font-semibold" : ""}`}>
-                Dashboard
-              </Link>
+              <>
+                <Link href="/dashboard" className={`block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-navy-base hover:bg-slate-100 ${pathname === "/dashboard" ? "bg-slate-100 text-navy-base font-semibold" : ""}`}>
+                  Dashboard
+                </Link>
+                <Link href="/dashboard?tab=listings" className={`block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-navy-base hover:bg-slate-100`}>
+                  My Listings
+                </Link>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await supabase.auth.signOut();
+                    window.location.href = '/';
+                  }}
+                  className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-600 hover:bg-red-50 hover:text-red-700"
+                >
+                  Sign Out
+                </button>
+              </>
             ) : (
               <>
                 <Link href="/login" className={`block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-navy-base hover:bg-slate-100 ${pathname === "/login" ? "bg-slate-100 text-navy-base font-semibold" : ""}`}>Login</Link>
