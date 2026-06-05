@@ -22,10 +22,21 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .single();
 
+  // Fetch safemove transactions (where user is landlord or tenant)
+  const { data: safemoveTransactions } = await supabase
+    .from('safemove_transactions')
+    .select(`
+      *,
+      listings ( id, title, neighborhood, city )
+    `)
+    .or(`landlord_id.eq.${user.id},tenant_id.eq.${user.id}`)
+    .order('created_at', { ascending: false });
+
   return (
     <DashboardTabs 
       initialListings={listings || []} 
       initialProfile={profile || {}} 
+      initialSafemoveTransactions={safemoveTransactions || []}
       userId={user.id} 
     />
   );

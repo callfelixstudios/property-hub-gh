@@ -24,6 +24,19 @@ interface Profile {
   [key: string]: any;
 }
 
+interface SafemoveTransaction {
+  id: string;
+  status: string;
+  transaction_amount: number;
+  listings?: {
+    id: string;
+    title: string;
+    neighborhood?: string;
+    city?: string;
+  };
+  [key: string]: any;
+}
+
 const extractPhoneFromWaLink = (link?: string) => {
   if (!link) return '';
   const match = link.match(/wa\.me\/(\d+)/);
@@ -33,10 +46,12 @@ const extractPhoneFromWaLink = (link?: string) => {
 export default function DashboardTabs({
   initialListings,
   initialProfile,
+  initialSafemoveTransactions = [],
   userId
 }: {
   initialListings: Listing[];
   initialProfile: Profile;
+  initialSafemoveTransactions?: SafemoveTransaction[];
   userId: string;
 }) {
   const [activeTab, setActiveTab] = useState<'overview' | 'listings' | 'safemove' | 'profile'>('overview');
@@ -136,7 +151,7 @@ export default function DashboardTabs({
               </div>
               <div className="bg-slate-50 p-6 rounded-md border border-gray-100">
                 <p className="text-sm text-gray-500 font-medium mb-1">SafeMove Transactions</p>
-                <p className="text-3xl font-bold text-navy-base">{listings.filter(l => l.safemove_enabled).length}</p>
+                <p className="text-3xl font-bold text-navy-base">{initialSafemoveTransactions.length}</p>
               </div>
               <div className="bg-slate-50 p-6 rounded-md border border-gray-100">
                 <p className="text-sm text-gray-500 font-medium mb-1">Total Views</p>
@@ -189,48 +204,75 @@ export default function DashboardTabs({
             <h2 className="text-2xl font-bold text-navy-base mb-2">SafeMove Tracker</h2>
             <p className="text-gray-500 mb-8 text-sm">Monitor your ongoing secure escrow transactions.</p>
             
-            <div className="bg-slate-50 rounded-xl border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className="font-bold text-navy-base text-lg">Transaction #SM-8492</h3>
-                  <p className="text-sm text-gray-500">2-Bedroom Apartment in East Legon</p>
-                </div>
-                <div className="bg-accent-gold/10 text-accent-gold font-bold px-3 py-1 rounded-full text-xs">
-                  In Progress
-                </div>
+            {initialSafemoveTransactions.length === 0 ? (
+              <div className="bg-slate-50 rounded-xl border border-gray-200 p-8 text-center">
+                <p className="text-gray-500">You don't have any active SafeMove escrow transactions right now.</p>
               </div>
+            ) : (
+              <div className="space-y-6">
+                {initialSafemoveTransactions.map((tx) => (
+                  <div key={tx.id} className="bg-slate-50 rounded-xl border border-gray-200 p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <div>
+                        <h3 className="font-bold text-navy-base text-lg">Transaction #{tx.id.split('-')[0].toUpperCase()}</h3>
+                        <p className="text-sm text-gray-500">{tx.listings?.title || 'Unknown Property'}</p>
+                      </div>
+                      <div className={`font-bold px-3 py-1 rounded-full text-xs ${tx.status === 'completed' ? 'bg-accent-emerald/10 text-accent-emerald' : 'bg-accent-gold/10 text-accent-gold'}`}>
+                        {tx.status === 'completed' ? 'Completed' : 'In Progress'}
+                      </div>
+                    </div>
 
-              {/* Timeline */}
-              <div className="relative border-l-2 border-gray-200 ml-3 space-y-8 mt-8">
-                {/* Step 1 */}
-                <div className="relative pl-6">
-                  <div className="absolute w-6 h-6 bg-accent-emerald rounded-full -left-[13px] flex items-center justify-center border-4 border-slate-50">
-                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <h4 className="font-bold text-navy-base">Deposit Locked</h4>
-                  <p className="text-sm text-gray-500 mt-1">Funds have been securely held in the Property Hub escrow account.</p>
-                </div>
-                
-                {/* Step 2 */}
-                <div className="relative pl-6">
-                  <div className="absolute w-6 h-6 bg-accent-gold rounded-full -left-[13px] flex items-center justify-center border-4 border-slate-50">
-                    <div className="w-2 h-2 bg-white rounded-full"></div>
-                  </div>
-                  <h4 className="font-bold text-navy-base">GPS Verification Pending</h4>
-                  <p className="text-sm text-gray-500 mt-1">Awaiting physical verification of the property against provided GPS coordinates.</p>
-                </div>
+                    {/* Timeline */}
+                    <div className="relative border-l-2 border-gray-200 ml-3 space-y-8 mt-8">
+                      {/* Step 1: Deposit Locked */}
+                      <div className="relative pl-6">
+                        <div className={`absolute w-6 h-6 rounded-full -left-[13px] flex items-center justify-center border-4 border-slate-50 ${['gps_pending', 'scheduled_handover', 'completed'].includes(tx.status) ? 'bg-accent-emerald' : (tx.status === 'deposit_locked' ? 'bg-accent-gold' : 'bg-gray-300')}`}>
+                          {['gps_pending', 'scheduled_handover', 'completed'].includes(tx.status) ? (
+                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          ) : (
+                            <div className="w-2 h-2 bg-white rounded-full"></div>
+                          )}
+                        </div>
+                        <h4 className="font-bold text-navy-base">Deposit Locked</h4>
+                        <p className="text-sm text-gray-500 mt-1">Funds have been securely held in the Property Hub escrow account.</p>
+                      </div>
+                      
+                      {/* Step 2: GPS Verification Pending */}
+                      <div className="relative pl-6">
+                        <div className={`absolute w-6 h-6 rounded-full -left-[13px] flex items-center justify-center border-4 border-slate-50 ${['scheduled_handover', 'completed'].includes(tx.status) ? 'bg-accent-emerald' : (tx.status === 'gps_pending' ? 'bg-accent-gold' : 'bg-gray-300')}`}>
+                          {['scheduled_handover', 'completed'].includes(tx.status) ? (
+                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          ) : tx.status === 'gps_pending' ? (
+                            <div className="w-2 h-2 bg-white rounded-full"></div>
+                          ) : null}
+                        </div>
+                        <h4 className={`font-bold ${['gps_pending', 'scheduled_handover', 'completed'].includes(tx.status) ? 'text-navy-base' : 'text-gray-400'}`}>GPS Verification Pending</h4>
+                        <p className="text-sm text-gray-500 mt-1">Awaiting physical verification of the property against provided GPS coordinates.</p>
+                      </div>
 
-                {/* Step 3 */}
-                <div className="relative pl-6">
-                  <div className="absolute w-6 h-6 bg-gray-300 rounded-full -left-[13px] flex items-center justify-center border-4 border-slate-50">
+                      {/* Step 3: Handover & Release Scheduled */}
+                      <div className="relative pl-6">
+                        <div className={`absolute w-6 h-6 rounded-full -left-[13px] flex items-center justify-center border-4 border-slate-50 ${tx.status === 'completed' ? 'bg-accent-emerald' : (tx.status === 'scheduled_handover' ? 'bg-accent-gold' : 'bg-gray-300')}`}>
+                          {tx.status === 'completed' ? (
+                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          ) : tx.status === 'scheduled_handover' ? (
+                            <div className="w-2 h-2 bg-white rounded-full"></div>
+                          ) : null}
+                        </div>
+                        <h4 className={`font-bold ${['scheduled_handover', 'completed'].includes(tx.status) ? 'text-navy-base' : 'text-gray-400'}`}>Handover & Release Scheduled</h4>
+                        <p className="text-sm text-gray-500 mt-1">Keys to be handed over and funds released to the landlord.</p>
+                      </div>
+                    </div>
                   </div>
-                  <h4 className="font-bold text-gray-400">Handover & Release Scheduled</h4>
-                  <p className="text-sm text-gray-400 mt-1">Keys to be handed over and funds released to the landlord.</p>
-                </div>
+                ))}
               </div>
-            </div>
+            )}
           </div>
         )}
 
