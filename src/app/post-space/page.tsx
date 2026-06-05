@@ -6,10 +6,21 @@ export const dynamic = 'force-dynamic';
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
+import { useEffect } from "react";
 
 export default function PostSpaceWizard() {
-  const router = useRouter();
   const supabase = createClient();
+  const router = useRouter();
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) {
+        router.replace("/login?message=Please%20log%20in%20or%20register%20an%20account%20to%20list%20a%20space");
+      }
+    });
+  }, []);
+
+
+
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);

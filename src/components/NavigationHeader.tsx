@@ -38,7 +38,7 @@ export default function NavigationHeader() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const isSolidHeader = isScrolled || pathname === '/login' || pathname === '/register' || pathname === '/post-space';
+  const isSolidHeader = isScrolled || pathname === '/login' || pathname === '/register' || pathname === '/post-space' || pathname === '/safemove';
 
   return (
     <header
@@ -90,9 +90,11 @@ export default function NavigationHeader() {
                 isSolidHeader
                   ? "text-gray-700 hover:text-navy-base"
                   : "text-white/80 hover:text-white"
-              } ${pathname === "/safemove" ? "border-b-2 border-accent-gold" : ""}`}
+              }`}
             >
-              SafeMove
+              <span className={`${pathname === "/safemove" ? "border-b-2 border-accent-gold" : ""}`}>
+                SafeMove
+              </span>
               <span className="ml-2 bg-accent-emerald text-white text-xs font-bold px-2 py-0.5 rounded-full">
                 New
               </span>
