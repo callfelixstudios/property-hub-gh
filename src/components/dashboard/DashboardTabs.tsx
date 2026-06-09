@@ -77,7 +77,8 @@ export default function DashboardTabs({
     const { error } = await supabase
       .from('listings')
       .update({ status: 'archived' })
-      .eq('id', listingId);
+      .eq('id', listingId)
+      .eq('poster_id', userId);
     
     if (error) {
       console.error('Archive failed:', error.message, error);
@@ -93,7 +94,8 @@ export default function DashboardTabs({
     const { error } = await supabase
       .from('listings')
       .delete()
-      .eq('id', listingId);
+      .eq('id', listingId)
+      .eq('poster_id', userId);
 
     if (error) {
       console.error('Database deletion failed:', error.message, error);
@@ -171,7 +173,8 @@ export default function DashboardTabs({
     const { error } = await supabase
       .from('listings')
       .update(updatePayload)
-      .eq('id', editingListing.id);
+      .eq('id', editingListing.id)
+      .eq('poster_id', userId);
 
     setIsSavingEdit(false);
     if (!error) {
