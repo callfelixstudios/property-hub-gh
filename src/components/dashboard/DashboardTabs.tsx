@@ -79,12 +79,13 @@ export default function DashboardTabs({
       .update({ status: 'archived' })
       .eq('id', listingId);
     
-    if (!error) {
-      setListings(listings.filter(l => l.id !== listingId));
-      router.refresh();
-    } else {
-      alert("Failed to archive listing.");
+    if (error) {
+      console.error('Archive failed:', error.message, error);
+      alert(`Failed to archive listing: ${error.message}`);
+      return;
     }
+    setListings(prev => prev.filter(l => l.id !== listingId));
+    router.refresh();
   };
 
   const handleDeleteListing = async (listingId: string) => {
@@ -94,12 +95,13 @@ export default function DashboardTabs({
       .delete()
       .eq('id', listingId);
 
-    if (!error) {
-      setListings(listings.filter(l => l.id !== listingId));
-      router.refresh();
-    } else {
-      alert('Failed to delete listing.');
+    if (error) {
+      console.error('Database deletion failed:', error.message, error);
+      alert(`Failed to delete listing: ${error.message}`);
+      return;
     }
+    setListings(prev => prev.filter(l => l.id !== listingId));
+    router.refresh();
   };
 
   const openEditModal = (listing: Listing) => {
