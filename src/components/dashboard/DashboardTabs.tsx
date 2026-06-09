@@ -60,6 +60,12 @@ export default function DashboardTabs({
   const [whatsappInput, setWhatsappInput] = useState(() => extractPhoneFromWaLink(initialProfile.whatsapp_link));
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [profileMessage, setProfileMessage] = useState('');
+
+  const [editingListing, setEditingListing] = useState<Listing | null>(null);
+  const [editForm, setEditForm] = useState({
+    title: '', description: '', price: '', neighborhood: '', region: '', transaction_type: 'rent' as 'rent' | 'sale'
+  });
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
   
   const supabase = createClient();
   const router = useRouter();
@@ -75,6 +81,56 @@ export default function DashboardTabs({
       router.refresh();
     } else {
       alert("Failed to archive listing.");
+    }
+  };
+
+  const openEditModal = (listing: Listing) => {
+    setEditingListing(listing);
+    setEditForm({
+      title: listing.title || '',
+      description: listing.description || '',
+      price: (listing.transaction_type === 'rent' ? listing.base_rent : listing.outright_price)?.toString() || '',
+      neighborhood: listing.neighborhood || '',
+      region: listing.region || '',
+      transaction_type: listing.transaction_type
+    });
+  };
+
+  const closeEditModal = () => {
+    setEditingListing(null);
+  };
+
+  const handleUpdateListing = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingListing) return;
+    setIsSavingEdit(true);
+
+    const priceVal = parseInt(editForm.price, 10) || 0;
+    const updatePayload: any = {
+      title: editForm.title,
+      description: editForm.description,
+      neighborhood: editForm.neighborhood,
+      region: editForm.region,
+    };
+
+    if (editForm.transaction_type === 'rent') {
+      updatePayload.base_rent = priceVal;
+    } else {
+      updatePayload.outright_price = priceVal;
+    }
+
+    const { error } = await supabase
+      .from('listings')
+      .update(updatePayload)
+      .eq('id', editingListing.id);
+
+    setIsSavingEdit(false);
+    if (!error) {
+      setListings(listings.map(l => l.id === editingListing.id ? { ...l, ...updatePayload } : l));
+      closeEditModal();
+      router.refresh();
+    } else {
+      alert("Failed to update listing: " + error.message);
     }
   };
 
@@ -185,12 +241,20 @@ export default function DashboardTabs({
                         </span>
                       </p>
                     </div>
-                    <button
-                      onClick={() => handleArchiveListing(listing.id)}
-                      className="bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold py-2 px-4 rounded-md transition-colors sm:w-auto w-full"
-                    >
-                      Archive Listing
-                    </button>
+                    <div className="flex gap-2 w-full sm:w-auto mt-4 sm:mt-0">
+                      <button
+                        onClick={() => openEditModal(listing)}
+                        className="bg-slate-700 hover:bg-slate-800 text-white text-sm font-bold py-2 px-4 rounded-md transition-colors flex-1 sm:flex-none"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleArchiveListing(listing.id)}
+                        className="bg-red-50 hover:bg-red-100 text-red-600 text-sm font-bold py-2 px-4 rounded-md transition-colors border border-red-200 flex-1 sm:flex-none"
+                      >
+                        Archive
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -334,6 +398,53 @@ export default function DashboardTabs({
           </div>
         )}
       </main>
+
+      {/* Editor Modal */}
+      {editingListing && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-navy-base">Edit Listing</h3>
+              <button onClick={closeEditModal} className="text-gray-400 hover:text-gray-600 text-xl font-bold">
+                ✕
+              </button>
+            </div>
+            <form onSubmit={handleUpdateListing} className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-navy-base mb-1">Title</label>
+                <input type="text" value={editForm.title} onChange={e => setEditForm({...editForm, title: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:border-navy-base outline-none" required />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-navy-base mb-1">Description</label>
+                <textarea value={editForm.description} onChange={e => setEditForm({...editForm, description: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:border-navy-base outline-none" rows={4} />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-navy-base mb-1">Price (₵)</label>
+                  <input type="number" value={editForm.price} onChange={e => setEditForm({...editForm, price: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:border-navy-base outline-none" required />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-navy-base mb-1">Region</label>
+                  <input type="text" value={editForm.region} onChange={e => setEditForm({...editForm, region: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:border-navy-base outline-none" />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-navy-base mb-1">Neighborhood</label>
+                  <input type="text" value={editForm.neighborhood} onChange={e => setEditForm({...editForm, neighborhood: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:border-navy-base outline-none" />
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 mt-8">
+                <button type="button" onClick={closeEditModal} className="px-5 py-2 text-gray-600 hover:bg-gray-100 rounded-md font-bold transition-colors">Cancel</button>
+                <button type="submit" disabled={isSavingEdit} className="bg-navy-base hover:bg-navy-light transition-colors text-white px-6 py-2 rounded-md font-bold disabled:opacity-50">
+                  {isSavingEdit ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

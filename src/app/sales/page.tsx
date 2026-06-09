@@ -8,7 +8,8 @@ async function fetchSalesListings() {
   const { data, error } = await supabase
     .from('listings')
     .select('*')
-    .eq('listing_type', 'sale')
+    .eq('transaction_type', 'sale')
+    .eq('status', 'active')
     .order('created_at', { ascending: false });
   if (error) {
     console.error('Error fetching sales listings:', error);

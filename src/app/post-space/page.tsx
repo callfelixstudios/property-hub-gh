@@ -26,6 +26,8 @@ export default function PostSpaceWizard() {
 
   // Step 1 State
   const [listingType, setListingType] = useState<"rent" | "sale">("rent");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [region, setRegion] = useState("");
   const [neighborhood, setNeighborhood] = useState("");
@@ -111,6 +113,8 @@ export default function PostSpaceWizard() {
       const { error } = await supabase.from('listings').insert({
         poster_id: user.id,
         transaction_type: listingType,
+        title: title || null,
+        description: description || null,
         category: category || 'apartment',
         region: region || null,
         neighborhood: neighborhood || null,
@@ -201,6 +205,30 @@ export default function PostSpaceWizard() {
                     >
                       For Sale
                     </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-6 mb-6">
+                  <div>
+                    <label className="block text-sm font-bold text-navy-base mb-2">Listing Title <span className="text-red-500">*</span></label>
+                    <input 
+                      type="text"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder="e.g. Modern 3 Bedroom House in Cantonments"
+                      className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-navy-base mb-2">Description</label>
+                    <textarea 
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Describe the property, features, and any other important details..."
+                      rows={4}
+                      className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors resize-y"
+                    />
                   </div>
                 </div>
 

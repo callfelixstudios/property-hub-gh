@@ -23,7 +23,8 @@ async function fetchRentalListings(): Promise<Listing[]> {
   const { data, error } = await supabase
     .from('listings')
     .select('*')
-    .eq('listing_type', 'rent')
+    .eq('transaction_type', 'rent')
+    .eq('status', 'active')
     .order('created_at', { ascending: false });
   if (error) {
     console.error('Error fetching rentals:', error);
