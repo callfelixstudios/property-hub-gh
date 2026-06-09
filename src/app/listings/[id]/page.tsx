@@ -23,6 +23,7 @@ interface ListingRow {
   views?: number;
   advance_period?: string;
   created_at?: string;
+  image_url?: string;
 }
 
 interface PosterProfile {
@@ -100,7 +101,7 @@ export default async function ListingDetailPage({
   // Build display values
   const displayTitle = `${formatCategory(row.category)} in ${row.neighborhood || row.region || 'Ghana'}`;
   const displayLocation = [row.neighborhood, row.region].filter(Boolean).join(', ');
-  const heroImage = row.media_urls?.[0] || null;
+  const heroImage = row.image_url || row.media_urls?.[0] || null;
   const galleryImages = row.media_urls?.slice(1, 4) || [];
   const isRent = row.transaction_type === 'rent';
   const primaryPrice = isRent ? row.base_rent : row.outright_price;
@@ -134,7 +135,7 @@ export default async function ListingDetailPage({
       <div className="max-w-7xl mx-auto px-4 -mt-1">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-2 rounded-xl overflow-hidden">
           {/* Main Image */}
-          <div className="lg:col-span-3 relative aspect-[16/9] bg-slate-200">
+          <div className="lg:col-span-3 relative h-[450px] bg-slate-200 rounded-xl overflow-hidden shadow-sm">
             {heroImage ? (
               <Image src={heroImage} alt={displayTitle} fill className="object-cover" />
             ) : (
@@ -392,10 +393,15 @@ export default async function ListingDetailPage({
               {/* Price Summary Card */}
               <div className="bg-white border border-gray-100 p-6 rounded-xl shadow-sm">
                 <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Cost Summary</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">{isRent ? 'Monthly Rent' : 'Property Price'}</span>
-                    <span className="font-bold text-navy-base">{formatCurrency(primaryPrice)}</span>
+                <div className="space-y-4">
+                  <div className="flex flex-col mb-2">
+                    <span className="text-sm font-semibold text-gray-500 mb-1">
+                      {isRent ? 'Monthly Rent' : 'Outright Purchase Price'}
+                    </span>
+                    <div className="flex items-baseline gap-1 text-teal-700">
+                      <span className="text-3xl font-extrabold">{formatCurrency(primaryPrice)}</span>
+                      {isRent && <span className="text-sm font-bold opacity-80">/month</span>}
+                    </div>
                   </div>
                   {isRent && row.service_charge && (
                     <div className="flex justify-between items-center">
