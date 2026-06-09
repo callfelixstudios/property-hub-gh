@@ -256,8 +256,21 @@ export default function PostSpaceWizard() {
                     >
                       <option value="">Select Region...</option>
                       <option value="greater_accra">Greater Accra</option>
-                      <option value="ashanti">Ashanti Region</option>
-                      <option value="central">Central Region</option>
+                      <option value="ashanti">Ashanti</option>
+                      <option value="central">Central</option>
+                      <option value="ahafo">Ahafo</option>
+                      <option value="bono">Bono</option>
+                      <option value="bono_east">Bono East</option>
+                      <option value="eastern">Eastern</option>
+                      <option value="north_east">North East</option>
+                      <option value="northern">Northern</option>
+                      <option value="oti">Oti</option>
+                      <option value="savannah">Savannah</option>
+                      <option value="upper_east">Upper East</option>
+                      <option value="upper_west">Upper West</option>
+                      <option value="volta">Volta</option>
+                      <option value="western">Western</option>
+                      <option value="western_north">Western North</option>
                     </select>
                   </div>
                 </div>
@@ -274,15 +287,15 @@ export default function PostSpaceWizard() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-navy-base mb-2">Ghana Post GPS Address</label>
+                    <label className="block text-sm font-bold text-navy-base mb-2">Nearest Landmark or Location Description</label>
                     <input 
                       type="text" 
                       value={gpsAddress}
                       onChange={(e) => setGpsAddress(e.target.value)}
-                      placeholder="e.g., GA-123-4567" 
+                      placeholder="e.g., Near East Legon Starbites" 
                       className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
                     />
-                    <p className="text-xs text-gray-400 mt-1">Required for accurate verification.</p>
+                    <p className="text-xs text-gray-400 mt-1">Required for accurate property localization.</p>
                   </div>
                 </div>
               </div>

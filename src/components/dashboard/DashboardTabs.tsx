@@ -63,8 +63,9 @@ export default function DashboardTabs({
 
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
   const [editForm, setEditForm] = useState({
-    title: '', description: '', price: '', neighborhood: '', region: '', transaction_type: 'rent' as 'rent' | 'sale'
+    title: '', description: '', price: '', neighborhood: '', region: '', transaction_type: 'rent' as 'rent' | 'sale', service_charge: '', gps_address: ''
   });
+  const [editImageFile, setEditImageFile] = useState<File | null>(null);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   
   const supabase = createClient();
@@ -92,12 +93,16 @@ export default function DashboardTabs({
       price: (listing.transaction_type === 'rent' ? listing.base_rent : listing.outright_price)?.toString() || '',
       neighborhood: listing.neighborhood || '',
       region: listing.region || '',
-      transaction_type: listing.transaction_type
+      transaction_type: listing.transaction_type,
+      service_charge: listing.service_charge?.toString() || '',
+      gps_address: listing.gps_address || ''
     });
+    setEditImageFile(null);
   };
 
   const closeEditModal = () => {
     setEditingListing(null);
+    setEditImageFile(null);
   };
 
   const handleUpdateListing = async (e: React.FormEvent) => {
@@ -106,12 +111,31 @@ export default function DashboardTabs({
     setIsSavingEdit(true);
 
     const priceVal = parseInt(editForm.price, 10) || 0;
+    const serviceChargeVal = parseInt(editForm.service_charge, 10) || 0;
     const updatePayload: any = {
       title: editForm.title,
       description: editForm.description,
       neighborhood: editForm.neighborhood,
       region: editForm.region,
+      gps_address: editForm.gps_address,
+      service_charge: serviceChargeVal,
     };
+
+    if (editImageFile) {
+      const fileName = `${Date.now()}-${editImageFile.name}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('property-images')
+        .upload(fileName, editImageFile, {
+          cacheControl: '3600',
+          upsert: false
+        });
+        
+      if (!uploadError && uploadData) {
+        const { data: { publicUrl } } = supabase.storage.from('property-images').getPublicUrl(uploadData.path);
+        const currentMedia = editingListing.media_urls || [];
+        updatePayload.media_urls = [publicUrl, ...currentMedia];
+      }
+    }
 
     if (editForm.transaction_type === 'rent') {
       updatePayload.base_rent = priceVal;
@@ -423,15 +447,47 @@ export default function DashboardTabs({
                   <label className="block text-sm font-bold text-navy-base mb-1">Price (₵)</label>
                   <input type="number" value={editForm.price} onChange={e => setEditForm({...editForm, price: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:border-navy-base outline-none" required />
                 </div>
+                <div>
+                  <label className="block text-sm font-bold text-navy-base mb-1">Service Charge (₵)</label>
+                  <input type="number" value={editForm.service_charge} onChange={e => setEditForm({...editForm, service_charge: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:border-navy-base outline-none" placeholder="0" />
+                </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-bold text-navy-base mb-1">Region</label>
-                  <input type="text" value={editForm.region} onChange={e => setEditForm({...editForm, region: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:border-navy-base outline-none" />
+                  <select value={editForm.region} onChange={e => setEditForm({...editForm, region: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:border-navy-base outline-none">
+                    <option value="">Select Region...</option>
+                    <option value="greater_accra">Greater Accra</option>
+                    <option value="ashanti">Ashanti</option>
+                    <option value="central">Central</option>
+                    <option value="ahafo">Ahafo</option>
+                    <option value="bono">Bono</option>
+                    <option value="bono_east">Bono East</option>
+                    <option value="eastern">Eastern</option>
+                    <option value="north_east">North East</option>
+                    <option value="northern">Northern</option>
+                    <option value="oti">Oti</option>
+                    <option value="savannah">Savannah</option>
+                    <option value="upper_east">Upper East</option>
+                    <option value="upper_west">Upper West</option>
+                    <option value="volta">Volta</option>
+                    <option value="western">Western</option>
+                    <option value="western_north">Western North</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-navy-base mb-1">Neighborhood</label>
                   <input type="text" value={editForm.neighborhood} onChange={e => setEditForm({...editForm, neighborhood: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:border-navy-base outline-none" />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-navy-base mb-1">Nearest Landmark or Location Description</label>
+                  <input type="text" value={editForm.gps_address} onChange={e => setEditForm({...editForm, gps_address: e.target.value})} placeholder="e.g. Near East Legon Starbites" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:border-navy-base outline-none" />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-navy-base mb-1">Update Property Image</label>
+                  <input type="file" accept="image/*" onChange={e => setEditImageFile(e.target.files?.[0] || null)} className="w-full px-4 py-1.5 border border-gray-300 rounded-md focus:border-navy-base outline-none text-sm file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-navy-base file:text-white hover:file:bg-navy-light cursor-pointer" />
                 </div>
               </div>
               <div className="flex justify-end gap-3 mt-8">
