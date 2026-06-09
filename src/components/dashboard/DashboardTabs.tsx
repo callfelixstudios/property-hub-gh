@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 
@@ -65,6 +66,7 @@ export default function DashboardTabs({
   const [editForm, setEditForm] = useState({
     title: '', description: '', price: '', neighborhood: '', region: '', transaction_type: 'rent' as 'rent' | 'sale', service_charge: '', gps_address: ''
   });
+  const [editMediaUrls, setEditMediaUrls] = useState<string[]>([]);
   const [editImageFile, setEditImageFile] = useState<File | null>(null);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   
@@ -85,6 +87,21 @@ export default function DashboardTabs({
     }
   };
 
+  const handleDeleteListing = async (listingId: string) => {
+    if (!confirm('Are you sure you want to permanently delete this listing? This cannot be undone.')) return;
+    const { error } = await supabase
+      .from('listings')
+      .delete()
+      .eq('id', listingId);
+
+    if (!error) {
+      setListings(listings.filter(l => l.id !== listingId));
+      router.refresh();
+    } else {
+      alert('Failed to delete listing.');
+    }
+  };
+
   const openEditModal = (listing: Listing) => {
     setEditingListing(listing);
     setEditForm({
@@ -97,11 +114,13 @@ export default function DashboardTabs({
       service_charge: listing.service_charge?.toString() || '',
       gps_address: listing.gps_address || ''
     });
+    setEditMediaUrls([...(listing.media_urls || [])]);
     setEditImageFile(null);
   };
 
   const closeEditModal = () => {
     setEditingListing(null);
+    setEditMediaUrls([]);
     setEditImageFile(null);
   };
 
@@ -121,6 +140,9 @@ export default function DashboardTabs({
       service_charge: serviceChargeVal,
     };
 
+    // Start with the curated media list (user may have removed images)
+    let finalMedia = [...editMediaUrls];
+
     if (editImageFile) {
       const fileName = `${Date.now()}-${editImageFile.name}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -132,10 +154,11 @@ export default function DashboardTabs({
         
       if (!uploadError && uploadData) {
         const { data: { publicUrl } } = supabase.storage.from('property-images').getPublicUrl(uploadData.path);
-        const currentMedia = editingListing.media_urls || [];
-        updatePayload.media_urls = [publicUrl, ...currentMedia];
+        finalMedia = [publicUrl, ...finalMedia];
       }
     }
+
+    updatePayload.media_urls = finalMedia;
 
     if (editForm.transaction_type === 'rent') {
       updatePayload.base_rent = priceVal;
@@ -274,9 +297,15 @@ export default function DashboardTabs({
                       </button>
                       <button
                         onClick={() => handleArchiveListing(listing.id)}
-                        className="bg-red-50 hover:bg-red-100 text-red-600 text-sm font-bold py-2 px-4 rounded-md transition-colors border border-red-200 flex-1 sm:flex-none"
+                        className="bg-amber-50 hover:bg-amber-100 text-amber-700 text-sm font-bold py-2 px-4 rounded-md transition-colors border border-amber-200 flex-1 sm:flex-none"
                       >
                         Archive
+                      </button>
+                      <button
+                        onClick={() => handleDeleteListing(listing.id)}
+                        className="text-red-600 hover:bg-red-50 text-sm font-bold py-2 px-4 rounded-md transition-colors border border-red-200 flex-1 sm:flex-none"
+                      >
+                        Delete
                       </button>
                     </div>
                   </div>
@@ -486,10 +515,33 @@ export default function DashboardTabs({
                   <input type="text" value={editForm.gps_address} onChange={e => setEditForm({...editForm, gps_address: e.target.value})} placeholder="e.g. Near East Legon Starbites" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:border-navy-base outline-none" />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-navy-base mb-1">Update Property Image</label>
+                  <label className="block text-sm font-bold text-navy-base mb-1">Add New Image</label>
                   <input type="file" accept="image/*" onChange={e => setEditImageFile(e.target.files?.[0] || null)} className="w-full px-4 py-1.5 border border-gray-300 rounded-md focus:border-navy-base outline-none text-sm file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-navy-base file:text-white hover:file:bg-navy-light cursor-pointer" />
                 </div>
               </div>
+              {/* Existing Image Thumbnails */}
+              {editMediaUrls.length > 0 && (
+                <div>
+                  <label className="block text-sm font-bold text-navy-base mb-2">Current Images</label>
+                  <div className="flex flex-wrap gap-3">
+                    {editMediaUrls.map((url, idx) => (
+                      <div key={idx} className="relative w-20 h-20 rounded-lg border border-slate-200 overflow-hidden group">
+                        <Image src={url} alt={`Image ${idx + 1}`} fill className="object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => setEditMediaUrls(editMediaUrls.filter((_, i) => i !== idx))}
+                          className="absolute -top-1 -right-1 bg-red-500 hover:bg-red-600 text-white rounded-full p-0.5 shadow-sm transition-colors z-10"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1.5">Click the red ✕ on any image to remove it.</p>
+                </div>
+              )}
               <div className="flex justify-end gap-3 mt-8">
                 <button type="button" onClick={closeEditModal} className="px-5 py-2 text-gray-600 hover:bg-gray-100 rounded-md font-bold transition-colors">Cancel</button>
                 <button type="submit" disabled={isSavingEdit} className="bg-navy-base hover:bg-navy-light transition-colors text-white px-6 py-2 rounded-md font-bold disabled:opacity-50">
