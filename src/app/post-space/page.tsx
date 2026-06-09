@@ -112,13 +112,13 @@ export default function PostSpaceWizard() {
         poster_id: user.id,
         transaction_type: listingType,
         category: category || 'apartment',
-        region,
-        neighborhood,
-        gps_address: gpsAddress,
+        region: region || null,
+        neighborhood: neighborhood || null,
+        gps_address: gpsAddress || null,
         base_rent: baseRent ? parseFloat(baseRent) : null,
         service_charge: serviceCharge ? parseFloat(serviceCharge) : null,
         outright_price: outrightPrice ? parseFloat(outrightPrice) : null,
-        legal_status: legalStatus,
+        legal_status: legalStatus || null,
         generator_backup: generatorBackup,
         solar_ready: solarReady,
         safemove_active: safeMoveActive,
@@ -134,9 +134,10 @@ export default function PostSpaceWizard() {
       } else {
         router.push("/sales");
       }
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error("Submission error:", error);
-      alert(error instanceof Error ? error.message : "Failed to submit space");
+      const errorMessage = error?.message || error?.error_description || "Failed to submit space. Check console for details.";
+      alert(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
