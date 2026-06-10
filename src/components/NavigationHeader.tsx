@@ -124,7 +124,7 @@ export default function NavigationHeader() {
                 <div className="absolute right-0 top-full pt-2 w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right z-50">
                   <div className="bg-white border border-slate-200 rounded-lg shadow-lg py-1 overflow-hidden">
                     <Link
-                      href="/dashboard"
+                      href="/dashboard?tab=overview"
                       className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-navy-base font-medium transition-colors"
                     >
                       Go to Dashboard
@@ -136,7 +136,7 @@ export default function NavigationHeader() {
                       My Listings
                     </Link>
                     <Link
-                      href="/dashboard?tab=tracker"
+                      href="/dashboard?tab=safemove"
                       className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-navy-base font-medium transition-colors"
                     >
                       SafeMove Tracker
@@ -239,13 +239,13 @@ export default function NavigationHeader() {
             </Link>
             {session ? (
               <>
-                <Link href="/dashboard" className={`block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-navy-base hover:bg-slate-100 ${pathname === "/dashboard" ? "bg-slate-100 text-navy-base font-semibold" : ""}`}>
+                <Link href="/dashboard?tab=overview" className={`block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-navy-base hover:bg-slate-100 ${pathname === "/dashboard" ? "bg-slate-100 text-navy-base font-semibold" : ""}`}>
                   Dashboard
                 </Link>
                 <Link href="/dashboard?tab=listings" className={`block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-navy-base hover:bg-slate-100`}>
                   My Listings
                 </Link>
-                <Link href="/dashboard?tab=tracker" className={`block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-navy-base hover:bg-slate-100`}>
+                <Link href="/dashboard?tab=safemove" className={`block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-navy-base hover:bg-slate-100`}>
                   SafeMove Tracker
                 </Link>
                 <Link href="/dashboard?tab=profile" className={`block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-navy-base hover:bg-slate-100`}>

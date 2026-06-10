@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { createClient } from '@/utils/supabase/client';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 interface Listing {
   id: string;
@@ -55,7 +55,18 @@ export default function DashboardTabs({
   initialSafemoveTransactions?: SafemoveTransaction[];
   userId: string;
 }) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'listings' | 'safemove' | 'profile'>('overview');
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get('tab') as 'overview' | 'listings' | 'safemove' | 'profile' | null;
+
+  const [activeTab, setActiveTab] = useState<'overview' | 'listings' | 'safemove' | 'profile'>(tabParam || 'overview');
+
+  useEffect(() => {
+    if (tabParam && ['overview', 'listings', 'safemove', 'profile'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
+
   const [listings, setListings] = useState<Listing[]>(initialListings);
   const [profile, setProfile] = useState<Profile>(initialProfile);
   const [whatsappInput, setWhatsappInput] = useState(() => extractPhoneFromWaLink(initialProfile.whatsapp_link));
@@ -71,7 +82,6 @@ export default function DashboardTabs({
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   
   const supabase = createClient();
-  const router = useRouter();
 
   const handleArchiveListing = async (listingId: string) => {
     const { error } = await supabase
@@ -232,7 +242,10 @@ export default function DashboardTabs({
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                setActiveTab(tab.id);
+                router.push(`/dashboard?tab=${tab.id}`, { scroll: false });
+              }}
               className={`text-left px-4 py-3 rounded-md font-medium whitespace-nowrap transition-colors ${
                 activeTab === tab.id
                   ? 'bg-navy-base text-white'
