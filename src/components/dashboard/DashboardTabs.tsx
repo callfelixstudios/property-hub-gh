@@ -57,12 +57,12 @@ export default function DashboardTabs({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const tabParam = searchParams.get('tab') as 'overview' | 'listings' | 'safemove' | 'profile' | null;
+  const tabParam = searchParams.get('tab') as 'overview' | 'listings' | 'archived' | 'safemove' | 'profile' | null;
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'listings' | 'safemove' | 'profile'>(tabParam || 'overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'listings' | 'archived' | 'safemove' | 'profile'>(tabParam || 'overview');
 
   useEffect(() => {
-    if (tabParam && ['overview', 'listings', 'safemove', 'profile'].includes(tabParam)) {
+    if (tabParam && ['overview', 'listings', 'archived', 'safemove', 'profile'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [tabParam]);
@@ -95,7 +95,23 @@ export default function DashboardTabs({
       alert(`Failed to archive listing: ${error.message}`);
       return;
     }
-    setListings(prev => prev.filter(l => l.id !== listingId));
+    setListings(prev => prev.map(l => l.id === listingId ? { ...l, status: 'archived' } : l));
+    router.refresh();
+  };
+
+  const handleRestoreListing = async (listingId: string) => {
+    const { error } = await supabase
+      .from('listings')
+      .update({ status: 'active' })
+      .eq('id', listingId)
+      .eq('poster_id', userId);
+    
+    if (error) {
+      console.error('Restore failed:', error.message, error);
+      alert(`Failed to restore listing: ${error.message}`);
+      return;
+    }
+    setListings(prev => prev.map(l => l.id === listingId ? { ...l, status: 'active' } : l));
     router.refresh();
   };
 
@@ -230,6 +246,7 @@ export default function DashboardTabs({
   const tabs = [
     { id: 'overview', label: 'Overview' },
     { id: 'listings', label: 'My Listings' },
+    { id: 'archived', label: 'Archived Listings' },
     { id: 'safemove', label: 'SafeMove Tracker' },
     { id: 'profile', label: 'Profile Settings' },
   ] as const;
@@ -286,11 +303,11 @@ export default function DashboardTabs({
         {activeTab === 'listings' && (
           <div>
             <h2 className="text-2xl font-bold text-navy-base mb-6">My Listings</h2>
-            {listings.length === 0 ? (
+            {listings.filter(l => l.status === 'active').length === 0 ? (
               <p className="text-gray-500">You don't have any active listings yet.</p>
             ) : (
               <div className="space-y-4">
-                {listings.map((listing) => (
+                {listings.filter(l => l.status === 'active').map((listing) => (
                   <div key={listing.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-md border border-gray-200 hover:border-gray-300 transition-colors bg-slate-50">
                     <div className="mb-4 sm:mb-0">
                       <div className="flex items-center gap-3 mb-1">
@@ -324,6 +341,57 @@ export default function DashboardTabs({
                         className="text-red-600 hover:bg-red-50 text-sm font-bold py-2 px-4 rounded-md transition-colors border border-red-200 flex-1 sm:flex-none"
                       >
                         Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ARCHIVED LISTINGS TAB */}
+        {activeTab === 'archived' && (
+          <div>
+            <h2 className="text-2xl font-bold text-navy-base mb-6">Archived Listings</h2>
+            {listings.filter(l => l.status === 'archived').length === 0 ? (
+              <p className="text-gray-500">You don't have any archived listings.</p>
+            ) : (
+              <div className="space-y-4">
+                {listings.filter(l => l.status === 'archived').map((listing) => (
+                  <div key={listing.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-md border border-gray-200 hover:border-gray-300 transition-colors bg-slate-50 opacity-75 hover:opacity-100">
+                    <div className="mb-4 sm:mb-0">
+                      <div className="flex items-center gap-3 mb-1">
+                        <h3 className="font-bold text-navy-base text-lg line-clamp-1">{listing.title || 'Untitled Property'}</h3>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-bold bg-gray-200 text-gray-600`}>
+                          Archived
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        {listing.transaction_type === 'rent' ? 'For Rent' : 'For Sale'} • 
+                        <span className="font-semibold text-navy-base ml-1">
+                          ₵{listing.transaction_type === 'rent' ? listing.base_rent : listing.outright_price}
+                        </span>
+                      </p>
+                    </div>
+                    <div className="flex gap-2 w-full sm:w-auto mt-4 sm:mt-0">
+                      <button
+                        onClick={() => openEditModal(listing)}
+                        className="bg-slate-700 hover:bg-slate-800 text-white text-sm font-bold py-2 px-4 rounded-md transition-colors flex-1 sm:flex-none"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleRestoreListing(listing.id)}
+                        className="text-teal-600 hover:bg-teal-50 text-sm font-bold py-2 px-4 rounded-md transition-colors border border-teal-600 flex-1 sm:flex-none"
+                      >
+                        Restore
+                      </button>
+                      <button
+                        onClick={() => handleDeleteListing(listing.id)}
+                        className="text-red-600 hover:bg-red-50 text-sm font-bold py-2 px-4 rounded-md transition-colors border border-red-200 flex-1 sm:flex-none"
+                      >
+                        Permanently Delete
                       </button>
                     </div>
                   </div>
