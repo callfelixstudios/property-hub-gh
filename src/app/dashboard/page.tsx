@@ -12,7 +12,6 @@ export default async function DashboardPage() {
     .from('listings')
     .select('*')
     .eq('poster_id', user.id)
-    .neq('status', 'archived')
     .order('created_at', { ascending: false });
 
   // Fetch profile
