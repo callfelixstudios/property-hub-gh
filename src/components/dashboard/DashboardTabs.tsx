@@ -601,6 +601,7 @@ export default function DashboardTabs({
                     <option value="Townhouse / Terrace">Townhouse / Terrace</option>
                     <option value="Single Room Self-Contain">Single Room Self-Contain</option>
                     <option value="Chamber and Hall">Chamber and Hall</option>
+                    <option value="Boys Quarters (BQ)">Boys Quarters (BQ)</option>
                     <option value="Studio Apartment">Studio Apartment</option>
                     <option value="Penthouse">Penthouse</option>
                     <option value="Villa / Mansion">Villa / Mansion</option>
