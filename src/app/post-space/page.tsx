@@ -36,13 +36,25 @@ export default function PostSpaceWizard() {
   const [bathrooms, setBathrooms] = useState("");
   const [furnishingStatus, setFurnishingStatus] = useState("");
   const [landSize, setLandSize] = useState("");
+  const [landUse, setLandUse] = useState("");
   const [squareMeters, setSquareMeters] = useState("");
+  const [parkingCapacity, setParkingCapacity] = useState("");
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
 
-  const AMENITIES_LIST = [
-    "Air Conditioning", "Standby Generator / Solar", "Water Reservoir (Polytank)", 
-    "24/7 Security", "Fitted Kitchen Cabinets", "POP Ceiling", "Balcony", "Washing Machine"
-  ];
+  const isLand = ['Plot of Land', 'Farm House'].includes(category);
+  const isCommercial = ['Commercial Property / Office'].includes(category);
+  const isResidential = !isLand && !isCommercial;
+
+  const AMENITIES_LIST = isResidential 
+    ? ["Air Conditioning", "Standby Generator / Solar", "Water Reservoir (Polytank)", "24/7 Security", "Fitted Kitchen Cabinets", "POP Ceiling"]
+    : isCommercial 
+      ? ["Central AC", "Standby Generator", "CCTV Security Systems", "Fibre Internet", "Elevator Access"]
+      : ["Fenced / Walled Compound", "Tarred / Graded Road Access", "Electricity Grid Connected", "Water Pipe Connected", "Registered Indenture / Title Docs"];
+
+  const handleCategoryChange = (val: string) => {
+    setCategory(val);
+    setSelectedAmenities([]);
+  };
 
   const toggleAmenity = (amenity: string) => {
     setSelectedAmenities(prev => 
@@ -149,7 +161,9 @@ export default function PostSpaceWizard() {
         bathrooms: bathrooms ? parseInt(bathrooms, 10) : null,
         furnishing_status: furnishingStatus || null,
         land_size: landSize || null,
+        land_use: landUse || null,
         square_meters: squareMeters ? parseFloat(squareMeters) : null,
+        parking_capacity: parkingCapacity ? parseInt(parkingCapacity, 10) : null,
         amenities: selectedAmenities.length > 0 ? selectedAmenities : null,
       });
 
@@ -260,7 +274,7 @@ export default function PostSpaceWizard() {
                     <label className="block text-sm font-bold text-navy-base mb-2">Category</label>
                     <select 
                       value={category}
-                      onChange={(e) => setCategory(e.target.value)}
+                      onChange={(e) => handleCategoryChange(e.target.value)}
                       className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
                     >
                       <option value="">Select Category...</option>
@@ -333,8 +347,8 @@ export default function PostSpaceWizard() {
                   </div>
                 </div>
 
-                {category === 'Plot of Land' ? (
-                  <div className="grid grid-cols-1 gap-6">
+                {isLand ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-bold text-navy-base mb-2">Land Size</label>
                       <input 
@@ -345,9 +359,33 @@ export default function PostSpaceWizard() {
                         className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
                       />
                     </div>
+                    <div>
+                      <label className="block text-sm font-bold text-navy-base mb-2">Land Use Classification</label>
+                      <select 
+                        value={landUse} 
+                        onChange={(e) => setLandUse(e.target.value)}
+                        className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
+                      >
+                        <option value="">Select...</option>
+                        <option value="Residential">Residential</option>
+                        <option value="Commercial">Commercial</option>
+                        <option value="Mixed-Use">Mixed-Use</option>
+                        <option value="Agricultural">Agricultural</option>
+                      </select>
+                    </div>
                   </div>
-                ) : category === 'Commercial Property / Office' ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                ) : isCommercial ? (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <label className="block text-sm font-bold text-navy-base mb-2">Square Meters</label>
+                      <input 
+                        type="number" 
+                        value={squareMeters} 
+                        onChange={(e) => setSquareMeters(e.target.value)} 
+                        placeholder="e.g. 150"
+                        className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
+                      />
+                    </div>
                     <div>
                       <label className="block text-sm font-bold text-navy-base mb-2">Bathrooms / Washrooms</label>
                       <input 
@@ -359,12 +397,12 @@ export default function PostSpaceWizard() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-navy-base mb-2">Square Meters</label>
+                      <label className="block text-sm font-bold text-navy-base mb-2">Parking Capacity</label>
                       <input 
                         type="number" 
-                        value={squareMeters} 
-                        onChange={(e) => setSquareMeters(e.target.value)} 
-                        placeholder="e.g. 150"
+                        value={parkingCapacity} 
+                        onChange={(e) => setParkingCapacity(e.target.value)} 
+                        placeholder="e.g. 15"
                         className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
                       />
                     </div>
@@ -407,27 +445,25 @@ export default function PostSpaceWizard() {
                   </div>
                 )}
 
-                {category !== 'Plot of Land' && (
-                  <div className="mt-6">
-                    <label className="block text-sm font-bold text-navy-base mb-3">Amenities</label>
-                    <div className="flex flex-wrap gap-3">
-                      {AMENITIES_LIST.map(amenity => (
-                        <button
-                          key={amenity}
-                          type="button"
-                          onClick={() => toggleAmenity(amenity)}
-                          className={`px-4 py-2 border rounded-full text-sm font-medium transition-all ${
-                            selectedAmenities.includes(amenity) 
-                              ? 'bg-navy-base text-white border-transparent shadow-sm' 
-                              : 'bg-white text-gray-600 border-gray-200 hover:border-navy-light hover:text-navy-base'
-                          }`}
-                        >
-                          {amenity}
-                        </button>
-                      ))}
-                    </div>
+                <div className="mt-6">
+                  <label className="block text-sm font-bold text-navy-base mb-3">Amenities & Features</label>
+                  <div className="flex flex-wrap gap-3">
+                    {AMENITIES_LIST.map(amenity => (
+                      <button
+                        key={amenity}
+                        type="button"
+                        onClick={() => toggleAmenity(amenity)}
+                        className={`px-4 py-2 border rounded-full text-sm font-medium transition-all ${
+                          selectedAmenities.includes(amenity) 
+                            ? 'bg-navy-base text-white border-transparent shadow-sm' 
+                            : 'bg-white text-gray-600 border-gray-200 hover:border-navy-light hover:text-navy-base'
+                        }`}
+                      >
+                        {amenity}
+                      </button>
+                    ))}
                   </div>
-                )}
+                </div>
 
               </div>
             </div>
