@@ -75,7 +75,7 @@ export default function DashboardTabs({
 
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
   const [editForm, setEditForm] = useState({
-    title: '', description: '', price: '', neighborhood: '', region: '', transaction_type: 'rent' as 'rent' | 'sale', service_charge: '', gps_address: ''
+    title: '', description: '', price: '', neighborhood: '', region: '', transaction_type: 'rent' as 'rent' | 'sale', service_charge: '', gps_address: '', category: ''
   });
   const [editMediaUrls, setEditMediaUrls] = useState<string[]>([]);
   const [editImageFile, setEditImageFile] = useState<File | null>(null);
@@ -142,7 +142,8 @@ export default function DashboardTabs({
       region: listing.region || '',
       transaction_type: listing.transaction_type,
       service_charge: listing.service_charge?.toString() || '',
-      gps_address: listing.gps_address || ''
+      gps_address: listing.gps_address || '',
+      category: listing.category || ''
     });
     setEditMediaUrls([...(listing.media_urls || [])]);
     setEditImageFile(null);
@@ -168,6 +169,7 @@ export default function DashboardTabs({
       region: editForm.region,
       gps_address: editForm.gps_address,
       service_charge: serviceChargeVal,
+      category: editForm.category,
     };
 
     // Start with the curated media list (user may have removed images)
@@ -590,6 +592,28 @@ export default function DashboardTabs({
                     <option value="western_north">Western North</option>
                   </select>
                 </div>
+                <div>
+                  <label className="block text-sm font-bold text-navy-base mb-1">Category</label>
+                  <select value={editForm.category} onChange={e => setEditForm({...editForm, category: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:border-navy-base outline-none">
+                    <option value="">Select Category...</option>
+                    <option value="Apartment">Apartment</option>
+                    <option value="House">House</option>
+                    <option value="Townhouse / Terrace">Townhouse / Terrace</option>
+                    <option value="Single Room Self-Contain">Single Room Self-Contain</option>
+                    <option value="Chamber and Hall">Chamber and Hall</option>
+                    <option value="Studio Apartment">Studio Apartment</option>
+                    <option value="Penthouse">Penthouse</option>
+                    <option value="Villa / Mansion">Villa / Mansion</option>
+                    <option value="Bungalow">Bungalow</option>
+                    <option value="Shared Apartment">Shared Apartment</option>
+                    <option value="Block of Flats">Block of Flats</option>
+                    <option value="Farm House">Farm House</option>
+                    <option value="Plot of Land">Plot of Land</option>
+                    <option value="Commercial Property / Office">Commercial Property / Office</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-bold text-navy-base mb-1">Neighborhood</label>
                   <input type="text" value={editForm.neighborhood} onChange={e => setEditForm({...editForm, neighborhood: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:border-navy-base outline-none" />

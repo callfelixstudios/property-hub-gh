@@ -115,7 +115,7 @@ export default function PostSpaceWizard() {
         transaction_type: listingType,
         title: title || null,
         description: description || null,
-        category: category || 'apartment',
+        category: category || 'Apartment',
         region: region || null,
         neighborhood: neighborhood || null,
         gps_address: gpsAddress || null,
@@ -241,10 +241,20 @@ export default function PostSpaceWizard() {
                       className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
                     >
                       <option value="">Select Category...</option>
-                      <option value="apartment">Apartment / Flat</option>
-                      <option value="house">House / Villa</option>
-                      <option value="single_room">Single Room</option>
-                      <option value="land">Land / Plot</option>
+                      <option value="Apartment">Apartment</option>
+                      <option value="House">House</option>
+                      <option value="Townhouse / Terrace">Townhouse / Terrace</option>
+                      <option value="Single Room Self-Contain">Single Room Self-Contain</option>
+                      <option value="Chamber and Hall">Chamber and Hall</option>
+                      <option value="Studio Apartment">Studio Apartment</option>
+                      <option value="Penthouse">Penthouse</option>
+                      <option value="Villa / Mansion">Villa / Mansion</option>
+                      <option value="Bungalow">Bungalow</option>
+                      <option value="Shared Apartment">Shared Apartment</option>
+                      <option value="Block of Flats">Block of Flats</option>
+                      <option value="Farm House">Farm House</option>
+                      <option value="Plot of Land">Plot of Land</option>
+                      <option value="Commercial Property / Office">Commercial Property / Office</option>
                     </select>
                   </div>
                   <div>
