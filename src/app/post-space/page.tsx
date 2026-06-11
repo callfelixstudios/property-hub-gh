@@ -46,10 +46,10 @@ export default function PostSpaceWizard() {
   const isResidential = !isLand && !isCommercial;
 
   const AMENITIES_LIST = isResidential 
-    ? ["Air Conditioning", "Standby Generator / Solar", "Water Reservoir (Polytank)", "24/7 Security", "Fitted Kitchen Cabinets", "POP Ceiling"]
+    ? ["Air Conditioning", "Standby Generator / Solar", "Water Reservoir (Polytank)", "24/7 Security", "Fitted Kitchen Cabinets"]
     : isCommercial 
-      ? ["Central AC", "Standby Generator", "CCTV Security Systems", "Fibre Internet", "Elevator Access"]
-      : ["Fenced / Walled Compound", "Tarred / Graded Road Access", "Electricity Grid Connected", "Water Pipe Connected", "Registered Indenture / Title Docs"];
+      ? ["Air Conditioning", "Standby Generator / Solar", "Water Reservoir (Polytank)", "24/7 Security", "Fitted Kitchen Cabinets"]
+      : ["Fenced / Walled Compound", "Tarred / Graded Road Access", "Electricity Grid Connected", "Water Pipe Connected", "Registered Indenture / Title Docs", "Non-Waterlogged Area"];
 
   const handleCategoryChange = (val: string) => {
     setCategory(val);
@@ -185,7 +185,7 @@ export default function PostSpaceWizard() {
   };
 
   return (
-    <div className="min-h-screen bg-surface-primary py-12 px-6 pb-24">
+    <div className="min-h-screen bg-surface-primary pt-28 px-6 pb-24">
       <div className="max-w-3xl mx-auto">
         
         {/* Header */}
@@ -347,123 +347,7 @@ export default function PostSpaceWizard() {
                   </div>
                 </div>
 
-                {isLand ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-bold text-navy-base mb-2">Land Size</label>
-                      <input 
-                        type="text" 
-                        value={landSize} 
-                        onChange={(e) => setLandSize(e.target.value)} 
-                        placeholder="e.g. 70x100 sqft or 2 acres" 
-                        className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-navy-base mb-2">Land Use Classification</label>
-                      <select 
-                        value={landUse} 
-                        onChange={(e) => setLandUse(e.target.value)}
-                        className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
-                      >
-                        <option value="">Select...</option>
-                        <option value="Residential">Residential</option>
-                        <option value="Commercial">Commercial</option>
-                        <option value="Mixed-Use">Mixed-Use</option>
-                        <option value="Agricultural">Agricultural</option>
-                      </select>
-                    </div>
-                  </div>
-                ) : isCommercial ? (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                      <label className="block text-sm font-bold text-navy-base mb-2">Square Meters</label>
-                      <input 
-                        type="number" 
-                        value={squareMeters} 
-                        onChange={(e) => setSquareMeters(e.target.value)} 
-                        placeholder="e.g. 150"
-                        className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-navy-base mb-2">Bathrooms / Washrooms</label>
-                      <input 
-                        type="number" 
-                        value={bathrooms} 
-                        onChange={(e) => setBathrooms(e.target.value)} 
-                        placeholder="e.g. 2"
-                        className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-navy-base mb-2">Parking Capacity</label>
-                      <input 
-                        type="number" 
-                        value={parkingCapacity} 
-                        onChange={(e) => setParkingCapacity(e.target.value)} 
-                        placeholder="e.g. 15"
-                        className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                      <label className="block text-sm font-bold text-navy-base mb-2">Bedrooms</label>
-                      <input 
-                        type="number" 
-                        value={bedrooms} 
-                        onChange={(e) => setBedrooms(e.target.value)} 
-                        placeholder="e.g. 3"
-                        className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-navy-base mb-2">Bathrooms</label>
-                      <input 
-                        type="number" 
-                        value={bathrooms} 
-                        onChange={(e) => setBathrooms(e.target.value)} 
-                        placeholder="e.g. 2"
-                        className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-navy-base mb-2">Furnishing Status</label>
-                      <select 
-                        value={furnishingStatus} 
-                        onChange={(e) => setFurnishingStatus(e.target.value)}
-                        className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
-                      >
-                        <option value="">Select...</option>
-                        <option value="Unfurnished">Unfurnished</option>
-                        <option value="Semi-Furnished">Semi-Furnished</option>
-                        <option value="Fully Furnished">Fully Furnished</option>
-                      </select>
-                    </div>
-                  </div>
-                )}
-
-                <div className="mt-6">
-                  <label className="block text-sm font-bold text-navy-base mb-3">Amenities & Features</label>
-                  <div className="flex flex-wrap gap-3">
-                    {AMENITIES_LIST.map(amenity => (
-                      <button
-                        key={amenity}
-                        type="button"
-                        onClick={() => toggleAmenity(amenity)}
-                        className={`px-4 py-2 border rounded-full text-sm font-medium transition-all ${
-                          selectedAmenities.includes(amenity) 
-                            ? 'bg-navy-base text-white border-transparent shadow-sm' 
-                            : 'bg-white text-gray-600 border-gray-200 hover:border-navy-light hover:text-navy-base'
-                        }`}
-                      >
-                        {amenity}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                {/* Property conditional attributes and amenities moved to Step 3 */}
 
               </div>
             </div>
@@ -546,6 +430,137 @@ export default function PostSpaceWizard() {
               <h2 className="text-2xl font-bold text-navy-base mb-6">Infrastructure & Trust</h2>
               
               <div className="space-y-8">
+
+                {/* Conditional Property Details */}
+                {isLand ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-bold text-navy-base mb-2">Land Size</label>
+                      <input 
+                        type="text" 
+                        value={landSize} 
+                        onChange={(e) => setLandSize(e.target.value)} 
+                        placeholder="e.g. 70x100 sqft or 2 acres" 
+                        className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-navy-base mb-2">Land Use Classification</label>
+                      <select 
+                        value={landUse} 
+                        onChange={(e) => setLandUse(e.target.value)}
+                        className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
+                      >
+                        <option value="">Select...</option>
+                        <option value="Residential">Residential</option>
+                        <option value="Commercial">Commercial</option>
+                        <option value="Mixed-Use">Mixed-Use</option>
+                        <option value="Agricultural">Agricultural</option>
+                      </select>
+                    </div>
+                  </div>
+                                ) : isCommercial ? (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <label className="block text-sm font-bold text-navy-base mb-2">Square Meters</label>
+                      <input 
+                        type="number" 
+                        value={squareMeters} 
+                        onChange={(e) => setSquareMeters(e.target.value)} 
+                        placeholder="e.g. 150"
+                        className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-navy-base mb-2">Bathrooms / Washrooms</label>
+                      <select 
+                        value={bathrooms} 
+                        onChange={(e) => setBathrooms(e.target.value)} 
+                        className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
+                      >
+                        <option value="">Select...</option>
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+                          <option key={n} value={n}>{n}</option>
+                        ))}
+                        <option value="10+">10+</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-navy-base mb-2">Parking Capacity</label>
+                      <input 
+                        type="number" 
+                        value={parkingCapacity} 
+                        onChange={(e) => setParkingCapacity(e.target.value)} 
+                        placeholder="e.g. 15"
+                        className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <label className="block text-sm font-bold text-navy-base mb-2">Bedrooms</label>
+                      <select 
+                        value={bedrooms} 
+                        onChange={(e) => setBedrooms(e.target.value)} 
+                        className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
+                      >
+                        <option value="">Select...</option>
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+                          <option key={n} value={n}>{n}</option>
+                        ))}
+                        <option value="10+">10+</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-navy-base mb-2">Bathrooms</label>
+                      <select 
+                        value={bathrooms} 
+                        onChange={(e) => setBathrooms(e.target.value)} 
+                        className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
+                      >
+                        <option value="">Select...</option>
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+                          <option key={n} value={n}>{n}</option>
+                        ))}
+                        <option value="10+">10+</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-navy-base mb-2">Furnishing Status</label>
+                      <select 
+                        value={furnishingStatus} 
+                        onChange={(e) => setFurnishingStatus(e.target.value)}
+                        className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
+                      >
+                        <option value="">Select...</option>
+                        <option value="Unfurnished">Unfurnished</option>
+                        <option value="Semi-Furnished">Semi-Furnished</option>
+                        <option value="Fully Furnished">Fully Furnished</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-6 mb-8">
+                  <label className="block text-sm font-bold text-navy-base mb-3">Amenities & Features</label>
+                  <div className="flex flex-wrap gap-3">
+                    {AMENITIES_LIST.map(amenity => (
+                      <button
+                        key={amenity}
+                        type="button"
+                        onClick={() => toggleAmenity(amenity)}
+                        className={`px-4 py-2 border rounded-full text-sm font-medium transition-all ${
+                          selectedAmenities.includes(amenity) 
+                            ? 'bg-navy-base text-white border-transparent shadow-sm' 
+                            : 'bg-white text-gray-600 border-gray-200 hover:border-navy-light hover:text-navy-base'
+                        }`}
+                      >
+                        {amenity}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
                 {/* Property Images Dropzone */}
                 <div>
