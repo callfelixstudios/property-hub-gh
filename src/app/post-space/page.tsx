@@ -46,9 +46,9 @@ export default function PostSpaceWizard() {
   const isResidential = !isLand && !isCommercial;
 
   const AMENITIES_LIST = isResidential 
-    ? ["Air Conditioning", "Standby Generator / Solar", "Water Reservoir (Polytank)", "24/7 Security", "Fitted Kitchen Cabinets"]
+    ? ["Air Conditioning", "Standby Generator / Plant", "Solar Power System", "Water Reservoir (Polytank)", "24/7 Security", "Fitted Kitchen Cabinets"]
     : isCommercial 
-      ? ["Air Conditioning", "Standby Generator / Solar", "Water Reservoir (Polytank)", "24/7 Security", "Fitted Kitchen Cabinets"]
+      ? ["Air Conditioning", "Standby Generator / Plant", "Solar Power System", "Water Reservoir (Polytank)", "24/7 Security", "Fitted Kitchen Cabinets"]
       : ["Fenced / Walled Compound", "Tarred / Graded Road Access", "Electricity Grid Connected", "Water Pipe Connected", "Registered Indenture / Title Docs", "Non-Waterlogged Area"];
 
   const handleCategoryChange = (val: string) => {
@@ -68,10 +68,20 @@ export default function PostSpaceWizard() {
   const [outrightPrice, setOutrightPrice] = useState("");
   const [legalStatus, setLegalStatus] = useState("");
   const [advancePeriod, setAdvancePeriod] = useState("");
+  const [customMonths, setCustomMonths] = useState<number>(0);
+
+  // Utility: convert raw month count into a human-readable advance label
+  const getAdvanceLabel = (months: number): string => {
+    if (months <= 0) return "None";
+    if (months <= 12) return `${months} ${months > 1 ? 'Months' : 'Month'} Advance`;
+    const years = Math.floor(months / 12);
+    const remainingMonths = months % 12;
+    return remainingMonths === 0
+      ? `${years} ${years > 1 ? 'Years' : 'Year'} Advance`
+      : `${years} ${years > 1 ? 'Years' : 'Year'}, ${remainingMonths} ${remainingMonths > 1 ? 'Months' : 'Month'} Advance`;
+  };
 
   // Step 3 State
-  const [generatorBackup, setGeneratorBackup] = useState(false);
-  const [solarReady, setSolarReady] = useState(false);
   const [safeMoveActive, setSafeMoveActive] = useState(false);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -153,9 +163,9 @@ export default function PostSpaceWizard() {
         service_charge: parseInt(serviceCharge, 10) || 0,
         outright_price: parseInt(outrightPrice, 10) || 0,
         legal_status: legalStatus || null,
-        advance_period: advancePeriod || null,
-        generator_backup: generatorBackup,
-        solar_ready: solarReady,
+        advance_period: advancePeriod === 'Custom...' ? getAdvanceLabel(customMonths) : (advancePeriod || null),
+        generator_backup: false,
+        solar_ready: false,
         safemove_active: safeMoveActive,
         media_urls: uploadedUrls.length > 0 ? uploadedUrls : null,
         status: 'active',
@@ -392,19 +402,40 @@ export default function PostSpaceWizard() {
                     </div>
                     <div>
                       <label className="block text-sm font-bold text-navy-base mb-2">Advance Period</label>
-                      <select 
-                        value={advancePeriod}
-                        onChange={(e) => setAdvancePeriod(e.target.value)}
-                        className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
-                      >
-                        <option value="">Select Advance Period...</option>
-                        <option value="None">None</option>
-                        <option value="3 Months Advance">3 Months Advance</option>
-                        <option value="6 Months Advance">6 Months Advance</option>
-                        <option value="1 Year Advance">1 Year Advance</option>
-                        <option value="2 Years Advance">2 Years Advance</option>
-                      </select>
-                      <p className="text-xs text-gray-400 mt-1">Select the standard rental advance duration required.</p>
+                      <div className={`grid gap-4 ${advancePeriod === 'Custom...' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
+                        <select 
+                          value={advancePeriod}
+                          onChange={(e) => { setAdvancePeriod(e.target.value); if (e.target.value !== 'Custom...') setCustomMonths(0); }}
+                          className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
+                        >
+                          <option value="">Select Advance Period...</option>
+                          <option value="None">None</option>
+                          <option value="3 Months Advance">3 Months</option>
+                          <option value="6 Months Advance">6 Months</option>
+                          <option value="1 Year Advance">1 Year</option>
+                          <option value="2 Years Advance">2 Years</option>
+                          <option value="Custom...">Custom...</option>
+                        </select>
+                        {advancePeriod === 'Custom...' && (
+                          <div className="relative">
+                            <input 
+                              type="number" 
+                              min={1}
+                              max={120}
+                              value={customMonths || ''}
+                              onChange={(e) => setCustomMonths(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                              placeholder="e.g. 18"
+                              className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
+                            />
+                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">months</span>
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {advancePeriod === 'Custom...' && customMonths > 0
+                          ? `Will be saved as: ${getAdvanceLabel(customMonths)}`
+                          : 'Select the standard rental advance duration required.'}
+                      </p>
                     </div>
                   </>
                 ) : (
@@ -637,40 +668,7 @@ export default function PostSpaceWizard() {
                   )}
                 </div>
 
-                {/* Infrastructure Essentials */}
-                <div>
-                  <h3 className="text-sm font-bold text-navy-base mb-4">Infrastructure Essentials</h3>
-                  <div className="space-y-4">
-                    <label className="flex items-center gap-3 cursor-pointer group">
-                      <div className={`relative flex items-center justify-center w-6 h-6 border-2 rounded-[4px] transition-colors bg-surface-primary ${generatorBackup ? "border-navy-base" : "border-gray-300 group-hover:border-navy-base"}`}>
-                        <input 
-                          type="checkbox" 
-                          checked={generatorBackup}
-                          onChange={(e) => setGeneratorBackup(e.target.checked)}
-                          className="absolute opacity-0 w-full h-full cursor-pointer peer" 
-                        />
-                        <svg className={`w-4 h-4 text-navy-base transition-opacity ${generatorBackup ? "opacity-100" : "opacity-0"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <span className="text-base text-gray-700 font-medium">Generator / Plant Backup</span>
-                    </label>
-                    <label className="flex items-center gap-3 cursor-pointer group">
-                      <div className={`relative flex items-center justify-center w-6 h-6 border-2 rounded-[4px] transition-colors bg-surface-primary ${solarReady ? "border-navy-base" : "border-gray-300 group-hover:border-navy-base"}`}>
-                        <input 
-                          type="checkbox" 
-                          checked={solarReady}
-                          onChange={(e) => setSolarReady(e.target.checked)}
-                          className="absolute opacity-0 w-full h-full cursor-pointer peer" 
-                        />
-                        <svg className={`w-4 h-4 text-navy-base transition-opacity ${solarReady ? "opacity-100" : "opacity-0"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <span className="text-base text-gray-700 font-medium">Solar Ready</span>
-                    </label>
-                  </div>
-                </div>
+
 
                 {/* SafeMove Callout Container */}
                 <div className={`p-6 rounded-md border-2 transition-all ${safeMoveActive ? "border-accent-emerald bg-accent-emerald/5" : "border-gray-200 bg-surface-primary"}`}>
