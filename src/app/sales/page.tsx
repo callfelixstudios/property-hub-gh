@@ -3,6 +3,14 @@ import Link from "next/link";
 import { createClient } from '@/utils/supabase/server';
 
 // Fetch live sales listings from Supabase
+function formatCategory(cat?: string) {
+  if (!cat) return 'Apartment';
+  return cat
+    .split('_')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
 async function fetchSalesListings() {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -15,7 +23,30 @@ async function fetchSalesListings() {
     console.error('Error fetching sales listings:', error);
     return [];
   }
-  return data;
+  
+  return (data || []).map((row: any) => {
+    const title = row.title || `${formatCategory(row.category)} in ${row.neighborhood || row.region || 'Ghana'}`;
+    const location = [row.neighborhood, row.region ? formatCategory(row.region) : null]
+      .filter(Boolean)
+      .join(', ') || 'Ghana';
+    const area = row.category === 'land' 
+      ? (row.land_size || 'Plot of land') 
+      : (row.square_meters ? `${row.square_meters} sqm` : '—');
+    
+    return {
+      id: row.id,
+      image_src: row.media_urls?.[0] || '/property-1.png',
+      title,
+      location,
+      beds: row.bedrooms || 0,
+      baths: row.bathrooms || 0,
+      area,
+      price: row.outright_price ? `₵${Number(row.outright_price).toLocaleString()}` : '₵0',
+      price_suffix: '',
+      dimensions: row.land_size || (row.square_meters ? `${row.square_meters} sqm` : '—'),
+      badge: row.legal_status === 'titled' ? 'verified' : (row.safemove_active ? 'safemove' : undefined),
+    };
+  });
 }
 
 export default async function SalesPage() {
@@ -122,7 +153,7 @@ export default async function SalesPage() {
                   </div>
 
                   {/* Primary CTA */}
-                  <Link href={`/sales/${prop.id}`} className="w-full text-center py-2.5 bg-accent-gold hover:bg-accent-gold/90 text-navy-base font-bold text-sm rounded-sm transition-colors shadow-sm">
+                  <Link href={`/listings/${prop.id}`} className="w-full text-center py-2.5 bg-accent-gold hover:bg-accent-gold/90 text-navy-base font-bold text-sm rounded-sm transition-colors shadow-sm">
                     Inquire Now
                   </Link>
                 </div>

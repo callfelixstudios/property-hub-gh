@@ -6,6 +6,7 @@ import { createClient } from '@/utils/supabase/server';
 interface Listing {
   id: string;
   image_src?: string;
+  media_urls?: string[];
   title: string;
   location: string;
   beds: number;
@@ -16,6 +17,14 @@ interface Listing {
   serviceCharge?: string;
   advance?: string;
   badge?: string;
+}
+
+function formatCategory(cat?: string) {
+  if (!cat) return 'Apartment';
+  return cat
+    .split('_')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
 }
 
 async function fetchRentalListings(): Promise<Listing[]> {
@@ -30,7 +39,31 @@ async function fetchRentalListings(): Promise<Listing[]> {
     console.error('Error fetching rentals:', error);
     return [];
   }
-  return data as Listing[];
+  
+  return (data || []).map((row: any) => {
+    const title = row.title || `${formatCategory(row.category)} in ${row.neighborhood || row.region || 'Ghana'}`;
+    const location = [row.neighborhood, row.region ? formatCategory(row.region) : null]
+      .filter(Boolean)
+      .join(', ') || 'Ghana';
+    const area = row.category === 'land' 
+      ? (row.land_size || 'Plot of land') 
+      : (row.square_meters ? `${row.square_meters} sqm` : '—');
+    
+    return {
+      id: row.id,
+      image_src: row.media_urls?.[0] || '/property-1.png',
+      title,
+      location,
+      beds: row.bedrooms || 0,
+      baths: row.bathrooms || 0,
+      area,
+      price: row.base_rent ? `₵${Number(row.base_rent).toLocaleString()}` : '₵0',
+      priceSuffix: '/mo',
+      serviceCharge: row.service_charge ? `₵${Number(row.service_charge).toLocaleString()}/mo` : 'Inclusive',
+      advance: 'Flexible',
+      badge: row.safemove_active ? 'safemove' : (row.generator_backup ? 'verified' : undefined),
+    };
+  });
 }
 
 export default async function RentalsPage() {
@@ -166,7 +199,7 @@ export default async function RentalsPage() {
                   </div>
 
                   {/* Primary CTA */}
-                  <Link href={`/rentals/${prop.id}`} className="w-full text-center py-2.5 bg-navy-base hover:bg-navy-light text-white font-bold text-sm rounded-sm transition-colors shadow-sm">
+                  <Link href={`/listings/${prop.id}`} className="w-full text-center py-2.5 bg-navy-base hover:bg-navy-light text-white font-bold text-sm rounded-sm transition-colors shadow-sm">
                     View Details
                   </Link>
                 </div>

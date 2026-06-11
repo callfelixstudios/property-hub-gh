@@ -67,6 +67,7 @@ export default function PostSpaceWizard() {
   const [serviceCharge, setServiceCharge] = useState("");
   const [outrightPrice, setOutrightPrice] = useState("");
   const [legalStatus, setLegalStatus] = useState("");
+  const [advancePeriod, setAdvancePeriod] = useState("");
 
   // Step 3 State
   const [generatorBackup, setGeneratorBackup] = useState(false);
@@ -152,6 +153,7 @@ export default function PostSpaceWizard() {
         service_charge: parseInt(serviceCharge, 10) || 0,
         outright_price: parseInt(outrightPrice, 10) || 0,
         legal_status: legalStatus || null,
+        advance_period: advancePeriod || null,
         generator_backup: generatorBackup,
         solar_ready: solarReady,
         safemove_active: safeMoveActive,
@@ -387,6 +389,22 @@ export default function PostSpaceWizard() {
                         />
                       </div>
                       <p className="text-xs text-gray-400 mt-1">Enter 0 if inclusive or none.</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-navy-base mb-2">Advance Period</label>
+                      <select 
+                        value={advancePeriod}
+                        onChange={(e) => setAdvancePeriod(e.target.value)}
+                        className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
+                      >
+                        <option value="">Select Advance Period...</option>
+                        <option value="None">None</option>
+                        <option value="3 Months Advance">3 Months Advance</option>
+                        <option value="6 Months Advance">6 Months Advance</option>
+                        <option value="1 Year Advance">1 Year Advance</option>
+                        <option value="2 Years Advance">2 Years Advance</option>
+                      </select>
+                      <p className="text-xs text-gray-400 mt-1">Select the standard rental advance duration required.</p>
                     </div>
                   </>
                 ) : (

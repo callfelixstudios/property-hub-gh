@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
+import ListingGallery from "@/components/listings/ListingGallery";
 
 interface ListingRow {
   id: string;
@@ -40,6 +41,9 @@ function formatCategory(cat: string) {
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(' ');
 }
+
+const formatRegion = (str: string | undefined) => 
+  str ? str.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') : '';
 
 function formatCurrency(amount?: number) {
   if (!amount && amount !== 0) return '—';
@@ -99,10 +103,9 @@ export default async function ListingDetailPage({
     .then(() => {});
 
   // Build display values
-  const displayTitle = `${formatCategory(row.category)} in ${row.neighborhood || row.region || 'Ghana'}`;
-  const displayLocation = [row.neighborhood, row.region].filter(Boolean).join(', ');
-  const heroImage = row.image_url || row.media_urls?.[0] || null;
-  const galleryImages = row.media_urls?.slice(1, 4) || [];
+  const displayTitle = `${formatCategory(row.category)} in ${row.neighborhood || formatRegion(row.region) || 'Ghana'}`;
+  const displayLocation = [row.neighborhood, formatRegion(row.region)].filter(Boolean).join(', ');
+  const allImages = Array.from(new Set([row.image_url, ...(row.media_urls || [])].filter(Boolean) as string[]));
   const isRent = row.transaction_type === 'rent';
   const primaryPrice = isRent ? row.base_rent : row.outright_price;
 
@@ -117,7 +120,7 @@ export default async function ListingDetailPage({
   return (
     <div className="w-full min-h-screen bg-surface-primary">
       {/* Hero Section */}
-      <div className="bg-navy-base pt-28 pb-8 px-4">
+      <div className="bg-navy-base pt-28 pb-8 mb-6 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center gap-2 text-sm text-white/60 mb-4">
             <Link href="/" className="hover:text-white transition-colors">Home</Link>
@@ -132,38 +135,8 @@ export default async function ListingDetailPage({
       </div>
 
       {/* Image Gallery */}
-      <div className="max-w-7xl mx-auto px-4 -mt-1">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-2 rounded-xl overflow-hidden">
-          {/* Main Image */}
-          <div className="lg:col-span-3 relative h-[450px] bg-slate-200 rounded-xl overflow-hidden shadow-sm">
-            {heroImage ? (
-              <Image src={heroImage} alt={displayTitle} fill className="object-cover" />
-            ) : (
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
-                <svg className="w-16 h-16 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <span className="text-sm font-medium">No photos available</span>
-              </div>
-            )}
-          </div>
-          {/* Side Thumbnails */}
-          <div className="hidden lg:flex flex-col gap-2">
-            {[0, 1, 2].map((i) => (
-              <div key={i} className="relative flex-1 bg-slate-200 min-h-[100px]">
-                {galleryImages[i] ? (
-                  <Image src={galleryImages[i]} alt={`Photo ${i + 2}`} fill className="object-cover" />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center text-slate-300">
-                    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+      <div className="max-w-7xl mx-auto px-4">
+        <ListingGallery allImages={allImages} displayTitle={displayTitle} />
       </div>
 
       {/* Two-Column Content Grid */}
@@ -311,7 +284,7 @@ export default async function ListingDetailPage({
                       </div>
                       <div>
                         <p className="text-xs text-gray-500">Region</p>
-                        <p className="text-sm font-bold text-navy-base">{row.region}</p>
+                        <p className="text-sm font-bold text-navy-base">{formatRegion(row.region)}</p>
                       </div>
                     </div>
                   )}
