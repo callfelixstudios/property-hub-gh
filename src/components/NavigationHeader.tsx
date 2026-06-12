@@ -95,7 +95,7 @@ export default function NavigationHeader() {
               <span className={`${pathname === "/safemove" ? "border-b-2 border-accent-gold" : ""}`}>
                 SafeMove
               </span>
-              <span className="ml-2 bg-accent-emerald text-white text-xs font-bold px-2 py-0.5 rounded-full">
+              <span className="ml-1.5 bg-accent-emerald text-white text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-full relative -top-2">
                 Coming Soon
               </span>
             </Link>
@@ -235,7 +235,7 @@ export default function NavigationHeader() {
             </Link>
             <Link href="/safemove" className={`flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-navy-base hover:bg-gray-50 ${pathname === "/safemove" ? "bg-gray-100" : ""}`}>
               SafeMove
-              <span className="ml-2 bg-accent-emerald text-white text-xs font-bold px-2 py-0.5 rounded-full">Coming Soon</span>
+              <span className="ml-1.5 bg-accent-emerald text-white text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-full relative -top-1.5">Coming Soon</span>
             </Link>
             {session ? (
               <>
