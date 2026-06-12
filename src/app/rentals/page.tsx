@@ -17,6 +17,7 @@ interface Listing {
   serviceCharge?: string;
   advance?: string;
   badge?: string;
+  category?: string;
 }
 
 function formatCategory(cat?: string) {
@@ -62,6 +63,7 @@ async function fetchRentalListings(): Promise<Listing[]> {
       serviceCharge: row.service_charge ? `₵${Number(row.service_charge).toLocaleString()}/mo` : 'Inclusive',
       advance: 'Flexible',
       badge: row.safemove_active ? 'safemove' : undefined,
+      category: row.category,
     };
   });
 }
@@ -170,11 +172,20 @@ export default async function RentalsPage() {
                     </div>
                   </div>
 
-                  <div className="my-4 pt-4 border-t border-gray-50 flex items-center gap-4 text-xs text-gray-600">
-                    <span className="flex items-center gap-1"><span className="font-semibold">{prop.beds}</span> Beds</span>
-                    <span className="flex items-center gap-1"><span className="font-semibold">{prop.baths}</span> Baths</span>
-                    <span>{prop.area}</span>
-                  </div>
+                  {(prop.category || '').toLowerCase() === 'plot of land' ? (
+                    <div className="my-4 pt-4 border-t border-gray-50 flex items-center gap-2 text-xs text-accent-emerald font-bold">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Verified Plot / Acreage
+                    </div>
+                  ) : (
+                    <div className="my-4 pt-4 border-t border-gray-50 flex items-center gap-4 text-xs text-gray-600">
+                      <span className="flex items-center gap-1"><span className="font-semibold">{prop.beds}</span> Beds</span>
+                      <span className="flex items-center gap-1"><span className="font-semibold">{prop.baths}</span> Baths</span>
+                      <span>{prop.area}</span>
+                    </div>
+                  )}
 
                   {/* Financial Transparency Box */}
                   <div className="mt-auto bg-surface-primary p-3 rounded-sm border border-gray-100 flex flex-wrap gap-x-4 gap-y-2 mb-4">

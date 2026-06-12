@@ -42,7 +42,7 @@ export default function PostSpaceWizard() {
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [posterRole, setPosterRole] = useState<"owner" | "agent" | "">("");
 
-  const isLand = ['Plot of Land', 'Farm House'].includes(category);
+  const isLand = category === 'Plot of Land';
   const isCommercial = ['Commercial Property / Office'].includes(category);
   const isResidential = !isLand && !isCommercial;
 
