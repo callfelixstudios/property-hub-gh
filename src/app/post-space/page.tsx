@@ -40,6 +40,7 @@ export default function PostSpaceWizard() {
   const [squareMeters, setSquareMeters] = useState("");
   const [parkingCapacity, setParkingCapacity] = useState("");
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+  const [posterRole, setPosterRole] = useState<"owner" | "agent" | "">("");
 
   const isLand = ['Plot of Land', 'Farm House'].includes(category);
   const isCommercial = ['Commercial Property / Office'].includes(category);
@@ -177,6 +178,7 @@ export default function PostSpaceWizard() {
         square_meters: squareMeters ? parseFloat(squareMeters) : null,
         parking_capacity: parkingCapacity ? parseInt(parkingCapacity, 10) : null,
         amenities: selectedAmenities.length > 0 ? selectedAmenities : null,
+        poster_role: posterRole || null,
       });
 
       if (error) throw error;
@@ -356,6 +358,40 @@ export default function PostSpaceWizard() {
                       className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
                     />
                     <p className="text-xs text-gray-400 mt-1">Required for accurate property localization.</p>
+                  </div>
+                </div>
+
+                <div className="mt-2">
+                  <label className="block text-sm font-bold text-navy-base mb-3">Are you listing this property as the Owner or an Agent?</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setPosterRole('owner')}
+                      className={`relative flex items-center justify-center p-4 border-2 rounded-xl transition-all duration-200 text-left hover:border-teal-300 ${posterRole === 'owner' ? 'border-teal-600 bg-teal-50/50' : 'border-gray-200 bg-surface-primary hover:bg-slate-50'}`}
+                    >
+                      {posterRole === 'owner' && (
+                        <div className="absolute top-3 right-3 text-teal-600">
+                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                      )}
+                      <span className={`font-bold text-lg ${posterRole === 'owner' ? 'text-teal-900' : 'text-navy-base'}`}>Property Owner</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPosterRole('agent')}
+                      className={`relative flex items-center justify-center p-4 border-2 rounded-xl transition-all duration-200 text-left hover:border-teal-300 ${posterRole === 'agent' ? 'border-teal-600 bg-teal-50/50' : 'border-gray-200 bg-surface-primary hover:bg-slate-50'}`}
+                    >
+                      {posterRole === 'agent' && (
+                        <div className="absolute top-3 right-3 text-teal-600">
+                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                      )}
+                      <span className={`font-bold text-lg ${posterRole === 'agent' ? 'text-teal-900' : 'text-navy-base'}`}>Real Estate Agent</span>
+                    </button>
                   </div>
                 </div>
 

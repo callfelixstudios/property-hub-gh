@@ -34,6 +34,7 @@ interface ListingRow {
   amenities?: string[];
   land_use?: string;
   parking_capacity?: number;
+  poster_role?: 'owner' | 'agent';
 }
 
 interface PosterProfile {
@@ -489,7 +490,15 @@ export default async function ListingDetailPage({
                     {(profile.full_name || 'A').charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <p className="font-bold text-slate-900">{profile.full_name || 'Property Agent'}</p>
+                    <p className="font-bold text-slate-900">
+                      {profile.full_name || 'Property Agent'}
+                      {row.poster_role === 'owner' && (
+                        <span className="bg-blue-50 text-blue-700 border border-blue-200 text-xs px-2.5 py-0.5 rounded-full font-medium inline-block ml-2">Owner</span>
+                      )}
+                      {row.poster_role === 'agent' && (
+                        <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs px-2.5 py-0.5 rounded-full font-medium inline-block ml-2">Agent</span>
+                      )}
+                    </p>
                     {profile.company_name && (
                       <p className="text-xs text-slate-500">{profile.company_name}</p>
                     )}
