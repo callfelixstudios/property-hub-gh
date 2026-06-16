@@ -25,6 +25,7 @@ interface ListingRow {
   media_urls?: string[];
   status?: string;
   views?: number;
+  video_url?: string | null;
   currency?: string;
   rent_advance_months?: number;
   whatsapp_leads_count?: number;
@@ -209,7 +210,7 @@ export default async function ListingDetailPage({
 
       {/* ── Image Gallery ───────────────────────────────────────────────── */}
       <div className="max-w-7xl mx-auto px-4">
-        <ListingGallery allImages={allImages} displayTitle={displayTitle} />
+        <ListingGallery allImages={allImages} displayTitle={displayTitle} videoUrl={row.video_url} />
       </div>
 
       {/* ── Two-Column Content Grid ─────────────────────────────────────── */}
