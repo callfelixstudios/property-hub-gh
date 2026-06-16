@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { createClient } from '@/utils/supabase/server';
 import PropertyFilters from '@/components/PropertyFilters';
+import PriceDisplay from '@/components/PriceDisplay';
 
 // Fetch live rental listings from Supabase
 interface Listing {
@@ -13,7 +14,9 @@ interface Listing {
   beds: number;
   baths: number;
   area: string;
-  price: string;
+  rawPrice: number;
+  currency: string;
+  rentAdvanceMonths: number;
   priceSuffix?: string;
   serviceCharge?: string;
   advance?: string;
@@ -90,7 +93,9 @@ async function fetchRentalListings(searchParams: { [key: string]: string | strin
       beds: row.bedrooms || 0,
       baths: row.bathrooms || 0,
       area,
-      price: row.base_rent ? `₵${Number(row.base_rent).toLocaleString()}` : '₵0',
+      rawPrice: Number(row.base_rent || 0),
+      currency: row.currency || 'GHS',
+      rentAdvanceMonths: row.rent_advance_months || 1,
       priceSuffix: '/mo',
       serviceCharge: row.service_charge ? `₵${Number(row.service_charge).toLocaleString()}/mo` : 'Inclusive',
       advance: 'Flexible',
@@ -176,7 +181,13 @@ export default async function RentalsPage(props: { searchParams: Promise<{ [key:
                   <div className="mt-auto bg-surface-primary p-3 rounded-sm border border-gray-100 flex flex-wrap gap-x-4 gap-y-2 mb-4">
                     <div className="w-full flex items-end justify-between">
                       <span className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Rent</span>
-                      <div className="text-lg font-extrabold text-navy-base">{prop.price}<span className="text-xs font-normal text-gray-500">{prop.priceSuffix}</span></div>
+                      <PriceDisplay 
+                        rawPrice={prop.rawPrice} 
+                        currency={prop.currency} 
+                        priceSuffix={prop.priceSuffix} 
+                        rentAdvanceMonths={prop.rentAdvanceMonths} 
+                        isRental={true} 
+                      />
                     </div>
                     <div className="w-full flex justify-between items-center text-xs">
                       <span className="text-gray-500">Service Charge:</span>

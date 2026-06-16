@@ -5,11 +5,13 @@ import { createClient } from '@/utils/supabase/client';
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
+import { useCurrency } from '@/context/CurrencyContext';
 
 export default function NavigationHeader() {
   const supabase = createClient();
   const router = useRouter();
   const pathname = usePathname();
+  const { displayCurrency, toggleCurrency } = useCurrency();
 
   const [session, setSession] = useState<Session | null>(null);
 
@@ -103,6 +105,18 @@ export default function NavigationHeader() {
 
           {/* Desktop Auth & CTA */}
           <div className="hidden md:flex items-center space-x-3">
+            {/* Currency Toggle */}
+            <button
+              onClick={toggleCurrency}
+              className={`mr-2 px-3 py-1.5 rounded-full text-xs font-bold border transition-colors ${
+                isSolidHeader
+                  ? "border-gray-200 text-navy-base hover:bg-gray-100"
+                  : "border-white/30 text-white hover:bg-white/10"
+              }`}
+            >
+              {displayCurrency === 'GHS' ? '₵ GHS' : '$ USD'}
+            </button>
+
             {session ? (
               <div className="relative group mr-2">
                 <button
@@ -237,6 +251,14 @@ export default function NavigationHeader() {
               SafeMove
               <span className="ml-1.5 bg-accent-emerald text-white text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-full relative -top-1.5">Coming Soon</span>
             </Link>
+            <div className="px-3 py-2">
+              <button
+                onClick={toggleCurrency}
+                className="w-full text-left px-4 py-2 rounded-md text-base font-bold bg-gray-100 text-navy-base border border-gray-200"
+              >
+                Currency: {displayCurrency === 'GHS' ? '₵ GHS' : '$ USD'}
+              </button>
+            </div>
             {session ? (
               <>
                 <Link href="/dashboard?tab=overview" className={`block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-navy-base hover:bg-slate-100 ${pathname === "/dashboard" ? "bg-slate-100 text-navy-base font-semibold" : ""}`}>

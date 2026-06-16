@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { createClient } from '@/utils/supabase/server';
 import PropertyFilters from '@/components/PropertyFilters';
+import PriceDisplay from '@/components/PriceDisplay';
 
 // Fetch live sales listings from Supabase
 function formatCategory(cat?: string) {
@@ -75,7 +76,8 @@ async function fetchSalesListings(searchParams: { [key: string]: string | string
       beds: row.bedrooms || 0,
       baths: row.bathrooms || 0,
       area,
-      price: row.outright_price ? `₵${Number(row.outright_price).toLocaleString()}` : '₵0',
+      rawPrice: Number(row.outright_price || 0),
+      currency: row.currency || 'GHS',
       price_suffix: '',
       dimensions: row.land_size || (row.square_meters ? `${row.square_meters} sqm` : '—'),
       badge: row.safemove_active ? 'safemove' : undefined,
@@ -156,11 +158,15 @@ export default async function SalesPage(props: { searchParams: Promise<{ [key: s
                     </div>
                   )}
 
-                  {/* Pricing and Dimensions Box */}
                   <div className="mt-auto bg-navy-base p-4 rounded-sm border border-navy-light flex flex-col gap-2 mb-4 text-white">
                     <div className="flex items-end justify-between">
                       <span className="text-xs text-white/70 uppercase tracking-wider font-semibold">Outright Price</span>
-                      <div className="text-xl font-extrabold text-white">{prop.price}<span className="text-xs font-normal text-gray-500">{prop.price_suffix}</span></div>
+                      <PriceDisplay 
+                        rawPrice={prop.rawPrice} 
+                        currency={prop.currency} 
+                        priceSuffix={prop.price_suffix} 
+                        isRental={false} 
+                      />
                     </div>
                     <div className="flex justify-between items-center text-xs border-t border-white/10 pt-2">
                       <span className="text-white/70">Dimensions:</span>

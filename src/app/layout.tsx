@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import NavigationHeader from "@/components/NavigationHeader";
+import { Providers } from "@/components/Providers";
 
 const jakartaSans = Plus_Jakarta_Sans({
   variable: "--font-jakarta-sans",
@@ -24,10 +25,12 @@ export default function RootLayout({
       className={`${jakartaSans.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
-        <NavigationHeader />
-        <main className="flex-grow">
-          {children}
-        </main>
+        <Providers>
+          <NavigationHeader />
+          <main className="flex-grow">
+            {children}
+          </main>
+        </Providers>
       </body>
     </html>
   );
