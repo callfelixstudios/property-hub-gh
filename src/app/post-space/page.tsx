@@ -88,6 +88,7 @@ export default function PostSpaceWizard() {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [videoUrl, setVideoUrl] = useState("");
 
   const handleFilesSelected = (files: FileList | null) => {
     if (!files) return;
@@ -151,6 +152,20 @@ export default function PostSpaceWizard() {
       // Payload sanitized: 'id' removed for auto-generation, 
       // Session correctly bound to 'poster_id', 
       // Image array cleanly mapped to 'media_urls'
+      // Derive rent_advance_months from advance period selection
+      let rentAdvanceMonths = 1;
+      if (advancePeriod === 'Custom...') {
+        rentAdvanceMonths = customMonths || 1;
+      } else if (advancePeriod === '3 Months Advance') {
+        rentAdvanceMonths = 3;
+      } else if (advancePeriod === '6 Months Advance') {
+        rentAdvanceMonths = 6;
+      } else if (advancePeriod === '1 Year Advance') {
+        rentAdvanceMonths = 12;
+      } else if (advancePeriod === '2 Years Advance') {
+        rentAdvanceMonths = 24;
+      }
+
       const { error } = await supabase.from('listings').insert({
         poster_id: user.id,
         transaction_type: listingType,
@@ -165,10 +180,13 @@ export default function PostSpaceWizard() {
         outright_price: parseInt(outrightPrice, 10) || 0,
         legal_status: legalStatus || null,
         advance_period: advancePeriod === 'Custom...' ? getAdvanceLabel(customMonths) : (advancePeriod || null),
+        rent_advance_months: listingType === 'rent' ? rentAdvanceMonths : null,
+        currency: 'GHS',
         generator_backup: false,
         solar_ready: false,
         safemove_active: safeMoveActive,
         media_urls: uploadedUrls.length > 0 ? uploadedUrls : null,
+        video_url: videoUrl || null,
         status: 'active',
         bedrooms: bedrooms ? parseInt(bedrooms, 10) : null,
         bathrooms: bathrooms ? parseInt(bathrooms, 10) : null,
@@ -704,7 +722,18 @@ export default function PostSpaceWizard() {
                   )}
                 </div>
 
-
+                {/* Video Walkthrough URL */}
+                <div>
+                  <h3 className="text-sm font-bold text-navy-base mb-2">🎥 Video Walkthrough Tour (YouTube or Vimeo Link)</h3>
+                  <input
+                    type="url"
+                    value={videoUrl}
+                    onChange={(e) => setVideoUrl(e.target.value)}
+                    placeholder="e.g., https://www.youtube.com/watch?v=..."
+                    className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Optional. Paste a YouTube or Vimeo link to show a video tour on your listing page.</p>
+                </div>
 
                 {/* SafeMove Callout Container */}
                 <div className={`p-6 rounded-md border-2 transition-all ${safeMoveActive ? "border-accent-emerald bg-accent-emerald/5" : "border-gray-200 bg-surface-primary"}`}>
