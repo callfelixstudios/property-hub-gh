@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { createClient } from '@/utils/supabase/server';
+import PropertyFilters from '@/components/PropertyFilters';
 
 // Fetch live sales listings from Supabase
 function formatCategory(cat?: string) {
@@ -11,14 +12,31 @@ function formatCategory(cat?: string) {
     .join(' ');
 }
 
-async function fetchSalesListings() {
+async function fetchSalesListings(searchParams: { [key: string]: string | string[] | undefined }) {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from('listings')
     .select('*')
     .eq('transaction_type', 'sale')
-    .eq('status', 'active')
-    .order('created_at', { ascending: false });
+    .eq('status', 'active');
+
+  const minPrice = searchParams.minPrice as string;
+  const maxPrice = searchParams.maxPrice as string;
+  const posterRole = searchParams.posterRole as string;
+  const beds = searchParams.beds as string;
+  const baths = searchParams.baths as string;
+  const furnishing = searchParams.furnishing as string;
+  const litigationFree = searchParams.litigationFree as string;
+
+  if (minPrice) query = query.gte('outright_price', minPrice);
+  if (maxPrice) query = query.lte('outright_price', maxPrice);
+  if (posterRole && posterRole !== 'all') query = query.eq('poster_role', posterRole);
+  if (beds) query = query.gte('bedrooms', beds);
+  if (baths) query = query.gte('bathrooms', baths);
+  if (furnishing) query = query.eq('furnishing_status', furnishing);
+  if (litigationFree === 'true') query = query.eq('is_litigation_free', true);
+
+  const { data, error } = await query.order('created_at', { ascending: false });
   if (error) {
     console.error('Error fetching sales listings:', error);
     return [];
@@ -50,8 +68,9 @@ async function fetchSalesListings() {
   });
 }
 
-export default async function SalesPage() {
-  const salesListings = (await fetchSalesListings()) as any[];
+export default async function SalesPage(props: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
+  const searchParams = await props.searchParams;
+  const salesListings = (await fetchSalesListings(searchParams)) as any[];
   return (
     <div className="w-full min-h-screen bg-surface-primary pb-20">
       {/* Search Header */}
@@ -68,36 +87,7 @@ export default async function SalesPage() {
 
       <div className="max-w-7xl mx-auto px-6 py-10 flex flex-col md:flex-row gap-8 items-start">
         {/* Left Filter Sidebar */}
-        <aside className="w-full md:w-72 flex-shrink-0 bg-white rounded-md shadow-ambient border border-gray-100 p-6 sticky top-24">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-navy-base">Filters</h2>
-            <button className="text-sm text-gray-500 hover:text-navy-base transition-colors">Reset</button>
-          </div>
-          {/* Price Range */}
-          <div className="mb-8">
-            <h3 className="text-sm font-semibold text-navy-base mb-4">Total Price (GHS)</h3>
-            <input type="range" min="100000" max="10000000" className="w-full accent-navy-base cursor-pointer mb-2" />
-            <div className="flex justify-between text-xs text-gray-500">
-              <span>₵100K</span>
-              <span>₵10M+</span>
-            </div>
-          </div>
-          {/* Premium Filter */}
-          <div className="mb-6 p-4 bg-accent-gold/10 border border-accent-gold/30 rounded-sm">
-            <label className="flex items-start gap-3 cursor-pointer group">
-              <div className="mt-0.5 relative flex items-center justify-center w-5 h-5 border border-accent-gold rounded-[4px] bg-white">
-                <input type="checkbox" defaultChecked className="absolute opacity-0 w-full h-full cursor-pointer peer" />
-                <svg className="w-3.5 h-3.5 text-navy-base opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <div>
-                <span className="text-sm font-bold text-navy-base block mb-0.5">Titled / Litigation-Free Only</span>
-                <span className="text-xs text-gray-600">Only show properties with verified land registry documents.</span>
-              </div>
-            </label>
-          </div>
-        </aside>
+        <PropertyFilters />
 
         {/* Right Property Feed Grid */}
         <main className="flex-1 w-full">
