@@ -27,6 +27,7 @@ interface ListingRow {
   views?: number;
   currency?: string;
   rent_advance_months?: number;
+  whatsapp_leads_count?: number;
   advance_period?: string;
   created_at?: string;
   image_url?: string;
@@ -187,14 +188,6 @@ export default async function ListingDetailPage({
   // Determine if this is a land/commercial type
   const isLand = ['Plot of Land', 'Farm House'].some(t => row.category.toLowerCase().includes(t.toLowerCase()));
   const isCommercial = row.category.toLowerCase().includes('commercial');
-
-  // Build WhatsApp pre-filled message
-  const waMessage = encodeURIComponent(
-    `Hello, I am interested in your listing on Property Hub GH:\n\n${displayTitle}\nPrice: ${formatCurrency(primaryPrice)}\n\nI would love to know more. Thank you!`
-  );
-  const whatsappUrl = profile.whatsapp_link
-    ? `${profile.whatsapp_link}?text=${waMessage}`
-    : null;
 
   return (
     <div className="w-full min-h-screen bg-[#f8f9fb]">
@@ -534,8 +527,17 @@ export default async function ListingDetailPage({
                   </div>
 
                   {/* ── Premium CTA Button ────────────────────────────────── */}
-                  {whatsappUrl ? (
-                    <WhatsAppButton whatsappUrl={whatsappUrl} listingId={id} />
+                  {profile.whatsapp_link ? (
+                    <WhatsAppButton 
+                      profileWhatsAppLink={profile.whatsapp_link}
+                      listingId={id}
+                      displayTitle={displayTitle}
+                      rawPrice={primaryPrice || 0}
+                      currency={row.currency || 'GHS'}
+                      rentAdvanceMonths={row.rent_advance_months || 1}
+                      isRental={isRent}
+                      serviceCharge={row.service_charge || 0}
+                    />
                   ) : (
                     <div className="w-full py-3 bg-slate-100 text-slate-400 font-semibold rounded-xl text-center text-sm">
                       Contact info unavailable

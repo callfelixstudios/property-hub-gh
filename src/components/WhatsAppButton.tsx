@@ -1,23 +1,56 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useTransition, useEffect, useState } from 'react';
 import { trackWhatsAppClick } from '@/app/actions/leads';
+import { useCurrency } from '@/context/CurrencyContext';
 
 interface WhatsAppButtonProps {
-  whatsappUrl: string;
+  profileWhatsAppLink: string;
   listingId: string;
+  displayTitle: string;
+  rawPrice: number;
+  currency: string;
+  rentAdvanceMonths?: number;
+  isRental?: boolean;
+  serviceCharge?: number;
 }
 
-export default function WhatsAppButton({ whatsappUrl, listingId }: WhatsAppButtonProps) {
+export default function WhatsAppButton({ 
+  profileWhatsAppLink, 
+  listingId,
+  displayTitle,
+  rawPrice,
+  currency = 'GHS',
+  rentAdvanceMonths = 1,
+  isRental = false,
+  serviceCharge = 0
+}: WhatsAppButtonProps) {
   const [isPending, startTransition] = useTransition();
+  const { formatPrice } = useCurrency();
+  const [currentUrl, setCurrentUrl] = useState('');
+
+  useEffect(() => {
+    setCurrentUrl(window.location.href);
+  }, []);
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    // We don't prevent default, we want the link to open in a new tab.
-    // We just dispatch the tracking call in the background.
     startTransition(() => {
       trackWhatsAppClick(listingId);
     });
   };
+
+  // Compute pricing text
+  const formattedPrice = formatPrice(rawPrice, currency);
+  const showUpfront = isRental && rentAdvanceMonths > 1;
+  const upfrontPrice = showUpfront ? formatPrice((rawPrice + serviceCharge) * rentAdvanceMonths, currency) : null;
+  
+  const pricingText = showUpfront 
+    ? `${formattedPrice} (Total Upfront: ${upfrontPrice} for ${rentAdvanceMonths} mos)`
+    : formattedPrice;
+
+  // Build message
+  const waMessage = `Hello! I am browsing Property Hub GH and I am highly interested in your listing: ${displayTitle}. My selected pricing is ${pricingText}. Is this property open for viewings? Here is the link: ${currentUrl}`;
+  const whatsappUrl = `${profileWhatsAppLink}?text=${encodeURIComponent(waMessage)}`;
 
   return (
     <a
