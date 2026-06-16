@@ -8,7 +8,8 @@ const featuredListings = [
   {
     imageSrc: "/property-1.png",
     title: "The Apex Residency",
-    price: "$2,500",
+    rawPrice: 2500,
+    currency: "USD",
     priceSuffix: "/mo",
     location: "East Legon, Accra",
     beds: 3,
@@ -19,7 +20,8 @@ const featuredListings = [
   {
     imageSrc: "/property-2.png",
     title: "Vista Heights",
-    price: "$1,800",
+    rawPrice: 1800,
+    currency: "USD",
     priceSuffix: "/mo",
     location: "Cantonments, Accra",
     beds: 2,
@@ -30,7 +32,8 @@ const featuredListings = [
   {
     imageSrc: "/property-3.png",
     title: "Eco-Haven Estate",
-    price: "$450,000",
+    rawPrice: 450000,
+    currency: "USD",
     priceSuffix: "",
     location: "Trasacco, East Legon",
     beds: 5,

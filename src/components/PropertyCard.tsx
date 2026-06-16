@@ -3,7 +3,8 @@ import Image from "next/image";
 interface PropertyCardProps {
   imageSrc?: string;
   title?: string;
-  price?: string;
+  rawPrice?: number;
+  currency?: string;
   priceSuffix?: string;
   location?: string;
   beds?: number;
@@ -13,10 +14,13 @@ interface PropertyCardProps {
   category?: string;
 }
 
+import PriceDisplay from "./PriceDisplay";
+
 export default function PropertyCard({
   imageSrc = "/property-1.png",
   title = "Modern Apartment",
-  price = "₵4,500",
+  rawPrice = 4500,
+  currency = "GHS",
   priceSuffix = "/mo",
   location = "East Legon, Accra",
   beds = 3,
@@ -52,9 +56,8 @@ export default function PropertyCard({
           <h3 className="text-base font-bold text-navy-base leading-tight line-clamp-1">
             {title}
           </h3>
-          <div className="text-base font-extrabold text-navy-base whitespace-nowrap ml-3">
-            {price}
-            <span className="text-xs font-normal text-gray-400">{priceSuffix}</span>
+          <div className="ml-3">
+            <PriceDisplay rawPrice={rawPrice} currency={currency} priceSuffix={priceSuffix} isRental={true} />
           </div>
         </div>
 
