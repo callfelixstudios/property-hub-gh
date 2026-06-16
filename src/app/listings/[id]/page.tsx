@@ -2,6 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { createClient } from '@/utils/supabase/server';
 import ListingGallery from "@/components/listings/ListingGallery";
+import VerifiedBadge from "@/components/VerifiedBadge";
+import ReportModal from "@/components/ReportModal";
 
 interface ListingRow {
   id: string;
@@ -35,6 +37,7 @@ interface ListingRow {
   land_use?: string;
   parking_capacity?: number;
   poster_role?: 'owner' | 'agent';
+  is_verified?: boolean;
 }
 
 interface PosterProfile {
@@ -233,8 +236,9 @@ export default async function ListingDetailPage({
                   </span>
                 )}
               </div>
-              <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-3 leading-tight">
+              <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-3 leading-tight flex items-center gap-3 flex-wrap">
                 {displayTitle}
+                {row.is_verified && <VerifiedBadge />}
               </h1>
               {/* Location Ribbon with pin icon */}
               <div className="inline-flex items-center gap-1.5 text-slate-500 bg-slate-100 rounded-full px-3 py-1.5">
@@ -557,6 +561,9 @@ export default async function ListingDetailPage({
                   </ul>
                 </div>
               )}
+
+              {/* ── Report Listing ─────────────────────────────────────── */}
+              <ReportModal listingId={id} />
 
             </div>
           </div>

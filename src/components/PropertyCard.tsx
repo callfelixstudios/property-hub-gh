@@ -12,9 +12,11 @@ interface PropertyCardProps {
   area?: string;
   badge?: "verified" | "new" | "safemove";
   category?: string;
+  isVerified?: boolean;
 }
 
 import PriceDisplay from "./PriceDisplay";
+import VerifiedBadge from "./VerifiedBadge";
 
 export default function PropertyCard({
   imageSrc = "/property-1.png",
@@ -28,6 +30,7 @@ export default function PropertyCard({
   area = "1,200 sqft",
   badge,
   category = "apartment",
+  isVerified = false,
 }: PropertyCardProps) {
   return (
     <div className="bg-white rounded-md overflow-hidden border border-gray-100 shadow-ambient hover:shadow-lg transition-shadow duration-300 group flex flex-col">
@@ -53,9 +56,12 @@ export default function PropertyCard({
       <div className="p-4 flex flex-col flex-grow">
         {/* Title + Price Row */}
         <div className="flex items-start justify-between mb-2">
-          <h3 className="text-base font-bold text-navy-base leading-tight line-clamp-1">
-            {title}
-          </h3>
+          <div className="flex flex-col gap-1.5 items-start">
+            {isVerified && <VerifiedBadge />}
+            <h3 className="text-base font-bold text-navy-base leading-tight line-clamp-1">
+              {title}
+            </h3>
+          </div>
           <div className="ml-3 text-navy-base">
             <PriceDisplay rawPrice={rawPrice} currency={currency} priceSuffix={priceSuffix} isRental={true} />
           </div>

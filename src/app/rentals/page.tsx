@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from '@/utils/supabase/server';
 import PropertyFilters from '@/components/PropertyFilters';
 import PriceDisplay from '@/components/PriceDisplay';
+import VerifiedBadge from '@/components/VerifiedBadge';
 
 // Fetch live rental listings from Supabase
 interface Listing {
@@ -22,6 +23,7 @@ interface Listing {
   advance?: string;
   badge?: string;
   category?: string;
+  isVerified?: boolean;
 }
 
 function formatCategory(cat?: string) {
@@ -101,6 +103,7 @@ async function fetchRentalListings(searchParams: { [key: string]: string | strin
       advance: 'Flexible',
       badge: row.safemove_active ? 'safemove' : undefined,
       category: row.category,
+      isVerified: row.is_verified || false,
     };
   });
 }
@@ -147,6 +150,11 @@ export default async function RentalsPage(props: { searchParams: Promise<{ [key:
                     <div className="absolute top-3 left-3 bg-accent-emerald text-white px-3 py-1 text-xs font-bold rounded-full flex items-center gap-1.5 shadow-sm">
                       <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944zM14.5 8.5a.75.75 0 00-1.06-1.06l-3.94 3.94-1.44-1.44a.75.75 0 00-1.06 1.06l2 2a.75.75 0 001.06 0l4.44-4.44z" clipRule="evenodd"/></svg>
                       SafeMove
+                    </div>
+                  )}
+                  {prop.isVerified && (
+                    <div className="absolute top-3 right-3">
+                      <VerifiedBadge />
                     </div>
                   )}
                 </div>
