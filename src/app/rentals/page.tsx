@@ -43,6 +43,7 @@ async function fetchRentalListings(searchParams: { [key: string]: string | strin
   const beds = searchParams.beds as string;
   const baths = searchParams.baths as string;
   const furnishing = searchParams.furnishing as string;
+  const region = searchParams.region as string;
   const neighborhood = searchParams.neighborhood as string;
   const propertyType = searchParams.propertyType as string;
   const condition = searchParams.condition as string;
@@ -57,6 +58,7 @@ async function fetchRentalListings(searchParams: { [key: string]: string | strin
   if (beds) query = query.gte('bedrooms', beds);
   if (baths) query = query.gte('bathrooms', baths);
   if (furnishing) query = query.eq('furnishing_status', furnishing);
+  if (region) query = query.eq('location_region', region);
   if (neighborhood) query = query.eq('location_neighborhood', neighborhood);
   if (propertyType && propertyType !== 'all') query = query.eq('property_type', propertyType);
   if (condition && condition !== 'any') query = query.eq('condition_status', condition);

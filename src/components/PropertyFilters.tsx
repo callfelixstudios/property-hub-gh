@@ -3,10 +3,13 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, Suspense } from 'react';
 
-const GH_NEIGHBORHOODS = [
-  'East Legon', 'Spintex', 'Dzorwulu', 'Airport Residential',
-  'Osu', 'Cantonments', 'Labone', 'Madina', 'Tema', 'Kasoa', 'Kumasi Central'
-];
+const GHANA_LOCATIONS: Record<string, string[]> = {
+  "Greater Accra": ["All", "East Legon", "Spintex", "Dzorwulu", "Airport Residential", "Osu", "Cantonments", "Labone", "Madina", "Tema", "Kasoa", "Adenta", "Dansoman"],
+  "Ashanti": ["All", "Ahodwo", "Nhyiaeso", "Asokwa", "Bantama", "Adum", "Kwadaso", "Suame", "Tafo", "Knust / Oduom"],
+  "Western": ["All", "Takoradi Central", "Anaji", "Effiakuma", "Kwame Nkrumah Circle", "Tarkwa"],
+  "Central": ["All", "Cape Coast Castle Area", "Elmina", "Winneba", "Swedru"],
+  "Eastern": ["All", "Koforidua", "Nkawkaw", "Aburi", "Nsawam"]
+};
 const PROPERTY_TYPES = [
   'Apartment/Flat', 'Standalone House', 'Townhouse', 'Chamber & Hall',
   'Single Room', 'Commercial / Office Space', 'Land / Plot'
@@ -27,6 +30,7 @@ function PropertyFiltersContent() {
   const furnishing = searchParams.get('furnishing') || '';
   const litigationFree = searchParams.get('litigationFree') === 'true';
   
+  const region = searchParams.get('region') || '';
   const neighborhood = searchParams.get('neighborhood') || '';
   const propertyType = searchParams.get('propertyType') || 'all';
   const condition = searchParams.get('condition') || 'any';
@@ -46,6 +50,11 @@ function PropertyFiltersContent() {
     });
     router.push(`?${params.toString()}`);
   }, [searchParams, router]);
+
+  const handleRegionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
+    updateFilters({ region: val || null, neighborhood: null });
+  };
 
   return (
     <aside className="w-full md:w-72 flex-shrink-0 bg-white rounded-md shadow-ambient border border-gray-100 p-6 sticky top-24">
@@ -79,17 +88,33 @@ function PropertyFiltersContent() {
         </div>
       </div>
 
-      {/* Location / Neighborhood */}
+      {/* 🌍 Select Region */}
       <div className="mb-6">
-        <h3 className="text-sm font-semibold text-navy-base mb-3">Location / Neighborhood</h3>
+        <h3 className="text-sm font-semibold text-navy-base mb-3">🌍 Select Region</h3>
         <select
-          value={neighborhood}
-          onChange={(e) => updateFilters({ neighborhood: e.target.value })}
+          value={region}
+          onChange={handleRegionChange}
           className="w-full bg-white border border-gray-200 text-sm rounded-sm px-3 py-2 text-navy-base outline-none cursor-pointer hover:border-navy-light transition-colors"
         >
+          <option value="">Any Region</option>
+          {Object.keys(GHANA_LOCATIONS).map((reg) => (
+            <option key={reg} value={reg}>{reg}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* 📍 Select Neighborhood */}
+      <div className="mb-6">
+        <h3 className="text-sm font-semibold text-navy-base mb-3">📍 Select Neighborhood</h3>
+        <select
+          value={neighborhood}
+          onChange={(e) => updateFilters({ neighborhood: e.target.value === 'All' ? null : e.target.value })}
+          disabled={!region}
+          className="w-full bg-white border border-gray-200 text-sm rounded-sm px-3 py-2 text-navy-base outline-none cursor-pointer hover:border-navy-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           <option value="">Any Location</option>
-          {GH_NEIGHBORHOODS.map((loc) => (
-            <option key={loc} value={loc}>{loc}</option>
+          {region && GHANA_LOCATIONS[region]?.map((loc) => (
+            <option key={loc} value={loc === 'All' ? '' : loc}>{loc}</option>
           ))}
         </select>
       </div>
