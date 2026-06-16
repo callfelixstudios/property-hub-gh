@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, Suspense } from 'react';
+import { useCurrency } from '@/context/CurrencyContext';
 
 const GHANA_LOCATIONS: Record<string, string[]> = {
   "Greater Accra": ["All", "East Legon", "Spintex", "Dzorwulu", "Airport Residential", "Osu", "Cantonments", "Labone", "Madina", "Tema", "Kasoa", "Adenta", "Dansoman"],
@@ -19,8 +20,30 @@ function PropertyFiltersContent() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { displayCurrency } = useCurrency();
 
   const isRentalContext = pathname.includes('rentals');
+
+  let maxBounds = 0;
+  let stepValue = 0;
+
+  if (isRentalContext) {
+    if (displayCurrency === 'GHS') {
+      maxBounds = 50000;
+      stepValue = 500;
+    } else {
+      maxBounds = 5000;
+      stepValue = 50;
+    }
+  } else {
+    if (displayCurrency === 'GHS') {
+      maxBounds = 10000000;
+      stepValue = 50000;
+    } else {
+      maxBounds = 1000000;
+      stepValue = 5000;
+    }
+  }
 
   const minPrice = searchParams.get('minPrice') || '';
   const maxPrice = searchParams.get('maxPrice') || '';
@@ -160,11 +183,14 @@ function PropertyFiltersContent() {
       {/* Total Price */}
       <div className="mb-6">
         <h3 className="text-sm font-semibold text-navy-base mb-3">
-          {isRentalContext ? 'Monthly Rent (GHS)' : 'Total Price (GHS)'}
+          {isRentalContext ? `Monthly Rent (${displayCurrency})` : `Total Price (${displayCurrency})`}
         </h3>
         <div className="flex items-center gap-2">
           <input
             type="number"
+            min={0}
+            max={maxBounds}
+            step={stepValue}
             placeholder="Min"
             value={minPrice}
             onChange={(e) => updateFilters({ minPrice: e.target.value })}
@@ -173,6 +199,9 @@ function PropertyFiltersContent() {
           <span className="text-gray-400">-</span>
           <input
             type="number"
+            min={0}
+            max={maxBounds}
+            step={stepValue}
             placeholder="Max"
             value={maxPrice}
             onChange={(e) => updateFilters({ maxPrice: e.target.value })}
