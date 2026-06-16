@@ -3,6 +3,15 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, Suspense } from 'react';
 
+const GH_NEIGHBORHOODS = [
+  'East Legon', 'Spintex', 'Dzorwulu', 'Airport Residential',
+  'Osu', 'Cantonments', 'Labone', 'Madina', 'Tema', 'Kasoa', 'Kumasi Central'
+];
+const PROPERTY_TYPES = [
+  'Apartment/Flat', 'Standalone House', 'Townhouse', 'Chamber & Hall',
+  'Single Room', 'Commercial / Office Space', 'Land / Plot'
+];
+
 function PropertyFiltersContent() {
   const pathname = usePathname();
   const router = useRouter();
@@ -17,6 +26,14 @@ function PropertyFiltersContent() {
   const baths = searchParams.get('baths') || '';
   const furnishing = searchParams.get('furnishing') || '';
   const litigationFree = searchParams.get('litigationFree') === 'true';
+  
+  const neighborhood = searchParams.get('neighborhood') || '';
+  const propertyType = searchParams.get('propertyType') || 'all';
+  const condition = searchParams.get('condition') || 'any';
+  const generator = searchParams.get('generator') === 'true';
+  const water = searchParams.get('water') === 'true';
+  const meter = searchParams.get('meter') === 'true';
+  const gated = searchParams.get('gated') === 'true';
 
   const updateFilters = useCallback((newFilters: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -59,6 +76,59 @@ function PropertyFiltersContent() {
               {role}
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* Location / Neighborhood */}
+      <div className="mb-6">
+        <h3 className="text-sm font-semibold text-navy-base mb-3">Location / Neighborhood</h3>
+        <select
+          value={neighborhood}
+          onChange={(e) => updateFilters({ neighborhood: e.target.value })}
+          className="w-full bg-white border border-gray-200 text-sm rounded-sm px-3 py-2 text-navy-base outline-none cursor-pointer hover:border-navy-light transition-colors"
+        >
+          <option value="">Any Location</option>
+          {GH_NEIGHBORHOODS.map((loc) => (
+            <option key={loc} value={loc}>{loc}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Property Type */}
+      <div className="mb-6">
+        <h3 className="text-sm font-semibold text-navy-base mb-3">Property Type</h3>
+        <select
+          value={propertyType}
+          onChange={(e) => updateFilters({ propertyType: e.target.value === 'all' ? null : e.target.value })}
+          className="w-full bg-white border border-gray-200 text-sm rounded-sm px-3 py-2 text-navy-base outline-none cursor-pointer hover:border-navy-light transition-colors"
+        >
+          <option value="all">All Types</option>
+          {PROPERTY_TYPES.map((type) => (
+            <option key={type} value={type}>{type}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Condition Switch */}
+      <div className="mb-6">
+        <h3 className="text-sm font-semibold text-navy-base mb-3">Condition</h3>
+        <div className="flex bg-gray-100 p-1 rounded-sm">
+          {['any', 'newly_built', 'refurbished', 'fairly_used'].map((cond) => {
+            const label = cond === 'any' ? 'Any' : cond === 'newly_built' ? 'Newly Built' : cond === 'refurbished' ? 'Refurbished' : 'Fairly Used';
+            return (
+              <button
+                key={cond}
+                onClick={() => updateFilters({ condition: cond === 'any' ? null : cond })}
+                className={`flex-1 text-xs py-1.5 rounded-sm capitalize font-medium transition-colors ${
+                  condition === cond || (cond === 'any' && !condition)
+                    ? 'bg-white shadow-sm text-navy-base'
+                    : 'text-gray-500 hover:text-navy-base'
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -133,6 +203,49 @@ function PropertyFiltersContent() {
           <option value="Semi-Furnished">Semi-Furnished</option>
           <option value="Unfurnished">Unfurnished</option>
         </select>
+      </div>
+
+      {/* 🛡️ Essential Amenities */}
+      <div className="mb-6">
+        <h3 className="text-sm font-semibold text-navy-base mb-3">🛡️ Essential Amenities</h3>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="flex items-center gap-2 cursor-pointer group">
+            <input
+              type="checkbox"
+              checked={generator}
+              onChange={(e) => updateFilters({ generator: e.target.checked ? 'true' : null })}
+              className="w-4 h-4 rounded border-gray-300 text-navy-base focus:ring-navy-light cursor-pointer"
+            />
+            <span className="text-xs font-medium text-navy-base group-hover:text-navy-light">Standby Generator</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer group">
+            <input
+              type="checkbox"
+              checked={water}
+              onChange={(e) => updateFilters({ water: e.target.checked ? 'true' : null })}
+              className="w-4 h-4 rounded border-gray-300 text-navy-base focus:ring-navy-light cursor-pointer"
+            />
+            <span className="text-xs font-medium text-navy-base group-hover:text-navy-light">Borehole / Polyank</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer group">
+            <input
+              type="checkbox"
+              checked={meter}
+              onChange={(e) => updateFilters({ meter: e.target.checked ? 'true' : null })}
+              className="w-4 h-4 rounded border-gray-300 text-navy-base focus:ring-navy-light cursor-pointer"
+            />
+            <span className="text-xs font-medium text-navy-base group-hover:text-navy-light">Prepaid Meter</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer group">
+            <input
+              type="checkbox"
+              checked={gated}
+              onChange={(e) => updateFilters({ gated: e.target.checked ? 'true' : null })}
+              className="w-4 h-4 rounded border-gray-300 text-navy-base focus:ring-navy-light cursor-pointer"
+            />
+            <span className="text-xs font-medium text-navy-base group-hover:text-navy-light">Walled & Gated</span>
+          </label>
+        </div>
       </div>
 
       {/* Titled / Litigation-Free Only (Sales Only) */}

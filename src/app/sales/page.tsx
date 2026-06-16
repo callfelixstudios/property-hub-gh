@@ -27,6 +27,13 @@ async function fetchSalesListings(searchParams: { [key: string]: string | string
   const baths = searchParams.baths as string;
   const furnishing = searchParams.furnishing as string;
   const litigationFree = searchParams.litigationFree as string;
+  const neighborhood = searchParams.neighborhood as string;
+  const propertyType = searchParams.propertyType as string;
+  const condition = searchParams.condition as string;
+  const generator = searchParams.generator as string;
+  const water = searchParams.water as string;
+  const meter = searchParams.meter as string;
+  const gated = searchParams.gated as string;
 
   if (minPrice) query = query.gte('outright_price', minPrice);
   if (maxPrice) query = query.lte('outright_price', maxPrice);
@@ -35,6 +42,13 @@ async function fetchSalesListings(searchParams: { [key: string]: string | string
   if (baths) query = query.gte('bathrooms', baths);
   if (furnishing) query = query.eq('furnishing_status', furnishing);
   if (litigationFree === 'true') query = query.eq('is_litigation_free', true);
+  if (neighborhood) query = query.eq('location_neighborhood', neighborhood);
+  if (propertyType && propertyType !== 'all') query = query.eq('property_type', propertyType);
+  if (condition && condition !== 'any') query = query.eq('condition_status', condition);
+  if (generator === 'true') query = query.eq('has_generator', true);
+  if (water === 'true') query = query.eq('has_water_reservoir', true);
+  if (meter === 'true') query = query.eq('has_independent_meter', true);
+  if (gated === 'true') query = query.eq('is_walled_gated', true);
 
   const { data, error } = await query.order('created_at', { ascending: false });
   if (error) {
