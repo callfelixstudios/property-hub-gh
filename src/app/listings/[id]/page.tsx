@@ -4,6 +4,7 @@ import { createClient } from '@/utils/supabase/server';
 import ListingGallery from "@/components/listings/ListingGallery";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import ReportModal from "@/components/ReportModal";
+import PriceDisplay from "@/components/PriceDisplay";
 
 interface ListingRow {
   id: string;
@@ -23,6 +24,8 @@ interface ListingRow {
   media_urls?: string[];
   status?: string;
   views?: number;
+  currency?: string;
+  rent_advance_months?: number;
   advance_period?: string;
   created_at?: string;
   image_url?: string;
@@ -451,25 +454,19 @@ export default async function ListingDetailPage({
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">
                   {isRent ? 'Monthly Rent' : 'Asking Price'}
                 </p>
-                <div className="flex items-baseline gap-1 mb-4">
-                  <span className="text-2xl font-extrabold text-slate-900">{formatCurrency(primaryPrice)}</span>
-                  {isRent && <span className="text-sm font-semibold text-slate-400">/mo</span>}
+                <div className="mb-4 text-2xl text-slate-900">
+                  <PriceDisplay
+                    rawPrice={row.base_rent || row.outright_price || 0}
+                    currency={row.currency || 'GHS'}
+                    priceSuffix={isRent ? '/ month' : '/ outright'}
+                    rentAdvanceMonths={row.rent_advance_months || 1}
+                    serviceCharge={row.service_charge || 0}
+                    isRental={isRent}
+                  />
                 </div>
 
                 {/* Cost breakdown */}
                 <div className="space-y-2 border-t border-slate-100 pt-4">
-                  {isRent && row.service_charge && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-slate-500">Service Charge</span>
-                      <span className="text-sm font-bold text-slate-800">{formatCurrency(row.service_charge)}</span>
-                    </div>
-                  )}
-                  {isRent && row.advance_period && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-slate-500">Advance Period</span>
-                      <span className="text-sm font-bold text-slate-800">{row.advance_period}</span>
-                    </div>
-                  )}
                   {!isRent && row.legal_status && (
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-slate-500">Legal Status</span>
