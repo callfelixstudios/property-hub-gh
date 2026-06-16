@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
 type Currency = 'GHS' | 'USD';
 
@@ -16,8 +16,24 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
   const [displayCurrency, setDisplayCurrency] = useState<Currency>('GHS');
   const exchangeRate = 11.25;
 
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = window.localStorage.getItem('property_hub_currency') as Currency;
+      if (stored === 'USD' || stored === 'GHS') {
+        setDisplayCurrency(stored);
+      }
+    }
+  }, []);
+
   const toggleCurrency = () => {
-    setDisplayCurrency(prev => prev === 'GHS' ? 'USD' : 'GHS');
+    setDisplayCurrency(prev => {
+      const next = prev === 'GHS' ? 'USD' : 'GHS';
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('property_hub_currency', next);
+      }
+      return next;
+    });
   };
 
   const formatPrice = (amount: number, fromCurrency: string) => {

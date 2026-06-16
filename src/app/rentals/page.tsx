@@ -18,7 +18,7 @@ interface Listing {
   currency: string;
   rentAdvanceMonths: number;
   priceSuffix?: string;
-  serviceCharge?: string;
+  serviceChargeNum: number;
   advance?: string;
   badge?: string;
   category?: string;
@@ -97,7 +97,7 @@ async function fetchRentalListings(searchParams: { [key: string]: string | strin
       currency: row.currency || 'GHS',
       rentAdvanceMonths: row.rent_advance_months || 1,
       priceSuffix: '/mo',
-      serviceCharge: row.service_charge ? `₵${Number(row.service_charge).toLocaleString()}/mo` : 'Inclusive',
+      serviceChargeNum: Number(row.service_charge || 0),
       advance: 'Flexible',
       badge: row.safemove_active ? 'safemove' : undefined,
       category: row.category,
@@ -187,11 +187,16 @@ export default async function RentalsPage(props: { searchParams: Promise<{ [key:
                         priceSuffix={prop.priceSuffix} 
                         rentAdvanceMonths={prop.rentAdvanceMonths} 
                         isRental={true} 
+                        serviceCharge={prop.serviceChargeNum}
                       />
                     </div>
                     <div className="w-full flex justify-between items-center text-xs">
                       <span className="text-gray-500">Service Charge:</span>
-                      <span className="font-semibold text-navy-base">{prop.serviceCharge}</span>
+                      {prop.serviceChargeNum > 0 ? (
+                        <PriceDisplay rawPrice={prop.serviceChargeNum} currency={prop.currency} isInline={true} />
+                      ) : (
+                        <span className="font-semibold text-navy-base">Inclusive</span>
+                      )}
                     </div>
                     <div className="w-full flex justify-between items-center text-xs">
                       <span className="text-gray-500">Required Advance:</span>
