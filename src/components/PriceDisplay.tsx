@@ -32,9 +32,9 @@ export default function PriceDisplay({
   
   return (
     <div className="flex flex-col">
-      <div className="text-lg font-extrabold text-slate-900 dark:text-white">
+      <div className="text-lg font-extrabold text-inherit">
         {formattedPrice}
-        {priceSuffix && <span className="text-xs font-normal text-gray-500 dark:text-gray-300 ml-1">{priceSuffix}</span>}
+        {priceSuffix && <span className="text-xs font-normal opacity-70 ml-1">{priceSuffix}</span>}
       </div>
       {showUpfront && (
         <div className="text-[10px] sm:text-xs font-semibold text-accent-gold mt-1 bg-accent-gold/10 px-2 py-0.5 rounded w-fit italic border border-accent-gold/20">

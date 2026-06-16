@@ -56,7 +56,7 @@ export default function PropertyCard({
           <h3 className="text-base font-bold text-navy-base leading-tight line-clamp-1">
             {title}
           </h3>
-          <div className="ml-3">
+          <div className="ml-3 text-navy-base">
             <PriceDisplay rawPrice={rawPrice} currency={currency} priceSuffix={priceSuffix} isRental={true} />
           </div>
         </div>

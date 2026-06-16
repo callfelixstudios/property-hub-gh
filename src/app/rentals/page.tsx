@@ -179,7 +179,7 @@ export default async function RentalsPage(props: { searchParams: Promise<{ [key:
 
                   {/* Financial Transparency Box */}
                   <div className="mt-auto bg-surface-primary p-3 rounded-sm border border-gray-100 flex flex-wrap gap-x-4 gap-y-2 mb-4">
-                    <div className="w-full flex items-end justify-between">
+                    <div className="w-full flex items-end justify-between text-navy-base">
                       <span className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Rent</span>
                       <PriceDisplay 
                         rawPrice={prop.rawPrice} 
@@ -190,7 +190,7 @@ export default async function RentalsPage(props: { searchParams: Promise<{ [key:
                         serviceCharge={prop.serviceChargeNum}
                       />
                     </div>
-                    <div className="w-full flex justify-between items-center text-xs">
+                    <div className="w-full flex justify-between items-center text-xs text-navy-base">
                       <span className="text-gray-500">Service Charge:</span>
                       {prop.serviceChargeNum > 0 ? (
                         <PriceDisplay rawPrice={prop.serviceChargeNum} currency={prop.currency} isInline={true} />
