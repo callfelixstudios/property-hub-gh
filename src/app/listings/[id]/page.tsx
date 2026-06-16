@@ -494,7 +494,7 @@ export default async function ListingDetailPage({
                     </div>
                     <h3 className="text-base font-bold text-slate-900 mb-2">Want to contact this lister?</h3>
                     <p className="text-sm text-slate-500 mb-6 leading-relaxed">
-                      Sign in or create a free account to view the agent&apos;s name, verified phone number, and unlock direct WhatsApp routing.
+                      Sign in or create a free account to view the agent&apos;s name, phone number, and message them directly on WhatsApp.
                     </p>
                     <Link href="/login" className="bg-navy-base hover:bg-navy-light text-white font-bold py-2.5 px-6 rounded-lg transition-colors w-full">
                       Sign In to View Contact
