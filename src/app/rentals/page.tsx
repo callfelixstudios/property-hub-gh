@@ -20,7 +20,7 @@ interface Listing {
   rentAdvanceMonths: number;
   priceSuffix?: string;
   serviceChargeNum: number;
-  advance?: string;
+  computedUpfront: number;
   badge?: string;
   category?: string;
   isVerified?: boolean;
@@ -100,7 +100,7 @@ async function fetchRentalListings(searchParams: { [key: string]: string | strin
       rentAdvanceMonths: row.rent_advance_months || 1,
       priceSuffix: '/mo',
       serviceChargeNum: Number(row.service_charge || 0),
-      advance: 'Flexible',
+      computedUpfront: (row.rent_advance_months || 0) > 0 ? Number(row.base_rent || 0) * (row.rent_advance_months || 1) : Number(row.base_rent || 0),
       badge: row.safemove_active ? 'safemove' : undefined,
       category: row.category,
       isVerified: row.is_verified || false,
@@ -208,7 +208,9 @@ export default async function RentalsPage(props: { searchParams: Promise<{ [key:
                     </div>
                     <div className="w-full flex justify-between items-center text-xs">
                       <span className="text-gray-500">Required Advance:</span>
-                      <span className="font-semibold text-navy-base">{prop.advance}</span>
+                      <span className="font-semibold text-navy-base">
+                        <PriceDisplay rawPrice={prop.computedUpfront} currency={prop.currency} isInline={true} />
+                      </span>
                     </div>
                   </div>
 
