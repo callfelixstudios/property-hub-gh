@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import EditListingModal from '@/components/listings/EditListingModal';
+import { Heart } from 'lucide-react';
 
 interface Listing {
   id: string;
@@ -48,12 +49,16 @@ export default function DashboardTabs({
   initialListings,
   initialProfile,
   initialSafemoveTransactions = [],
-  userId
+  userId,
+  activeTabOverride,
+  children
 }: {
-  initialListings: Listing[];
-  initialProfile: Profile;
+  initialListings?: Listing[];
+  initialProfile?: Profile;
   initialSafemoveTransactions?: SafemoveTransaction[];
   userId: string;
+  activeTabOverride?: string;
+  children?: React.ReactNode;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -67,9 +72,9 @@ export default function DashboardTabs({
     }
   }, [tabParam]);
 
-  const [listings, setListings] = useState<Listing[]>(initialListings);
-  const [profile, setProfile] = useState<Profile>(initialProfile);
-  const [whatsappInput, setWhatsappInput] = useState(() => extractPhoneFromWaLink(initialProfile.whatsapp_link));
+  const [listings, setListings] = useState<Listing[]>(initialListings || []);
+  const [profile, setProfile] = useState<Profile>(initialProfile || {});
+  const [whatsappInput, setWhatsappInput] = useState(() => extractPhoneFromWaLink(initialProfile?.whatsapp_link));
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [profileMessage, setProfileMessage] = useState('');
 
@@ -171,42 +176,58 @@ export default function DashboardTabs({
   };
 
   const tabs = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'listings', label: 'My Listings' },
-    { id: 'archived', label: 'Archived Listings' },
-    { id: 'safemove', label: 'SafeMove Tracker' },
-    { id: 'profile', label: 'Profile Settings' },
-  ] as const;
+    { id: 'overview', label: 'Overview', path: '/dashboard?tab=overview' },
+    { id: 'listings', label: 'My Listings', path: '/dashboard?tab=listings' },
+    { id: 'archived', label: 'Archived Listings', path: '/dashboard?tab=archived' },
+    { id: 'safemove', label: 'SafeMove Tracker', path: '/dashboard?tab=safemove' },
+    { id: 'saved', label: 'Saved Listings', path: '/dashboard/saved', icon: <Heart className="w-4 h-4 mr-2 inline-block opacity-70" /> },
+    { id: 'profile', label: 'Profile Settings', path: '/dashboard?tab=profile' },
+  ];
 
   return (
     <div className="flex flex-col md:flex-row gap-8">
       {/* Left Navigation Rail */}
       <aside className="w-full md:w-64 flex-shrink-0">
         <nav className="flex md:flex-col gap-2 overflow-x-auto pb-4 md:pb-0 hide-scrollbar">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => {
-                setActiveTab(tab.id);
-                router.push(`/dashboard?tab=${tab.id}`, { scroll: false });
-              }}
-              className={`text-left px-4 py-3 rounded-md font-medium whitespace-nowrap transition-colors ${
-                activeTab === tab.id
-                  ? 'bg-navy-base text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+          {tabs.map((tab) => {
+            const isActive = (activeTabOverride || activeTab) === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  if (tab.path) {
+                    router.push(tab.path, { scroll: false });
+                  } else {
+                    setActiveTab(tab.id as any);
+                    router.push(`/dashboard?tab=${tab.id}`, { scroll: false });
+                  }
+                }}
+                className={`flex items-center text-left px-4 py-3 rounded-md font-medium whitespace-nowrap transition-colors ${
+                  isActive
+                    ? 'bg-navy-base text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                {tab.icon && (
+                  <span className={`flex items-center justify-center ${isActive ? 'text-red-400' : 'text-gray-400'}`}>
+                    {tab.icon}
+                  </span>
+                )}
+                {tab.label}
+              </button>
+            );
+          })}
         </nav>
       </aside>
 
       {/* Main Content Area */}
       <main className="flex-1 bg-white rounded-lg shadow-sm border border-gray-100 p-6 md:p-8">
         
-        {/* OVERVIEW TAB */}
-        {activeTab === 'overview' && (
+        {/* EXTERNAL INJECTED CONTENT */}
+        {activeTabOverride ? children : (
+          <>
+            {/* OVERVIEW TAB */}
+            {activeTab === 'overview' && (
           <div>
             <h2 className="text-2xl font-bold text-navy-base mb-6">Overview</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
@@ -462,6 +483,8 @@ export default function DashboardTabs({
               </div>
             </form>
           </div>
+        )}
+          </>
         )}
       </main>
 
