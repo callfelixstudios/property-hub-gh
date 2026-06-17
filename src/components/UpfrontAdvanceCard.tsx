@@ -18,8 +18,9 @@ export default function UpfrontAdvanceCard({
   currency = 'GHS' 
 }: UpfrontAdvanceCardProps) {
   const { formatPrice } = useCurrency();
-  const totalUpfront = formatPrice((rawPrice + serviceCharge) * rentAdvanceMonths, currency);
-
+  const totalAdvance = rawPrice * rentAdvanceMonths;
+  const initialPayment = totalAdvance + serviceCharge;
+  const formattedUpfront = formatPrice(initialPayment, currency);
   return (
     <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-center flex flex-col items-center gap-1.5 h-full">
       <span className="text-navy-base">
@@ -29,7 +30,7 @@ export default function UpfrontAdvanceCard({
       </span>
       <span className="text-sm font-extrabold text-slate-900 leading-snug">{advancePeriod}</span>
       <span className="text-[10px] sm:text-xs font-semibold text-accent-gold mt-1 bg-accent-gold/10 px-2 py-0.5 rounded w-fit italic border border-accent-gold/20">
-        Upfront: {totalUpfront}
+        Total Initial Payment: {formattedUpfront}
       </span>
       <span className="text-xs text-slate-500 font-medium mt-1">Required Advance</span>
     </div>
