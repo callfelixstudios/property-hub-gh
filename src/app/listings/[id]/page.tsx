@@ -315,7 +315,6 @@ export default async function ListingDetailPage({
                       advancePeriod={row.advance_period}
                       rentAdvanceMonths={row.rent_advance_months || 1}
                       rawPrice={row.base_rent || 0}
-                      serviceCharge={row.service_charge || 0}
                       currency={row.currency || 'GHS'}
                     />
                   )}
