@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
 import { useCurrency } from '@/context/CurrencyContext';
+import { Heart } from "lucide-react";
 
 export default function NavigationHeader() {
   const supabase = createClient();
@@ -150,6 +151,13 @@ export default function NavigationHeader() {
                       My Listings
                     </Link>
                     <Link
+                      href="/dashboard/saved"
+                      className="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-navy-base font-medium transition-colors"
+                    >
+                      <Heart className="w-4 h-4 mr-2 text-red-500" />
+                      Saved
+                    </Link>
+                    <Link
                       href="/dashboard?tab=safemove"
                       className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-navy-base font-medium transition-colors"
                     >
@@ -266,6 +274,9 @@ export default function NavigationHeader() {
                 </Link>
                 <Link href="/dashboard?tab=listings" className={`block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-navy-base hover:bg-slate-100`}>
                   My Listings
+                </Link>
+                <Link href="/dashboard/saved" className={`flex items-center px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-navy-base hover:bg-slate-100`}>
+                  <Heart className="w-4 h-4 mr-2 text-red-500" /> Saved
                 </Link>
                 <Link href="/dashboard?tab=safemove" className={`block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-navy-base hover:bg-slate-100`}>
                   SafeMove Tracker

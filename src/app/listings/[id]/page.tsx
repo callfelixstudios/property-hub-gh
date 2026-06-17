@@ -6,6 +6,7 @@ import VerifiedBadge from "@/components/VerifiedBadge";
 import ReportModal from "@/components/ReportModal";
 import PriceDisplay from "@/components/PriceDisplay";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import SaveListingButton from "@/components/SaveListingButton";
 
 interface ListingRow {
   id: string;
@@ -143,6 +144,19 @@ export default async function ListingDetailPage({
     .eq('id', id)
     .single();
 
+  let initialIsSaved = false;
+  if (user) {
+    const { data: savedListing } = await supabase
+      .from('saved_listings')
+      .select('id')
+      .match({ user_id: user.id, listing_id: id })
+      .maybeSingle();
+    
+    if (savedListing) {
+      initialIsSaved = true;
+    }
+  }
+
   if (error || !listing) {
     return (
       <div className="w-full min-h-screen bg-surface-primary flex items-center justify-center px-4 pt-32">
@@ -231,10 +245,15 @@ export default async function ListingDetailPage({
                   </span>
                 )}
               </div>
-              <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-3 leading-tight flex items-center gap-3 flex-wrap">
-                {displayTitle}
-                {row.is_verified && <VerifiedBadge />}
-              </h1>
+              <div className="flex items-start justify-between gap-4 mb-3">
+                <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 leading-tight flex items-center gap-3 flex-wrap">
+                  {displayTitle}
+                  {row.is_verified && <VerifiedBadge />}
+                </h1>
+                <div className="flex-shrink-0 mt-1">
+                  <SaveListingButton listingId={id} initialIsSaved={initialIsSaved} />
+                </div>
+              </div>
               {/* Location Ribbon and Views Counter */}
               <div className="flex items-center gap-3 flex-wrap">
                 <div className="inline-flex items-center gap-1.5 text-slate-500 bg-slate-100 rounded-full px-3 py-1.5">
