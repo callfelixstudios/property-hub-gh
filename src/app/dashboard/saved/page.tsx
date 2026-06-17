@@ -108,7 +108,7 @@ export default async function SavedListingsPage() {
                 return (
                   <Link href={`/listings/${listing.id}`} key={record.id} className="block">
                     <PropertyCard
-                      imageSrc={listing.image_url || "/property-placeholder.jpg"}
+                      imageSrc={listing.media_urls?.[0] || listing.image_url || "/property-placeholder.jpg"}
                       title={listing.title || `${formatCategory(listing.category)} in ${listing.neighborhood || 'Ghana'}`}
                       rawPrice={price || 0}
                       currency={listing.currency || "GHS"}
