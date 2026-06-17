@@ -7,8 +7,11 @@ const PropertyVicinityMap = dynamic(() => import('./PropertyVicinityMap'), { ssr
 interface MapLoaderProps {
   lat?: number | null;
   lng?: number | null;
+  neighborhood?: string;
+  region?: string;
+  country?: string;
 }
 
-export default function MapLoader({ lat, lng }: MapLoaderProps) {
-  return <PropertyVicinityMap lat={lat} lng={lng} />;
+export default function MapLoader({ lat, lng, neighborhood, region, country }: MapLoaderProps) {
+  return <PropertyVicinityMap lat={lat} lng={lng} neighborhood={neighborhood} region={region} country={country} />;
 }
