@@ -24,7 +24,7 @@ interface ListingRow {
   safemove_active?: boolean;
   media_urls?: string[];
   status?: string;
-  views?: number;
+  views_count: number;
   video_url?: string | null;
   currency?: string;
   rent_advance_months?: number;
@@ -172,12 +172,8 @@ export default async function ListingDetailPage({
 
   const profile = (poster || {}) as PosterProfile;
 
-  // Increment view count (fire-and-forget)
-  supabase
-    .from('listings')
-    .update({ views: (row.views || 0) + 1 })
-    .eq('id', id)
-    .then(() => {});
+  // Increment view count via atomic RPC (fire-and-forget)
+  supabase.rpc("increment_listing_views", { row_id: id }).then(() => {});
 
   // Build display values
   const displayTitle = `${formatCategory(row.category)} in ${row.neighborhood || formatRegion(row.region) || 'Ghana'}`;
@@ -239,10 +235,20 @@ export default async function ListingDetailPage({
                 {displayTitle}
                 {row.is_verified && <VerifiedBadge />}
               </h1>
-              {/* Location Ribbon with pin icon */}
-              <div className="inline-flex items-center gap-1.5 text-slate-500 bg-slate-100 rounded-full px-3 py-1.5">
-                <IconPin />
-                <span className="text-sm font-medium">{displayLocation || 'Ghana'}</span>
+              {/* Location Ribbon and Views Counter */}
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="inline-flex items-center gap-1.5 text-slate-500 bg-slate-100 rounded-full px-3 py-1.5">
+                  <IconPin />
+                  <span className="text-sm font-medium">{displayLocation || 'Ghana'}</span>
+                </div>
+                
+                <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 bg-slate-100 py-1.5 px-3 rounded-full shadow-sm">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-slate-500">
+                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                  {row.views_count} views
+                </div>
               </div>
             </div>
 

@@ -15,7 +15,7 @@ interface Listing {
   service_charge?: number;
   safemove_active?: boolean;
   safemove_enabled?: boolean;
-  views?: number;
+  views_count?: number;
   description?: string;
   category?: string;
   region?: string;
