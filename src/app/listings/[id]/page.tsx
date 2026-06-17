@@ -7,7 +7,8 @@ import ReportModal from "@/components/ReportModal";
 import PriceDisplay from "@/components/PriceDisplay";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import SaveListingButton from "@/components/SaveListingButton";
-
+import UpfrontAdvanceCard from "@/components/UpfrontAdvanceCard";
+import MapLoader from "@/components/MapLoader";
 interface ListingRow {
   id: string;
   poster_id: string;
@@ -45,6 +46,8 @@ interface ListingRow {
   parking_capacity?: number;
   poster_role?: 'owner' | 'agent';
   is_verified?: boolean;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface PosterProfile {
@@ -308,11 +311,13 @@ export default async function ListingDetailPage({
 
                   {/* Advance Period (rent only) */}
                   {isRent && row.advance_period && (
-                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-center flex flex-col items-center gap-1.5">
-                      <span className="text-navy-base"><IconClock /></span>
-                      <span className="text-sm font-extrabold text-slate-900 leading-snug">{row.advance_period}</span>
-                      <span className="text-xs text-slate-500 font-medium">Advance</span>
-                    </div>
+                    <UpfrontAdvanceCard
+                      advancePeriod={row.advance_period}
+                      rentAdvanceMonths={row.rent_advance_months || 1}
+                      rawPrice={row.base_rent || 0}
+                      serviceCharge={row.service_charge || 0}
+                      currency={row.currency || 'GHS'}
+                    />
                   )}
 
                   {/* Parking (commercial) */}
@@ -441,7 +446,7 @@ export default async function ListingDetailPage({
                         </svg>
                       </div>
                       <div>
-                        <p className="text-[10px] text-gray-400 uppercase tracking-wide">Ghana Post GPS</p>
+                        <p className="text-[10px] text-gray-400 uppercase tracking-wide">Nearest Landmark or Location Description</p>
                         <p className="text-sm font-bold text-navy-base">{row.gps_address}</p>
                       </div>
                     </div>
@@ -464,6 +469,13 @@ export default async function ListingDetailPage({
                 </div>
               </div>
             </div>
+
+            {/* Vicinity Map */}
+            <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6">
+              <h2 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-2">Vicinity Map</h2>
+              <p className="text-xs text-slate-500 mb-4">Exact location provided upon scheduling a viewing.</p>
+              <MapLoader lat={row.latitude} lng={row.longitude} />
+            </div>
           </div>
 
           {/* ──────────────────── RIGHT SIDEBAR (1/3) ────────────────── */}
@@ -475,7 +487,7 @@ export default async function ListingDetailPage({
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">
                   {isRent ? 'Monthly Rent' : 'Asking Price'}
                 </p>
-                <div className="mb-4 text-2xl text-slate-900">
+                <div className="mb-4 flex items-baseline gap-2 flex-wrap text-2xl text-slate-900">
                   <PriceDisplay
                     rawPrice={row.base_rent || row.outright_price || 0}
                     currency={row.currency || 'GHS'}
@@ -484,6 +496,11 @@ export default async function ListingDetailPage({
                     serviceCharge={row.service_charge || 0}
                     isRental={isRent}
                   />
+                  {isRent && row.advance_period && (
+                    <span className="text-sm font-medium text-slate-500 opacity-80">
+                      ({row.advance_period} Advance)
+                    </span>
+                  )}
                 </div>
 
                 {/* Cost breakdown */}
