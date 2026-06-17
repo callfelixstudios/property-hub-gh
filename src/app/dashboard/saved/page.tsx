@@ -23,39 +23,49 @@ export default async function SavedListingsPage() {
     );
   }
 
-  // Use the inner join to fetch only saved listings and their corresponding public.listings data
-  const { data: savedRecords, error } = await supabase
+  // Fetch saved listing IDs first to avoid relationship syntax issues
+  const { data: savedRecords, error: savedError } = await supabase
     .from("saved_listings")
-    .select(`
-      id,
-      listing_id,
-      listings!inner (
-        id,
-        title,
-        base_rent,
-        outright_price,
-        currency,
-        rent_advance_months,
-        transaction_type,
-        category,
-        neighborhood,
-        region,
-        bedrooms,
-        bathrooms,
-        image_url,
-        created_at,
-        views_count,
-        safemove_active
-      )
-    `)
+    .select("id, listing_id, created_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
-  const hasListings = savedRecords && savedRecords.length > 0;
+  if (savedError) {
+    console.error("Error fetching saved listings:", savedError);
+  }
+
+  let finalListings: any[] = [];
+  if (savedRecords && savedRecords.length > 0) {
+    const listingIds = savedRecords.map(r => r.listing_id);
+    
+    // Fetch the actual listings
+    const { data: listingsData, error: listingsError } = await supabase
+      .from("listings")
+      .select("*")
+      .in("id", listingIds);
+      
+    if (listingsError) {
+      console.error("Error fetching listings data:", listingsError);
+    }
+    
+    if (listingsData) {
+      // Map them together to preserve the saved_listings 'created_at' sort order
+      finalListings = savedRecords.map(record => {
+        const listing = listingsData.find(l => l.id === record.listing_id);
+        return {
+          id: record.id,
+          listing
+        };
+      }).filter(r => r.listing != null);
+    }
+  }
+
+  const hasListings = finalListings.length > 0;
 
   return (
     <DashboardTabs activeTabOverride="saved" userId={user.id}>
       <div>
+
         {/* Header Banner */}
         <div className="mb-8 flex items-center gap-4">
           <div className="w-12 h-12 bg-red-50 text-red-500 rounded-xl flex items-center justify-center">
@@ -83,9 +93,8 @@ export default async function SavedListingsPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {savedRecords.map((record: any) => {
-                const listing = record.listings;
-                if (!listing) return null;
+              {finalListings.map((record: any) => {
+                const listing = record.listing;
                 
                 const isRent = listing.transaction_type === 'rent';
                 const price = isRent ? listing.base_rent : listing.outright_price;
