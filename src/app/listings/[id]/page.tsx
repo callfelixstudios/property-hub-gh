@@ -261,7 +261,9 @@ export default async function ListingDetailPage({
               <div className="flex items-center gap-3 flex-wrap">
                 <div className="inline-flex items-center gap-1.5 text-slate-500 bg-slate-100 rounded-full px-3 py-1.5">
                   <IconPin />
-                  <span className="text-sm font-medium">{displayLocation || 'Ghana'}</span>
+                  <span className="text-sm font-medium">
+                    {[row.neighborhood, formatRegion(row.region)].filter(Boolean).join(', ')}{row.gps_address ? ` | Near ${row.gps_address}` : ''}
+                  </span>
                 </div>
                 
                 <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 bg-slate-100 py-1.5 px-3 rounded-full shadow-sm">
@@ -309,15 +311,7 @@ export default async function ListingDetailPage({
                     </div>
                   )}
 
-                  {/* Advance Period (rent only) */}
-                  {isRent && row.advance_period && (
-                    <UpfrontAdvanceCard
-                      advancePeriod={row.advance_period}
-                      rentAdvanceMonths={row.rent_advance_months || 1}
-                      rawPrice={row.base_rent || 0}
-                      currency={row.currency || 'GHS'}
-                    />
-                  )}
+                  {/* Advance Period removed to right sidebar */}
 
                   {/* Parking (commercial) */}
                   {isCommercial && row.parking_capacity != null && (
@@ -435,36 +429,7 @@ export default async function ListingDetailPage({
                     </div>
                   </div>
 
-                  {/* GPS Address */}
-                  {row.gps_address && (
-                    <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg sm:col-span-2">
-                      <div className="w-9 h-9 bg-navy-base/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <svg className="w-4.5 h-4.5 text-navy-base" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="text-[10px] text-gray-400 uppercase tracking-wide">Nearest Landmark or Location Description</p>
-                        <p className="text-sm font-bold text-navy-base">{row.gps_address}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Region */}
-                  {row.region && (
-                    <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
-                      <div className="w-9 h-9 bg-navy-base/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <svg className="w-4.5 h-4.5 text-navy-base" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="text-[10px] text-gray-400 uppercase tracking-wide">Region</p>
-                        <p className="text-sm font-bold text-navy-base">{formatRegion(row.region)}</p>
-                      </div>
-                    </div>
-                  )}
+                  {/* Region and Landmark removed to top hero */}
                 </div>
               </div>
             </div>
@@ -482,30 +447,38 @@ export default async function ListingDetailPage({
             <div className="lg:sticky lg:top-28 space-y-4">
 
               {/* ── Price Card (TOP of sidebar, prominent) ─────────────── */}
-              <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">
-                  {isRent ? 'Monthly Rent' : 'Asking Price'}
-                </p>
-                <div className="mb-4 flex items-baseline gap-2 flex-wrap text-2xl text-slate-900">
-                  <PriceDisplay
-                    rawPrice={row.base_rent || row.outright_price || 0}
-                    currency={row.currency || 'GHS'}
-                    priceSuffix={isRent ? '/ month' : '/ outright'}
-                    rentAdvanceMonths={row.rent_advance_months || 1}
-                    serviceCharge={row.service_charge || 0}
-                    isRental={isRent}
-                  />
-                  {isRent && row.advance_period && (
-                    <span className="text-sm font-medium text-slate-500 opacity-80">
-                      ({row.advance_period} Advance)
-                    </span>
+              <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div className="p-6">
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">
+                    {isRent ? 'Base Monthly Rent' : 'Asking Price'}
+                  </p>
+                  <div className="flex items-baseline gap-2 flex-wrap text-2xl text-slate-900 font-extrabold mb-1">
+                    <PriceDisplay
+                      rawPrice={row.base_rent || row.outright_price || 0}
+                      currency={row.currency || 'GHS'}
+                      priceSuffix={isRent ? '/ mo' : ''}
+                      rentAdvanceMonths={1}
+                      serviceCharge={0}
+                      isRental={isRent}
+                    />
+                  </div>
+                  
+                  {isRent && row.service_charge != null && row.service_charge > 0 && (
+                    <div className="flex justify-between items-center text-sm border-t border-slate-100 pt-3 mt-3">
+                      <span className="text-slate-500">Service Charge / mo</span>
+                      <span className="font-semibold text-slate-700">
+                        <PriceDisplay
+                          rawPrice={row.service_charge}
+                          currency={row.currency || 'GHS'}
+                          isInline={true}
+                        />
+                      </span>
+                    </div>
                   )}
-                </div>
-
-                {/* Cost breakdown */}
-                <div className="space-y-2 border-t border-slate-100 pt-4">
+                  
+                  {/* Cost breakdown */}
                   {!isRent && row.legal_status && (
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center mt-4 border-t border-slate-100 pt-3">
                       <span className="text-sm text-slate-500">Legal Status</span>
                       <span className="text-sm font-bold text-slate-800">
                         {row.legal_status.charAt(0).toUpperCase() + row.legal_status.slice(1)}
@@ -513,11 +486,30 @@ export default async function ListingDetailPage({
                     </div>
                   )}
                 </div>
-                <p className="text-xs text-slate-400 text-center mt-4">
+                
+                {isRent && row.rent_advance_months != null && row.rent_advance_months > 0 && (
+                  <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 flex flex-col gap-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-semibold text-slate-700">Total Upfront Required</span>
+                      <span className="text-lg font-extrabold text-navy-base">
+                        <PriceDisplay
+                          rawPrice={(row.base_rent || 0) * row.rent_advance_months}
+                          currency={row.currency || 'GHS'}
+                          isInline={true}
+                        />
+                      </span>
+                    </div>
+                    <span className="text-xs text-slate-500">
+                      Based on {row.advance_period || `${row.rent_advance_months} months`} advance
+                    </span>
+                  </div>
+                )}
+                
+                <div className="px-6 pb-6 pt-4 text-xs text-slate-400 text-center border-t border-slate-100">
                   Posted {row.created_at
                     ? new Date(row.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
                     : 'recently'}
-                </p>
+                </div>
               </div>
 
               {/* ── Locked Agent Card / Agent Card Conditional ───────────── */}
