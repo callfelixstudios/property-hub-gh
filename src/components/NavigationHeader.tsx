@@ -41,7 +41,7 @@ export default function NavigationHeader() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const isSolidHeader = isScrolled || pathname === '/login' || pathname === '/register' || pathname === '/post-space' || pathname === '/safemove' || pathname === '/dashboard' || pathname.startsWith('/listings/');
+  const isSolidHeader = isScrolled || pathname === '/login' || pathname === '/register' || pathname === '/post-space' || pathname === '/safemove' || pathname.startsWith('/dashboard') || pathname.startsWith('/listings/');
 
   return (
     <header
