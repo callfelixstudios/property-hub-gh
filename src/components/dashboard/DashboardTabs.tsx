@@ -131,6 +131,26 @@ export default function DashboardTabs({
     router.refresh();
   };
 
+  const handleStatusToggle = async (listingId: string, currentStatus: string, transactionType: string) => {
+    const newStatus = currentStatus === 'active' 
+      ? (transactionType === 'rent' ? 'rented' : 'sold') 
+      : 'active';
+
+    const { error } = await supabase
+      .from('listings')
+      .update({ status: newStatus })
+      .eq('id', listingId)
+      .eq('poster_id', userId);
+
+    if (error) {
+      console.error('Database update failed:', error.message, error);
+      alert(`Failed to update status: ${error.message}`);
+      return;
+    }
+    setListings(prev => prev.map(l => l.id === listingId ? { ...l, status: newStatus } : l));
+    router.refresh();
+  };
+
   const openEditModal = (listing: Listing) => {
     setEditingListing(listing);
   };
@@ -251,11 +271,11 @@ export default function DashboardTabs({
         {activeTab === 'listings' && (
           <div>
             <h2 className="text-2xl font-bold text-navy-base mb-6">My Listings</h2>
-            {listings.filter(l => l.status === 'active').length === 0 ? (
+            {listings.filter(l => l.status !== 'archived').length === 0 ? (
               <p className="text-gray-500">You don't have any active listings yet.</p>
             ) : (
               <div className="space-y-4">
-                {listings.filter(l => l.status === 'active').map((listing) => (
+                {listings.filter(l => l.status !== 'archived').map((listing) => (
                   <div key={listing.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-md border border-gray-200 hover:border-gray-300 transition-colors bg-slate-50">
                     <div className="mb-4 sm:mb-0">
                       <div className="flex items-center gap-3 mb-1">
@@ -272,6 +292,18 @@ export default function DashboardTabs({
                       </p>
                     </div>
                     <div className="flex gap-2 w-full sm:w-auto mt-4 sm:mt-0">
+                      <button
+                        onClick={() => handleStatusToggle(listing.id, listing.status || 'active', listing.transaction_type)}
+                        className={`text-sm font-bold py-2 px-4 rounded-md transition-colors flex-1 sm:flex-none border ${
+                          listing.status === 'active'
+                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
+                            : 'bg-white hover:bg-emerald-50 text-emerald-700 border-emerald-600'
+                        }`}
+                      >
+                        {listing.status === 'active' 
+                          ? (listing.transaction_type === 'rent' ? 'Mark as Rented' : 'Mark as Sold') 
+                          : 'Relist Property'}
+                      </button>
                       <button
                         onClick={() => openEditModal(listing)}
                         className="bg-slate-700 hover:bg-slate-800 text-white text-sm font-bold py-2 px-4 rounded-md transition-colors flex-1 sm:flex-none"
