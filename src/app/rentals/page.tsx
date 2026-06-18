@@ -157,18 +157,20 @@ export default async function RentalsPage(props: { searchParams: Promise<{ [key:
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {rentalListings.map((prop) => (
-              <div key={prop.id} className="bg-white rounded-md overflow-hidden border border-gray-100 shadow-ambient hover:shadow-lg transition-shadow duration-300 flex flex-col">
+              <Link href={`/listings/${prop.id}`} key={prop.id} className="block group cursor-pointer bg-white rounded-2xl border border-gray-100 shadow-ambient hover:shadow-lg transition-shadow duration-300 flex flex-col relative z-0">
                 {/* 3:2 Image */}
-                <div className="relative w-full pt-[66.66%]">
-                  <Image src={prop.image_src ?? '/placeholder.png'} alt={prop.title} fill className="object-cover" />
+                <div className="relative">
+                  <div className="relative w-full pt-[66.66%] rounded-t-2xl overflow-hidden">
+                    <Image src={prop.image_src ?? '/placeholder.png'} alt={prop.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                  </div>
                   {prop.badge === 'safemove' && (
-                    <div className="absolute top-3 left-3 bg-accent-emerald text-white px-3 py-1 text-xs font-bold rounded-full flex items-center gap-1.5 shadow-sm">
+                    <div className="absolute top-3 left-3 bg-accent-emerald text-white px-3 py-1 text-xs font-bold rounded-full flex items-center gap-1.5 shadow-sm z-10">
                       <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944zM14.5 8.5a.75.75 0 00-1.06-1.06l-3.94 3.94-1.44-1.44a.75.75 0 00-1.06 1.06l2 2a.75.75 0 001.06 0l4.44-4.44z" clipRule="evenodd"/></svg>
                       SafeMove
                     </div>
                   )}
                   {prop.isVerified && (
-                    <div className="absolute top-3 right-3">
+                    <div className="absolute top-3 right-3 z-10">
                       <VerifiedBadge />
                     </div>
                   )}
@@ -230,11 +232,11 @@ export default async function RentalsPage(props: { searchParams: Promise<{ [key:
                   </div>
 
                   {/* Primary CTA */}
-                  <Link href={`/listings/${prop.id}`} className="w-full text-center py-2.5 bg-navy-base hover:bg-navy-light text-white font-bold text-sm rounded-sm transition-colors shadow-sm">
+                  <div className="w-full text-center py-2.5 bg-navy-base group-hover:bg-navy-light text-white font-bold text-sm rounded-sm transition-colors shadow-sm">
                     View Details
-                  </Link>
+                  </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </main>
