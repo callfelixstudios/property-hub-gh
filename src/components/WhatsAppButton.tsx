@@ -41,15 +41,14 @@ export default function WhatsAppButton({
 
   // Compute pricing text
   const formattedPrice = formatPrice(rawPrice, currency);
-  const showUpfront = isRental && rentAdvanceMonths > 1;
-  const upfrontPrice = showUpfront ? formatPrice((rawPrice + serviceCharge) * rentAdvanceMonths, currency) : null;
+  const totalUpfront = formatPrice((rawPrice + serviceCharge) * Math.max(1, rentAdvanceMonths), currency);
   
-  const pricingText = showUpfront 
-    ? `${formattedPrice} (Total Upfront: ${upfrontPrice} for ${rentAdvanceMonths} mos)`
-    : formattedPrice;
+  const pricingText = isRental 
+    ? `I see the rent is ${formattedPrice} / mo with a total upfront required of ${totalUpfront}.`
+    : `I see it is listed for ${formattedPrice}.`;
 
   // Build message
-  const waMessage = `Hello! I am browsing Property Hub GH and I am highly interested in your listing: ${displayTitle}. My selected pricing is ${pricingText}. Is this property open for viewings? Here is the link: ${currentUrl}`;
+  const waMessage = `Hello! I am browsing Property Hub GH and I am highly interested in your listing: ${displayTitle}. ${pricingText} Is this property open for viewings? Here is the link: ${currentUrl}`;
   const whatsappUrl = `${profileWhatsAppLink}?text=${encodeURIComponent(waMessage)}`;
 
   return (
