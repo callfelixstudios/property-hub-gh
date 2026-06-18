@@ -48,7 +48,7 @@ export default async function RequestsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans pt-32">
       <NavigationHeader />
 
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 py-8">
@@ -57,13 +57,6 @@ export default async function RequestsPage() {
             <h1 className="text-3xl font-bold text-gray-900">Seeker Notice Board</h1>
             <p className="text-gray-600 mt-2">Discover verified seekers actively looking for properties to rent or buy.</p>
           </div>
-          <Link 
-            href="/request-space"
-            className="px-6 py-3 bg-emerald-600 text-white font-medium rounded-xl hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-2"
-          >
-            <Search className="w-5 h-5" />
-            Post a Request
-          </Link>
         </div>
 
         {requests && requests.length > 0 ? (

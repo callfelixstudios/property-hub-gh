@@ -67,7 +67,7 @@ export default function RequestSpacePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans text-gray-900 flex flex-col">
+    <div className="min-h-screen bg-gray-50 font-sans text-gray-900 flex flex-col pt-32">
       <NavigationHeader />
       
       <main className="flex-1 max-w-3xl w-full mx-auto px-4 py-12">
