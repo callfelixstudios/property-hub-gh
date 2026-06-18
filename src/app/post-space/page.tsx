@@ -50,14 +50,12 @@ export default function PostSpaceWizard() {
   const isResidential = !isLand && !isCommercial;
 
   const RESIDENTIAL_TYPES = [
-    'Apartment', 'House', 'Townhouse / Terrace', 'Single Room Self-Contain',
-    'Chamber and Hall', 'Boys Quarters (BQ)', 'Studio Apartment', 'Penthouse',
-    'Villa / Mansion', 'Bungalow', 'Shared Apartment', 'Block of Flats',
-    'Farm House', 'Plot of Land'
+    'Apartment', 'House', 'Penthouse', 'Townhouse', 'Room & Parlor',
+    'Plot of Land', 'Hostel'
   ];
   const COMMERCIAL_TYPES = [
-    'Business Center', 'Hotel', 'Open Space', 'Shop', 'Warehouse',
-    'Hostel', 'Office Space', 'Farm', 'Commercial Property / Office'
+    'Business Center', 'Hotel', 'Office Space', 'Shop', 'Warehouse',
+    'Open Space', 'Farm', 'Plot of Land', 'Hostel'
   ];
 
   const AMENITIES_LIST = isResidential 

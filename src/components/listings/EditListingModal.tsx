@@ -334,30 +334,23 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
                       <>
                         <option value="Apartment">Apartment</option>
                         <option value="House">House</option>
-                        <option value="Townhouse / Terrace">Townhouse / Terrace</option>
-                        <option value="Single Room Self-Contain">Single Room Self-Contain</option>
-                        <option value="Chamber and Hall">Chamber and Hall</option>
-                        <option value="Boys Quarters (BQ)">Boys Quarters (BQ)</option>
-                        <option value="Studio Apartment">Studio Apartment</option>
                         <option value="Penthouse">Penthouse</option>
-                        <option value="Villa / Mansion">Villa / Mansion</option>
-                        <option value="Bungalow">Bungalow</option>
-                        <option value="Shared Apartment">Shared Apartment</option>
-                        <option value="Block of Flats">Block of Flats</option>
-                        <option value="Farm House">Farm House</option>
+                        <option value="Townhouse">Townhouse</option>
+                        <option value="Room & Parlor">Room & Parlor</option>
                         <option value="Plot of Land">Plot of Land</option>
+                        <option value="Hostel">Hostel</option>
                       </>
                     ) : (
                       <>
                         <option value="Business Center">Business Center</option>
                         <option value="Hotel">Hotel</option>
-                        <option value="Open Space">Open Space</option>
+                        <option value="Office Space">Office Space</option>
                         <option value="Shop">Shop</option>
                         <option value="Warehouse">Warehouse</option>
-                        <option value="Hostel">Hostel</option>
-                        <option value="Office Space">Office Space</option>
+                        <option value="Open Space">Open Space</option>
                         <option value="Farm">Farm</option>
-                        <option value="Commercial Property / Office">Commercial Property / Office</option>
+                        <option value="Plot of Land">Plot of Land</option>
+                        <option value="Hostel">Hostel</option>
                       </>
                     )}
                   </select>
