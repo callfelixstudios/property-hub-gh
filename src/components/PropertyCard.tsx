@@ -1,6 +1,10 @@
 import Image from "next/image";
+import Link from "next/link";
+import PriceDisplay from "./PriceDisplay";
+import VerifiedBadge from "./VerifiedBadge";
 
 interface PropertyCardProps {
+  id?: string | number;
   imageSrc?: string;
   title?: string;
   rawPrice?: number;
@@ -15,10 +19,8 @@ interface PropertyCardProps {
   isVerified?: boolean;
 }
 
-import PriceDisplay from "./PriceDisplay";
-import VerifiedBadge from "./VerifiedBadge";
-
 export default function PropertyCard({
+  id = "1",
   imageSrc = "/property-1.png",
   title = "Modern Apartment",
   rawPrice = 4500,
@@ -33,9 +35,9 @@ export default function PropertyCard({
   isVerified = false,
 }: PropertyCardProps) {
   return (
-    <div className="bg-white rounded-md overflow-hidden border border-gray-100 shadow-ambient hover:shadow-lg transition-shadow duration-300 group flex flex-col">
+    <Link href={`/listings/${id}`} className="block group cursor-pointer bg-white rounded-2xl border border-gray-100 shadow-ambient hover:shadow-lg transition-shadow duration-300 flex flex-col relative z-0">
       {/* Image */}
-      <div className="relative w-full pt-[66.66%] overflow-hidden">
+      <div className="relative w-full pt-[66.66%] rounded-t-2xl overflow-hidden">
         <Image
           src={imageSrc}
           alt={title}
@@ -109,6 +111,6 @@ export default function PropertyCard({
           )}
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
