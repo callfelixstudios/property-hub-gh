@@ -4,6 +4,7 @@ import React, { useState, useRef } from "react";
 import Image from "next/image";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
+import imageCompression from 'browser-image-compression';
 
 interface Listing {
   id: string;
@@ -128,16 +129,45 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
   const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
   const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [videoUrl, setVideoUrl] = useState(listing.video_url || "");
 
-  const handleFilesSelected = (files: FileList | null) => {
+  const compressionOptions = {
+    maxSizeMB: 0.6,
+    maxWidthOrHeight: 1280,
+    useWebWorker: true,
+    fileType: 'image/webp' as const,
+  };
+
+  const handleFilesSelected = async (files: FileList | null) => {
     if (!files) return;
     const incoming = Array.from(files).filter(f => f.type.startsWith('image/'));
+    if (incoming.length === 0) return;
     const totalAllowed = 6 - editMediaUrls.length;
-    const combined = [...newImageFiles, ...incoming].slice(0, totalAllowed);
-    setNewImageFiles(combined);
-    setNewImagePreviews(combined.map(f => URL.createObjectURL(f)));
+
+    setIsCompressing(true);
+    try {
+      const compressed: File[] = [];
+      for (const file of incoming) {
+        try {
+          const result = await imageCompression(file, compressionOptions);
+          compressed.push(new File([result], file.name.replace(/\.[^.]+$/, '.webp'), { type: 'image/webp' }));
+        } catch {
+          try {
+            const fallback = await imageCompression(file, { ...compressionOptions, fileType: 'image/jpeg' as const });
+            compressed.push(new File([fallback], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }));
+          } catch {
+            compressed.push(file);
+          }
+        }
+      }
+      const combined = [...newImageFiles, ...compressed].slice(0, totalAllowed);
+      setNewImageFiles(combined);
+      setNewImagePreviews(combined.map(f => URL.createObjectURL(f)));
+    } finally {
+      setIsCompressing(false);
+    }
   };
 
   const removeExistingImage = (index: number) => {
@@ -149,6 +179,36 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
     const updatedFiles = newImageFiles.filter((_, i) => i !== index);
     setNewImageFiles(updatedFiles);
     setNewImagePreviews(updatedFiles.map(f => URL.createObjectURL(f)));
+  };
+
+  // Re-ordering helpers for existing images
+  const moveExistingLeft = (index: number) => {
+    if (index <= 0) return;
+    const arr = [...editMediaUrls];
+    [arr[index - 1], arr[index]] = [arr[index], arr[index - 1]];
+    setEditMediaUrls(arr);
+  };
+  const moveExistingRight = (index: number) => {
+    if (index >= editMediaUrls.length - 1) return;
+    const arr = [...editMediaUrls];
+    [arr[index], arr[index + 1]] = [arr[index + 1], arr[index]];
+    setEditMediaUrls(arr);
+  };
+
+  // Re-ordering helpers for new images
+  const moveNewLeft = (index: number) => {
+    if (index <= 0) return;
+    const nf = [...newImageFiles]; const np = [...newImagePreviews];
+    [nf[index - 1], nf[index]] = [nf[index], nf[index - 1]];
+    [np[index - 1], np[index]] = [np[index], np[index - 1]];
+    setNewImageFiles(nf); setNewImagePreviews(np);
+  };
+  const moveNewRight = (index: number) => {
+    if (index >= newImageFiles.length - 1) return;
+    const nf = [...newImageFiles]; const np = [...newImagePreviews];
+    [nf[index], nf[index + 1]] = [nf[index + 1], nf[index]];
+    [np[index], np[index + 1]] = [np[index + 1], np[index]];
+    setNewImageFiles(nf); setNewImagePreviews(np);
   };
 
   const nextStep = () => setStep((prev) => Math.min(prev + 1, 3) as 1 | 2 | 3);
@@ -629,16 +689,28 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
                 {/* Existing Images */}
                 {editMediaUrls.length > 0 && (
                   <div className="mb-4">
-                    <p className="text-xs font-medium text-gray-500 mb-2">Current Images (click ✕ to remove)</p>
+                    <p className="text-xs font-medium text-gray-500 mb-2">Current Images • First image = marketplace cover photo</p>
                     <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
                       {editMediaUrls.map((url, i) => (
-                        <div key={`existing-${i}`} className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200">
+                        <div key={`existing-${i}`} className={`relative group aspect-square rounded-lg overflow-hidden border-2 ${i === 0 ? 'border-accent-gold shadow-md' : 'border-gray-200'}`}>
                           <Image src={url} alt={`Image ${i + 1}`} fill className="object-cover" />
                           <button type="button" onClick={() => removeExistingImage(i)}
                             className="absolute top-1 right-1 w-6 h-6 bg-black/60 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                           </button>
-                          {i === 0 && (<span className="absolute bottom-1 left-1 bg-navy-base text-white text-[10px] font-bold px-1.5 py-0.5 rounded">Cover</span>)}
+                          {editMediaUrls.length > 1 && (
+                            <div className="absolute bottom-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                              {i > 0 && (
+                                <button type="button" onClick={() => moveExistingLeft(i)}
+                                  className="w-5 h-5 bg-black/60 hover:bg-navy-base text-white rounded flex items-center justify-center text-[10px] font-bold">←</button>
+                              )}
+                              {i < editMediaUrls.length - 1 && (
+                                <button type="button" onClick={() => moveExistingRight(i)}
+                                  className="w-5 h-5 bg-black/60 hover:bg-navy-base text-white rounded flex items-center justify-center text-[10px] font-bold">→</button>
+                              )}
+                            </div>
+                          )}
+                          {i === 0 && (<span className="absolute bottom-1 left-1 bg-accent-gold text-navy-base text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm">Cover Photo</span>)}
                         </div>
                       ))}
                     </div>
@@ -663,7 +735,13 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
                       </svg>
                     </div>
                     <p className="text-sm font-semibold text-navy-base">Add more images</p>
-                    <p className="text-xs text-gray-400">Drag & drop or click to browse • Up to 6 total • JPG, PNG, WebP</p>
+                    <p className="text-xs text-gray-400">Drag & drop or click to browse • Up to 6 total • Auto-compressed to WebP</p>
+                    {isCompressing && (
+                      <div className="mt-2 flex items-center gap-2 text-sm text-navy-base font-medium">
+                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                        Compressing images…
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -671,12 +749,24 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
                 {newImagePreviews.length > 0 && (
                   <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mt-3">
                     {newImagePreviews.map((src, i) => (
-                      <div key={`new-${i}`} className="relative group aspect-square rounded-lg overflow-hidden border border-emerald-200">
+                      <div key={`new-${i}`} className="relative group aspect-square rounded-lg overflow-hidden border-2 border-emerald-200">
                         <img src={src} alt={`New ${i + 1}`} className="w-full h-full object-cover" />
                         <button type="button" onClick={(e) => { e.stopPropagation(); removeNewImage(i); }}
                           className="absolute top-1 right-1 w-6 h-6 bg-black/60 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
+                        {newImagePreviews.length > 1 && (
+                          <div className="absolute bottom-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {i > 0 && (
+                              <button type="button" onClick={(e) => { e.stopPropagation(); moveNewLeft(i); }}
+                                className="w-5 h-5 bg-black/60 hover:bg-navy-base text-white rounded flex items-center justify-center text-[10px] font-bold">←</button>
+                            )}
+                            {i < newImagePreviews.length - 1 && (
+                              <button type="button" onClick={(e) => { e.stopPropagation(); moveNewRight(i); }}
+                                className="w-5 h-5 bg-black/60 hover:bg-navy-base text-white rounded flex items-center justify-center text-[10px] font-bold">→</button>
+                            )}
+                          </div>
+                        )}
                         <span className="absolute bottom-1 left-1 bg-emerald-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">New</span>
                       </div>
                     ))}

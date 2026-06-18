@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
+import imageCompression from 'browser-image-compression';
 
 export default function PostSpaceWizard() {
   const supabase = createClient();
@@ -107,25 +108,72 @@ export default function PostSpaceWizard() {
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [videoUrl, setVideoUrl] = useState("");
 
-  const handleFilesSelected = (files: FileList | null) => {
+  const compressionOptions = {
+    maxSizeMB: 0.6,
+    maxWidthOrHeight: 1280,
+    useWebWorker: true,
+    fileType: 'image/webp' as const,
+  };
+
+  const handleFilesSelected = async (files: FileList | null) => {
     if (!files) return;
-    const newFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
-    const combined = [...imageFiles, ...newFiles].slice(0, 6);
-    setImageFiles(combined);
-    // Generate previews
-    const previews = combined.map(f => URL.createObjectURL(f));
-    setImagePreviews(previews);
+    const incoming = Array.from(files).filter(f => f.type.startsWith('image/'));
+    if (incoming.length === 0) return;
+
+    setIsCompressing(true);
+    try {
+      const compressed: File[] = [];
+      for (const file of incoming) {
+        try {
+          const result = await imageCompression(file, compressionOptions);
+          compressed.push(new File([result], file.name.replace(/\.[^.]+$/, '.webp'), { type: 'image/webp' }));
+        } catch {
+          // Fallback: try jpeg if webp fails
+          try {
+            const fallback = await imageCompression(file, { ...compressionOptions, fileType: 'image/jpeg' as const });
+            compressed.push(new File([fallback], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }));
+          } catch {
+            compressed.push(file); // Use original if all compression fails
+          }
+        }
+      }
+      const combined = [...imageFiles, ...compressed].slice(0, 6);
+      setImageFiles(combined);
+      setImagePreviews(combined.map(f => URL.createObjectURL(f)));
+    } finally {
+      setIsCompressing(false);
+    }
   };
 
   const removeImage = (index: number) => {
     const updatedFiles = imageFiles.filter((_, i) => i !== index);
     setImageFiles(updatedFiles);
-    // Revoke old blob URL
     URL.revokeObjectURL(imagePreviews[index]);
     setImagePreviews(updatedFiles.map(f => URL.createObjectURL(f)));
+  };
+
+  const moveImageLeft = (index: number) => {
+    if (index <= 0) return;
+    const newFiles = [...imageFiles];
+    const newPreviews = [...imagePreviews];
+    [newFiles[index - 1], newFiles[index]] = [newFiles[index], newFiles[index - 1]];
+    [newPreviews[index - 1], newPreviews[index]] = [newPreviews[index], newPreviews[index - 1]];
+    setImageFiles(newFiles);
+    setImagePreviews(newPreviews);
+  };
+
+  const moveImageRight = (index: number) => {
+    if (index >= imageFiles.length - 1) return;
+    const newFiles = [...imageFiles];
+    const newPreviews = [...imagePreviews];
+    [newFiles[index], newFiles[index + 1]] = [newFiles[index + 1], newFiles[index]];
+    [newPreviews[index], newPreviews[index + 1]] = [newPreviews[index + 1], newPreviews[index]];
+    setImageFiles(newFiles);
+    setImagePreviews(newPreviews);
   };
 
   const nextStep = () => setStep((prev) => Math.min(prev + 1, 3) as 1 | 2 | 3);
@@ -778,29 +826,53 @@ export default function PostSpaceWizard() {
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-navy-base">Drag & drop images here</p>
-                        <p className="text-xs text-gray-400 mt-1">or click to browse • Up to 6 photos • JPG, PNG, WebP</p>
+                        <p className="text-xs text-gray-400 mt-1">or click to browse • Up to 6 photos • Auto-compressed to WebP</p>
                       </div>
+                      {isCompressing && (
+                        <div className="mt-3 flex items-center gap-2 text-sm text-navy-base font-medium">
+                          <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                          Compressing images…
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  {/* Image Previews */}
+                  {/* Image Previews with Re-ordering */}
                   {imagePreviews.length > 0 && (
-                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mt-4">
-                      {imagePreviews.map((src, i) => (
-                        <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200">
-                          <img src={src} alt={`Preview ${i + 1}`} className="w-full h-full object-cover" />
-                          <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); removeImage(i); }}
-                            className="absolute top-1 right-1 w-6 h-6 bg-black/60 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                          </button>
-                          {i === 0 && (
-                            <span className="absolute bottom-1 left-1 bg-navy-base text-white text-[10px] font-bold px-1.5 py-0.5 rounded">Cover</span>
-                          )}
-                        </div>
-                      ))}
+                    <div className="mt-4">
+                      <p className="text-xs font-medium text-gray-500 mb-2">Drag position to re-order. First image = marketplace cover photo.</p>
+                      <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+                        {imagePreviews.map((src, i) => (
+                          <div key={i} className={`relative group aspect-square rounded-lg overflow-hidden border-2 ${i === 0 ? 'border-accent-gold shadow-md' : 'border-gray-200'}`}>
+                            <img src={src} alt={`Preview ${i + 1}`} className="w-full h-full object-cover" />
+                            {/* Remove button */}
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); removeImage(i); }}
+                              className="absolute top-1 right-1 w-6 h-6 bg-black/60 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                            {/* Re-ordering controls */}
+                            {imagePreviews.length > 1 && (
+                              <div className="absolute bottom-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                {i > 0 && (
+                                  <button type="button" onClick={(e) => { e.stopPropagation(); moveImageLeft(i); }}
+                                    className="w-5 h-5 bg-black/60 hover:bg-navy-base text-white rounded flex items-center justify-center text-[10px] font-bold">←</button>
+                                )}
+                                {i < imagePreviews.length - 1 && (
+                                  <button type="button" onClick={(e) => { e.stopPropagation(); moveImageRight(i); }}
+                                    className="w-5 h-5 bg-black/60 hover:bg-navy-base text-white rounded flex items-center justify-center text-[10px] font-bold">→</button>
+                                )}
+                              </div>
+                            )}
+                            {/* Cover badge */}
+                            {i === 0 && (
+                              <span className="absolute bottom-1 left-1 bg-accent-gold text-navy-base text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm">Cover Photo</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
