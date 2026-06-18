@@ -200,6 +200,7 @@ export default function DashboardTabs({
     { id: 'listings', label: 'My Listings', path: '/dashboard?tab=listings' },
     { id: 'archived', label: 'Archived Listings', path: '/dashboard?tab=archived' },
     { id: 'safemove', label: 'SafeMove Tracker', path: '/dashboard?tab=safemove' },
+    { id: 'requests', label: 'Seeker Requests', path: '/requests' },
     { id: 'saved', label: 'Saved Listings', path: '/dashboard/saved', icon: <Heart className="w-4 h-4 mr-2 inline-block opacity-70" /> },
     { id: 'profile', label: 'Profile Settings', path: '/dashboard?tab=profile' },
   ];

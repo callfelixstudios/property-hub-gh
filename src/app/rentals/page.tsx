@@ -135,6 +135,17 @@ export default async function RentalsPage(props: { searchParams: Promise<{ [key:
 
         {/* Right Property Feed Grid */}
         <main className="flex-1 w-full">
+          {/* Seeker Notice Board CTA */}
+          <div className="mb-8 bg-emerald-50 border border-emerald-100 rounded-xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+            <div>
+              <h3 className="text-lg font-bold text-emerald-900 mb-1">Can't find what you're looking for?</h3>
+              <p className="text-emerald-700 text-sm">Post a request on our Seeker Notice Board and let property owners come to you!</p>
+            </div>
+            <Link href="/request-space" className="shrink-0 px-6 py-3 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition-colors shadow-sm">
+              Request a Space
+            </Link>
+          </div>
+
           <div className="flex items-center justify-between mb-6">
             <p className="text-sm text-gray-500 font-medium">Showing {rentalListings.length} properties</p>
             <select className="bg-white border border-gray-200 text-sm rounded-sm px-3 py-2 text-navy-base outline-none cursor-pointer hover:border-navy-light transition-colors">

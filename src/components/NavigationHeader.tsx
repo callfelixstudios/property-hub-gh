@@ -102,6 +102,16 @@ export default function NavigationHeader() {
                 Coming Soon
               </span>
             </Link>
+            <Link
+              href="/requests"
+              className={`font-medium transition-colors ${
+                isSolidHeader
+                  ? "text-gray-700 hover:text-navy-base"
+                  : "text-white/80 hover:text-white"
+              } ${pathname === "/requests" ? "border-b-2 border-accent-gold" : ""}`}
+            >
+              Notice Board
+            </Link>
           </nav>
 
           {/* Desktop Auth & CTA */}
@@ -207,6 +217,16 @@ export default function NavigationHeader() {
                 </Link>
               </>
             )}
+            <Link
+              href="/request-space"
+              className={`ml-1 font-bold py-2 px-5 rounded-full transition-all duration-200 border-2 ${
+                isSolidHeader
+                  ? "border-emerald-600 text-emerald-700 hover:bg-emerald-50"
+                  : "border-white text-white hover:bg-white/10"
+              }`}
+            >
+              Request a Space
+            </Link>
             <button
               type="button"
               onClick={() => {
@@ -216,7 +236,7 @@ export default function NavigationHeader() {
                   router.push('/post-space');
                 }
               }}
-              className="ml-1 bg-accent-gold text-navy-base font-bold py-2 px-5 rounded-full transition-all duration-200 hover:brightness-105 hover:shadow-md"
+              className="ml-2 bg-accent-gold text-navy-base font-bold py-2 px-5 rounded-full transition-all duration-200 hover:brightness-105 hover:shadow-md"
             >
               + Post a Space
             </button>
@@ -258,6 +278,12 @@ export default function NavigationHeader() {
             <Link href="/safemove" className={`flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-navy-base hover:bg-gray-50 ${pathname === "/safemove" ? "bg-gray-100" : ""}`}>
               SafeMove
               <span className="ml-1.5 bg-accent-emerald text-white text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-full relative -top-1.5">Coming Soon</span>
+            </Link>
+            <Link href="/requests" className={`block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-navy-base hover:bg-gray-50 ${pathname === "/requests" ? "bg-gray-100" : ""}`}>
+              Notice Board
+            </Link>
+            <Link href="/request-space" className={`block px-3 py-2 rounded-md text-base font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 mt-2`}>
+              Request a Space
             </Link>
             <div className="px-3 py-2">
               <button
