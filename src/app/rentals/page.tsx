@@ -51,7 +51,9 @@ async function fetchRentalListings(searchParams: { [key: string]: string | strin
   const region = searchParams.region as string;
   const neighborhood = searchParams.neighborhood as string;
   const propertyType = searchParams.propertyType as string;
+  const listingCategoryType = searchParams.listing_category_type as string;
   const condition = searchParams.condition as string;
+  const parkingSpace = searchParams.parking_space as string;
   const generator = searchParams.generator as string;
   const water = searchParams.water as string;
   const meter = searchParams.meter as string;
@@ -63,10 +65,12 @@ async function fetchRentalListings(searchParams: { [key: string]: string | strin
   if (beds) query = query.gte('bedrooms', beds);
   if (baths) query = query.gte('bathrooms', baths);
   if (furnishing) query = query.eq('furnishing_status', furnishing);
-  if (region) query = query.eq('location_region', region);
-  if (neighborhood) query = query.eq('location_neighborhood', neighborhood);
-  if (propertyType && propertyType !== 'all') query = query.eq('property_type', propertyType);
-  if (condition && condition !== 'any') query = query.eq('condition_status', condition);
+  if (region) query = query.eq('region', region);
+  if (neighborhood) query = query.eq('neighborhood', neighborhood);
+  if (propertyType && propertyType !== 'all') query = query.eq('category', propertyType);
+  if (listingCategoryType && listingCategoryType !== 'all') query = query.eq('listing_category_type', listingCategoryType);
+  if (condition && condition !== 'any') query = query.eq('condition', condition);
+  if (parkingSpace && parkingSpace !== 'any') query = query.eq('parking_space', parkingSpace);
   if (generator === 'true') query = query.eq('has_generator', true);
   if (water === 'true') query = query.eq('has_water_reservoir', true);
   if (meter === 'true') query = query.eq('has_independent_meter', true);

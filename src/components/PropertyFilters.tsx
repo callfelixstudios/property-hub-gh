@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, Suspense } from 'react';
+import { useCallback, useState, Suspense } from 'react';
 import { useCurrency } from '@/context/CurrencyContext';
 
 const GHANA_LOCATIONS: Record<string, string[]> = {
@@ -21,6 +21,7 @@ function PropertyFiltersContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { displayCurrency } = useCurrency();
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const isRentalContext = pathname.includes('rentals');
 
@@ -56,7 +57,9 @@ function PropertyFiltersContent() {
   const region = searchParams.get('region') || '';
   const neighborhood = searchParams.get('neighborhood') || '';
   const propertyType = searchParams.get('propertyType') || 'all';
+  const listingCategoryType = searchParams.get('listing_category_type') || 'all';
   const condition = searchParams.get('condition') || 'any';
+  const parkingSpace = searchParams.get('parking_space') || 'any';
   const generator = searchParams.get('generator') === 'true';
   const water = searchParams.get('water') === 'true';
   const meter = searchParams.get('meter') === 'true';
@@ -157,27 +160,93 @@ function PropertyFiltersContent() {
         </select>
       </div>
 
-      {/* Condition Switch */}
+      {/* Advanced Filters */}
       <div className="mb-6">
-        <h3 className="text-sm font-semibold text-navy-base mb-3">Condition</h3>
-        <div className="flex bg-gray-100 p-1 rounded-sm">
-          {['any', 'newly_built', 'refurbished', 'fairly_used'].map((cond) => {
-            const label = cond === 'any' ? 'Any' : cond === 'newly_built' ? 'Newly Built' : cond === 'refurbished' ? 'Refurbished' : 'Fairly Used';
-            return (
-              <button
-                key={cond}
-                onClick={() => updateFilters({ condition: cond === 'any' ? null : cond })}
-                className={`flex-1 text-xs py-1.5 rounded-sm capitalize font-medium transition-colors ${
-                  condition === cond || (cond === 'any' && !condition)
-                    ? 'bg-white shadow-sm text-navy-base'
-                    : 'text-gray-500 hover:text-navy-base'
-                }`}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
+        <button
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className="w-full flex items-center justify-between text-sm font-bold text-navy-base mb-3 hover:text-navy-light transition-colors"
+        >
+          <span>Advanced Filters</span>
+          <svg className={`w-4 h-4 transition-transform duration-200 ${showAdvanced ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        
+        {showAdvanced && (
+          <div className="space-y-6 pt-2 animate-in fade-in slide-in-from-top-2 duration-200">
+            {/* Category Type */}
+            <div>
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Category Type</h3>
+              <div className="flex bg-gray-100 p-1 rounded-sm">
+                {['all', 'residential', 'commercial'].map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => updateFilters({ listing_category_type: cat === 'all' ? null : cat, propertyType: null })}
+                    className={`flex-1 text-xs py-1.5 rounded-sm capitalize font-medium transition-colors ${
+                      listingCategoryType === cat
+                        ? 'bg-white shadow-sm text-navy-base'
+                        : 'text-gray-500 hover:text-navy-base'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Condition */}
+            <div>
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Property Condition</h3>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { id: 'any', label: 'Any' },
+                  { id: 'newly_built', label: 'Newly Built' },
+                  { id: 'fairly_used', label: 'Fairly Used' },
+                  { id: 'old', label: 'Old' },
+                  { id: 'uncompleted', label: 'Uncompleted' },
+                  { id: 'under_construction', label: 'Under Construction' }
+                ].map(cond => (
+                  <button
+                    key={cond.id}
+                    onClick={() => updateFilters({ condition: cond.id === 'any' ? null : cond.id })}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                      condition === cond.id || (cond.id === 'any' && !condition)
+                        ? 'bg-navy-base text-white border-navy-base shadow-sm'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-navy-light hover:text-navy-base'
+                    }`}
+                  >
+                    {cond.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Parking Space */}
+            <div>
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Parking Space</h3>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { id: 'any', label: 'Any' },
+                  { id: 'in_house', label: 'In House' },
+                  { id: 'street_side', label: 'Street Side' },
+                  { id: 'no_parking', label: 'No Parking' }
+                ].map(park => (
+                  <button
+                    key={park.id}
+                    onClick={() => updateFilters({ parking_space: park.id === 'any' ? null : park.id })}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                      parkingSpace === park.id || (park.id === 'any' && !parkingSpace)
+                        ? 'bg-navy-base text-white border-navy-base shadow-sm'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-navy-light hover:text-navy-base'
+                    }`}
+                  >
+                    {park.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Total Price */}
