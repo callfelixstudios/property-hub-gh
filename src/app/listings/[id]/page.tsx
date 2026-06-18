@@ -449,22 +449,27 @@ export default async function ListingDetailPage({
               {/* ── Price Card (TOP of sidebar, prominent) ─────────────── */}
               <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                 <div className="p-6">
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">
-                    {isRent ? 'Base Monthly Rent' : 'Asking Price'}
-                  </p>
-                  <div className="flex items-baseline gap-2 flex-wrap text-2xl text-slate-900 font-extrabold mb-1">
-                    <PriceDisplay
-                      rawPrice={row.base_rent || row.outright_price || 0}
-                      currency={row.currency || 'GHS'}
-                      priceSuffix={isRent ? '/ mo' : ''}
-                      rentAdvanceMonths={1}
-                      serviceCharge={0}
-                      isRental={isRent}
-                    />
+                  <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">
+                    Financial Overview
+                  </h3>
+                  
+                  <div className="flex justify-between items-center text-sm py-2">
+                    <span className="text-slate-500">{isRent ? 'Base Monthly Rent' : 'Asking Price'}</span>
+                    <span className="font-bold text-slate-900 text-lg">
+                      <PriceDisplay
+                        rawPrice={row.base_rent || row.outright_price || 0}
+                        currency={row.currency || 'GHS'}
+                        priceSuffix={isRent ? '/ mo' : ''}
+                        rentAdvanceMonths={1}
+                        serviceCharge={0}
+                        isRental={isRent}
+                        isInline={true}
+                      />
+                    </span>
                   </div>
                   
                   {isRent && row.service_charge != null && row.service_charge > 0 && (
-                    <div className="flex justify-between items-center text-sm border-t border-slate-100 pt-3 mt-3">
+                    <div className="flex justify-between items-center text-sm border-t border-slate-100 py-3 mt-1">
                       <span className="text-slate-500">Service Charge / mo</span>
                       <span className="font-semibold text-slate-700">
                         <PriceDisplay
