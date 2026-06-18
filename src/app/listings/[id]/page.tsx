@@ -45,6 +45,9 @@ interface ListingRow {
   land_use?: string;
   parking_capacity?: number;
   poster_role?: 'owner' | 'agent';
+  listing_category_type?: 'residential' | 'commercial';
+  condition?: string;
+  parking_space?: string;
   is_verified?: boolean;
   latitude?: number;
   longitude?: number;

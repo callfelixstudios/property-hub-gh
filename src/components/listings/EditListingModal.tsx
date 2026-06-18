@@ -36,6 +36,9 @@ interface Listing {
   video_url?: string | null;
   currency?: string;
   rent_advance_months?: number;
+  listing_category_type?: 'residential' | 'commercial';
+  condition?: string;
+  parking_space?: string;
   is_verified?: boolean;
   [key: string]: any;
 }
@@ -71,9 +74,12 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
   const [parkingCapacity, setParkingCapacity] = useState(listing.parking_capacity?.toString() || "");
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>(listing.amenities || []);
   const [posterRole, setPosterRole] = useState<"owner" | "agent" | "">(listing.poster_role || "");
+  const [listingCategoryType, setListingCategoryType] = useState<'residential' | 'commercial'>(listing.listing_category_type || 'residential');
+  const [conditionValue, setConditionValue] = useState(listing.condition || '');
+  const [parkingSpace, setParkingSpace] = useState(listing.parking_space || '');
 
   const isLand = category === 'Plot of Land';
-  const isCommercial = ['Commercial Property / Office'].includes(category);
+  const isCommercial = listingCategoryType === 'commercial' || ['Commercial Property / Office'].includes(category);
   const isResidential = !isLand && !isCommercial;
 
   const AMENITIES_LIST = isResidential
@@ -84,6 +90,11 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
 
   const handleCategoryChange = (val: string) => {
     setCategory(val);
+    setSelectedAmenities([]);
+  };
+  const handleCategoryTypeChange = (type: 'residential' | 'commercial') => {
+    setListingCategoryType(type);
+    setCategory('');
     setSelectedAmenities([]);
   };
 
@@ -210,6 +221,9 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
         parking_capacity: parkingCapacity ? parseInt(parkingCapacity, 10) : null,
         amenities: selectedAmenities.length > 0 ? selectedAmenities : null,
         poster_role: posterRole || null,
+        listing_category_type: listingCategoryType,
+        condition: conditionValue || null,
+        parking_space: parkingSpace || null,
       };
 
       const { error } = await supabase
@@ -303,26 +317,49 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
                 <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe the property, features, and any other important details..." rows={4} className={`${inputCls} resize-y`} />
               </div>
 
+              <div>
+                <label className={labelCls}>Category</label>
+                <div className="flex bg-slate-50 p-1 rounded-lg border border-gray-200">
+                  <button onClick={() => handleCategoryTypeChange('residential')} className={`flex-1 py-3 text-sm font-bold rounded-lg transition-all ${listingCategoryType === 'residential' ? 'bg-navy-base text-white shadow-sm' : 'text-gray-500 hover:text-navy-base'}`}>Residential</button>
+                  <button onClick={() => handleCategoryTypeChange('commercial')} className={`flex-1 py-3 text-sm font-bold rounded-lg transition-all ${listingCategoryType === 'commercial' ? 'bg-navy-base text-white shadow-sm' : 'text-gray-500 hover:text-navy-base'}`}>Commercial</button>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className={labelCls}>Category</label>
+                  <label className={labelCls}>Property Type</label>
                   <select value={category} onChange={(e) => handleCategoryChange(e.target.value)} className={inputCls}>
-                    <option value="">Select Category...</option>
-                    <option value="Apartment">Apartment</option>
-                    <option value="House">House</option>
-                    <option value="Townhouse / Terrace">Townhouse / Terrace</option>
-                    <option value="Single Room Self-Contain">Single Room Self-Contain</option>
-                    <option value="Chamber and Hall">Chamber and Hall</option>
-                    <option value="Boys Quarters (BQ)">Boys Quarters (BQ)</option>
-                    <option value="Studio Apartment">Studio Apartment</option>
-                    <option value="Penthouse">Penthouse</option>
-                    <option value="Villa / Mansion">Villa / Mansion</option>
-                    <option value="Bungalow">Bungalow</option>
-                    <option value="Shared Apartment">Shared Apartment</option>
-                    <option value="Block of Flats">Block of Flats</option>
-                    <option value="Farm House">Farm House</option>
-                    <option value="Plot of Land">Plot of Land</option>
-                    <option value="Commercial Property / Office">Commercial Property / Office</option>
+                    <option value="">Select Property Type...</option>
+                    {listingCategoryType === 'residential' ? (
+                      <>
+                        <option value="Apartment">Apartment</option>
+                        <option value="House">House</option>
+                        <option value="Townhouse / Terrace">Townhouse / Terrace</option>
+                        <option value="Single Room Self-Contain">Single Room Self-Contain</option>
+                        <option value="Chamber and Hall">Chamber and Hall</option>
+                        <option value="Boys Quarters (BQ)">Boys Quarters (BQ)</option>
+                        <option value="Studio Apartment">Studio Apartment</option>
+                        <option value="Penthouse">Penthouse</option>
+                        <option value="Villa / Mansion">Villa / Mansion</option>
+                        <option value="Bungalow">Bungalow</option>
+                        <option value="Shared Apartment">Shared Apartment</option>
+                        <option value="Block of Flats">Block of Flats</option>
+                        <option value="Farm House">Farm House</option>
+                        <option value="Plot of Land">Plot of Land</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="Business Center">Business Center</option>
+                        <option value="Hotel">Hotel</option>
+                        <option value="Open Space">Open Space</option>
+                        <option value="Shop">Shop</option>
+                        <option value="Warehouse">Warehouse</option>
+                        <option value="Hostel">Hostel</option>
+                        <option value="Office Space">Office Space</option>
+                        <option value="Farm">Farm</option>
+                        <option value="Commercial Property / Office">Commercial Property / Office</option>
+                      </>
+                    )}
                   </select>
                 </div>
                 <div>
@@ -519,6 +556,52 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
                   </div>
                 </div>
               )}
+
+              {/* Condition */}
+              <div>
+                <label className={labelCls}>Condition</label>
+                <div className="flex flex-wrap gap-3">
+                  {[
+                    { label: 'Newly Built', value: 'newly_built' },
+                    { label: 'Fairly Used', value: 'fairly_used' },
+                    { label: 'Old', value: 'old' },
+                    { label: 'Uncompleted', value: 'uncompleted' },
+                    { label: 'Under Construction', value: 'under_construction' },
+                  ].map(opt => (
+                    <button key={opt.value} type="button" onClick={() => setConditionValue(conditionValue === opt.value ? '' : opt.value)}
+                      className={`px-4 py-2 border rounded-full text-sm font-medium transition-all ${
+                        conditionValue === opt.value
+                          ? 'bg-navy-base text-white border-transparent shadow-sm'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-navy-light hover:text-navy-base'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Parking Space */}
+              <div>
+                <label className={labelCls}>Parking Space</label>
+                <div className="flex flex-wrap gap-3">
+                  {[
+                    { label: 'In House', value: 'in_house' },
+                    { label: 'Street Side', value: 'street_side' },
+                    { label: 'No Parking Space', value: 'no_parking' },
+                  ].map(opt => (
+                    <button key={opt.value} type="button" onClick={() => setParkingSpace(parkingSpace === opt.value ? '' : opt.value)}
+                      className={`px-4 py-2 border rounded-full text-sm font-medium transition-all ${
+                        parkingSpace === opt.value
+                          ? 'bg-navy-base text-white border-transparent shadow-sm'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-navy-light hover:text-navy-base'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               {/* Amenities */}
               <div>

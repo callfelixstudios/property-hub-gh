@@ -26,6 +26,7 @@ export default function PostSpaceWizard() {
 
   // Step 1 State
   const [listingType, setListingType] = useState<"rent" | "sale">("rent");
+  const [listingCategoryType, setListingCategoryType] = useState<"residential" | "commercial">("residential");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
@@ -40,11 +41,24 @@ export default function PostSpaceWizard() {
   const [squareMeters, setSquareMeters] = useState("");
   const [parkingCapacity, setParkingCapacity] = useState("");
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
-  const [posterRole, setPosterRole] = useState<"owner" | "agent" | "">("");
+  const [posterRole, setPosterRole] = useState<"owner" | "agent" | "">("")
+  const [conditionValue, setConditionValue] = useState("");
+  const [parkingSpace, setParkingSpace] = useState("");
 
   const isLand = category === 'Plot of Land';
-  const isCommercial = ['Commercial Property / Office'].includes(category);
+  const isCommercial = listingCategoryType === 'commercial' || ['Commercial Property / Office'].includes(category);
   const isResidential = !isLand && !isCommercial;
+
+  const RESIDENTIAL_TYPES = [
+    'Apartment', 'House', 'Townhouse / Terrace', 'Single Room Self-Contain',
+    'Chamber and Hall', 'Boys Quarters (BQ)', 'Studio Apartment', 'Penthouse',
+    'Villa / Mansion', 'Bungalow', 'Shared Apartment', 'Block of Flats',
+    'Farm House', 'Plot of Land'
+  ];
+  const COMMERCIAL_TYPES = [
+    'Business Center', 'Hotel', 'Open Space', 'Shop', 'Warehouse',
+    'Hostel', 'Office Space', 'Farm', 'Commercial Property / Office'
+  ];
 
   const AMENITIES_LIST = isResidential 
     ? ["Air Conditioning", "Standby Generator / Plant", "Solar Power System", "Water Reservoir (Polytank)", "24/7 Security", "Fitted Kitchen Cabinets"]
@@ -54,6 +68,12 @@ export default function PostSpaceWizard() {
 
   const handleCategoryChange = (val: string) => {
     setCategory(val);
+    setSelectedAmenities([]);
+  };
+
+  const handleCategoryTypeChange = (type: 'residential' | 'commercial') => {
+    setListingCategoryType(type);
+    setCategory('');
     setSelectedAmenities([]);
   };
 
@@ -82,7 +102,7 @@ export default function PostSpaceWizard() {
       : `${years} ${years > 1 ? 'Years' : 'Year'}, ${remainingMonths} ${remainingMonths > 1 ? 'Months' : 'Month'} Advance`;
   };
 
-  // Step 3 State
+  // Step 3 State  
   const [safeMoveActive, setSafeMoveActive] = useState(false);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -169,6 +189,7 @@ export default function PostSpaceWizard() {
       const { error } = await supabase.from('listings').insert({
         poster_id: user.id,
         transaction_type: listingType,
+        listing_category_type: listingCategoryType,
         title: title || null,
         description: description || null,
         category: category || 'Apartment',
@@ -191,6 +212,8 @@ export default function PostSpaceWizard() {
         bedrooms: bedrooms ? parseInt(bedrooms, 10) : null,
         bathrooms: bathrooms ? parseInt(bathrooms, 10) : null,
         furnishing_status: furnishingStatus || null,
+        condition: conditionValue || null,
+        parking_space: parkingSpace || null,
         land_size: landSize || null,
         land_use: landUse || null,
         square_meters: squareMeters ? parseFloat(squareMeters) : null,
@@ -277,6 +300,28 @@ export default function PostSpaceWizard() {
                   </div>
                 </div>
 
+                <div>
+                  <label className="block text-sm font-bold text-navy-base mb-3">Category</label>
+                  <div className="flex bg-surface-primary p-1 rounded-sm border border-gray-200">
+                    <button 
+                      onClick={() => handleCategoryTypeChange("residential")}
+                      className={`flex-1 py-3 text-sm font-bold rounded-sm transition-all ${
+                        listingCategoryType === "residential" ? "bg-navy-base text-white shadow-sm" : "text-gray-500 hover:text-navy-base"
+                      }`}
+                    >
+                      Residential
+                    </button>
+                    <button 
+                      onClick={() => handleCategoryTypeChange("commercial")}
+                      className={`flex-1 py-3 text-sm font-bold rounded-sm transition-all ${
+                        listingCategoryType === "commercial" ? "bg-navy-base text-white shadow-sm" : "text-gray-500 hover:text-navy-base"
+                      }`}
+                    >
+                      Commercial
+                    </button>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 gap-6 mb-6">
                   <div>
                     <label className="block text-sm font-bold text-navy-base mb-2">Listing Title <span className="text-red-500">*</span></label>
@@ -303,28 +348,17 @@ export default function PostSpaceWizard() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-bold text-navy-base mb-2">Category</label>
+                    <label className="block text-sm font-bold text-navy-base mb-2">Property Type</label>
                     <select 
                       value={category}
                       onChange={(e) => handleCategoryChange(e.target.value)}
                       className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
                     >
-                      <option value="">Select Category...</option>
-                      <option value="Apartment">Apartment</option>
-                      <option value="House">House</option>
-                      <option value="Townhouse / Terrace">Townhouse / Terrace</option>
-                      <option value="Single Room Self-Contain">Single Room Self-Contain</option>
-                      <option value="Chamber and Hall">Chamber and Hall</option>
-                      <option value="Boys Quarters (BQ)">Boys Quarters (BQ)</option>
-                      <option value="Studio Apartment">Studio Apartment</option>
-                      <option value="Penthouse">Penthouse</option>
-                      <option value="Villa / Mansion">Villa / Mansion</option>
-                      <option value="Bungalow">Bungalow</option>
-                      <option value="Shared Apartment">Shared Apartment</option>
-                      <option value="Block of Flats">Block of Flats</option>
-                      <option value="Farm House">Farm House</option>
-                      <option value="Plot of Land">Plot of Land</option>
-                      <option value="Commercial Property / Office">Commercial Property / Office</option>
+                      <option value="">Select Property Type...</option>
+                      {listingCategoryType === 'residential' 
+                        ? RESIDENTIAL_TYPES.map(type => <option key={type} value={type}>{type}</option>)
+                        : COMMERCIAL_TYPES.map(type => <option key={type} value={type}>{type}</option>)
+                      }
                     </select>
                   </div>
                   <div>
@@ -645,6 +679,55 @@ export default function PostSpaceWizard() {
                   </div>
                 )}
 
+                <div className="mt-6 mb-8">
+                  <label className="block text-sm font-bold text-navy-base mb-3">Condition</label>
+                  <div className="flex flex-wrap gap-3">
+                    {[
+                      { id: 'newly_built', label: 'Newly Built' },
+                      { id: 'fairly_used', label: 'Fairly Used' },
+                      { id: 'old', label: 'Old' },
+                      { id: 'uncompleted', label: 'Uncompleted' },
+                      { id: 'under_construction', label: 'Under Construction' }
+                    ].map(cond => (
+                      <button
+                        key={cond.id}
+                        type="button"
+                        onClick={() => setConditionValue(cond.id)}
+                        className={`px-4 py-2 border rounded-full text-sm font-medium transition-all ${
+                          conditionValue === cond.id 
+                            ? 'bg-navy-base text-white border-transparent shadow-sm' 
+                            : 'bg-white text-gray-600 border-gray-200 hover:border-navy-light hover:text-navy-base'
+                        }`}
+                      >
+                        {cond.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-6 mb-8">
+                  <label className="block text-sm font-bold text-navy-base mb-3">Parking Space</label>
+                  <div className="flex flex-wrap gap-3">
+                    {[
+                      { id: 'in_house', label: 'In House' },
+                      { id: 'street_side', label: 'Street Side' },
+                      { id: 'no_parking', label: 'No Parking Space' }
+                    ].map(park => (
+                      <button
+                        key={park.id}
+                        type="button"
+                        onClick={() => setParkingSpace(park.id)}
+                        className={`px-4 py-2 border rounded-full text-sm font-medium transition-all ${
+                          parkingSpace === park.id 
+                            ? 'bg-navy-base text-white border-transparent shadow-sm' 
+                            : 'bg-white text-gray-600 border-gray-200 hover:border-navy-light hover:text-navy-base'
+                        }`}
+                      >
+                        {park.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div className="mt-6 mb-8">
                   <label className="block text-sm font-bold text-navy-base mb-3">Amenities & Features</label>
                   <div className="flex flex-wrap gap-3">
