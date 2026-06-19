@@ -57,6 +57,18 @@ export default function RequestSpacePage() {
         setErrorMsg(error.message);
       } else {
         setSuccess(true);
+
+        // Dispatch live notification if webhook URL is configured
+        const webhookUrl = process.env.NEXT_PUBLIC_ADMIN_WEBHOOK_URL;
+        if (webhookUrl) {
+          fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              content: `🔔 **New Space Request**\n**Seeker:** ${formData.seeker_name}\n**Location:** ${formData.location}\n**Budget:** GHS ${formData.budget}\n**Category:** ${formData.property_type.replace('_', ' ')} (${formData.purpose})\n**Contact:** ${formData.whatsapp_number}`
+            })
+          }).catch(err => console.error("Webhook notification failed:", err));
+        }
       }
     } catch (err: any) {
       console.error("Unexpected error:", err);
