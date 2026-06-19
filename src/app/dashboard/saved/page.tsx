@@ -3,6 +3,7 @@ import Link from "next/link";
 import PropertyCard from "@/components/PropertyCard";
 import { Heart } from "lucide-react";
 import DashboardTabs from "@/components/dashboard/DashboardTabs";
+import { generateListingSlug } from "@/utils/slugify";
 
 export default async function SavedListingsPage() {
   const supabase = await createClient();
@@ -106,7 +107,7 @@ export default async function SavedListingsPage() {
                 const location = [listing.neighborhood, listing.region].filter(Boolean).join(', ');
 
                 return (
-                  <Link href={`/listings/${listing.id}`} key={record.id} className="block">
+                  <Link href={`/listings/${generateListingSlug(listing.title || `${formatCategory(listing.category)} in ${listing.neighborhood || 'Ghana'}`, location || 'Ghana', listing.id)}`} key={record.id} className="block">
                     <PropertyCard
                       imageSrc={listing.media_urls?.[0] || listing.image_url || "/property-placeholder.jpg"}
                       title={listing.title || `${formatCategory(listing.category)} in ${listing.neighborhood || 'Ghana'}`}

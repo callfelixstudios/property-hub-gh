@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import PriceDisplay from "./PriceDisplay";
 import VerifiedBadge from "./VerifiedBadge";
+import { generateListingSlug } from "@/utils/slugify";
 
 interface PropertyCardProps {
   id?: string | number;
@@ -35,7 +36,7 @@ export default function PropertyCard({
   isVerified = false,
 }: PropertyCardProps) {
   return (
-    <Link href={`/listings/${id}`} className="block group cursor-pointer bg-white rounded-2xl border border-gray-100 shadow-ambient hover:shadow-lg transition-shadow duration-300 flex flex-col relative z-0">
+    <Link href={`/listings/${generateListingSlug(title, location, id)}`} className="block group cursor-pointer bg-white rounded-2xl border border-gray-100 shadow-ambient hover:shadow-lg transition-shadow duration-300 flex flex-col relative z-0">
       {/* Image Area */}
       <div className="relative">
         <div className="relative w-full pt-[66.66%] rounded-t-2xl overflow-hidden">

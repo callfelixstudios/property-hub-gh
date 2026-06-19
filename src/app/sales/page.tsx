@@ -4,6 +4,7 @@ import { createClient } from '@/utils/supabase/server';
 import PropertyFilters from '@/components/PropertyFilters';
 import PriceDisplay from '@/components/PriceDisplay';
 import VerifiedBadge from '@/components/VerifiedBadge';
+import { generateListingSlug } from '@/utils/slugify';
 
 // Fetch live sales listings from Supabase
 function formatCategory(cat?: string) {
@@ -137,7 +138,7 @@ export default async function SalesPage(props: { searchParams: Promise<{ [key: s
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {salesListings.map((prop) => (
-              <Link href={`/listings/${prop.id}`} key={prop.id} className="block group cursor-pointer bg-white rounded-2xl border border-gray-100 shadow-ambient hover:shadow-lg transition-shadow duration-300 flex flex-col relative z-0">
+              <Link href={`/listings/${generateListingSlug(prop.title, prop.location, prop.id)}`} key={prop.id} className="block group cursor-pointer bg-white rounded-2xl border border-gray-100 shadow-ambient hover:shadow-lg transition-shadow duration-300 flex flex-col relative z-0">
                 {/* 3:2 Image */}
                 <div className="relative">
                   <div className="relative w-full pt-[66.66%] rounded-t-2xl overflow-hidden">

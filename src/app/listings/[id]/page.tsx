@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { Metadata } from 'next';
 import { createClient } from '@/utils/supabase/server';
 import ListingGallery from "@/components/listings/ListingGallery";
 import VerifiedBadge from "@/components/VerifiedBadge";
@@ -135,12 +136,47 @@ function IconSun() {
   );
 }
 
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id: slug } = await params;
+  const id = slug.split('-').pop() || slug;
+
+  const supabase = await createClient();
+  const { data: listing } = await supabase
+    .from('listings')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (!listing) {
+    return { title: 'Property Not Found | Property Hub GH' };
+  }
+
+  const title = `${formatCategory(listing.category || '')} in ${listing.neighborhood || formatRegion(listing.region) || 'Ghana'} | Property Hub GH`;
+  const description = `${formatCategory(listing.category || '')} for ${listing.transaction_type === 'rent' ? 'Rent' : 'Sale'} - ₵${(listing.base_rent || listing.outright_price || 0).toLocaleString()}. ${listing.description?.substring(0, 150) || ''}...`;
+  const imageUrl = listing.image_url || (listing.media_urls && listing.media_urls[0]);
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: imageUrl ? [imageUrl] : [],
+    },
+  };
+}
+
 export default async function ListingDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
+  const { id: slug } = await params;
+  const id = slug.split('-').pop() || slug;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
