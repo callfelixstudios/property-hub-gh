@@ -142,7 +142,8 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id: slug } = await params;
-  const id = slug.split('-').pop() || slug;
+  const uuidMatch = slug.match(/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$/i);
+  const id = uuidMatch ? uuidMatch[1] : (slug.split('-').pop() || slug);
 
   const supabase = await createClient();
   const { data: listing } = await supabase
@@ -176,7 +177,8 @@ export default async function ListingDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id: slug } = await params;
-  const id = slug.split('-').pop() || slug;
+  const uuidMatch = slug.match(/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$/i);
+  const id = uuidMatch ? uuidMatch[1] : (slug.split('-').pop() || slug);
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
