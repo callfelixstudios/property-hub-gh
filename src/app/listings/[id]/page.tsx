@@ -546,7 +546,7 @@ export default async function ListingDetailPage({
                       </span>
                     </div>
                     <span className="text-xs text-slate-500">
-                      Based on {row.advance_period || `${row.rent_advance_months} months`} advance
+                      Based on {row.advance_period || `${row.rent_advance_months} months advance`}
                     </span>
                   </div>
                 )}
