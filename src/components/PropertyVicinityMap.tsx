@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Circle, useMap } from 'react-leaflet';
 
 interface PropertyVicinityMapProps {
   lat?: number | null;
@@ -9,18 +8,6 @@ interface PropertyVicinityMapProps {
   neighborhood?: string;
   region?: string;
   country?: string;
-}
-
-function MapUpdater({ center }: { center: [number, number] }) {
-  const map = useMap();
-  useEffect(() => {
-    map.setView(center, map.getZoom());
-    const timeoutId = setTimeout(() => {
-      map.invalidateSize();
-    }, 250);
-    return () => clearTimeout(timeoutId);
-  }, [center, map]);
-  return null;
 }
 
 export default function PropertyVicinityMap({ lat, lng, neighborhood, region, country }: PropertyVicinityMapProps) {
@@ -40,19 +27,9 @@ export default function PropertyVicinityMap({ lat, lng, neighborhood, region, co
     async function fetchWithFallback() {
       const queries = [];
       
-      // Tier 1: Specific
-      if (neighborhood && region) {
-        queries.push(`${neighborhood}, ${region}, ${country || "Ghana"}`);
-      } else if (neighborhood) {
-        queries.push(`${neighborhood}, ${country || "Ghana"}`);
-      }
-
-      // Tier 2: Regional Fallback
-      if (region) {
-        queries.push(`${region}, ${country || "Ghana"}`);
-      }
-
-      // Tier 3: National Baseline Fallback
+      if (neighborhood && region) queries.push(`${neighborhood}, ${region}, ${country || "Ghana"}`);
+      else if (neighborhood) queries.push(`${neighborhood}, ${country || "Ghana"}`);
+      if (region) queries.push(`${region}, ${country || "Ghana"}`);
       queries.push(`Accra, ${country || "Ghana"}`);
 
       const controller = new AbortController();
@@ -76,21 +53,16 @@ export default function PropertyVicinityMap({ lat, lng, neighborhood, region, co
                 setCoordinates({ lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) });
                 setIsLoading(false);
               }
-              return; // Stop searching once we find a valid result
+              return; 
             }
           } catch (err: any) {
-            if (err.name === 'AbortError') {
-              throw err; // Break out of the loop completely on timeout
-            }
+            if (err.name === 'AbortError') throw err; 
             console.error(`Geocoding lookup failed for query "${query}":`, err);
-            // Continue to the next fallback tier
           }
         }
       } catch (err: any) {
         if (err.name === 'AbortError') {
           console.warn("Geocoding API timed out after 2500ms. Forcing fallback.");
-        } else {
-          console.error("Geocoding loop failed:", err);
         }
       } finally {
         clearTimeout(timeoutId);
@@ -121,28 +93,25 @@ export default function PropertyVicinityMap({ lat, lng, neighborhood, region, co
     );
   }
 
-  const centerTuple: [number, number] = [coordinates.lat, coordinates.lon];
+  // Calculate a reasonable bounding box for the iframe
+  const offset = 0.005; // Roughly 500 meters
+  const bbox = `${coordinates.lon - offset},${coordinates.lat - offset},${coordinates.lon + offset},${coordinates.lat + offset}`;
+  const iframeSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${coordinates.lat},${coordinates.lon}`;
 
   return (
-    <div className="w-full rounded-xl overflow-hidden border border-slate-200 z-0 relative">
-      <MapContainer 
-        key={`${centerTuple[0]}-${centerTuple[1]}`}
-        center={centerTuple} 
-        zoom={14} 
-        scrollWheelZoom={false} 
-        style={{ height: '400px', width: '100%', zIndex: 0 }}
-      >
-        <MapUpdater center={centerTuple} />
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        <Circle 
-          center={centerTuple} 
-          radius={400} 
-          pathOptions={{ fillColor: "#ef4444", color: "#ef4444", fillOpacity: 0.15 }} 
-        />
-      </MapContainer>
+    <div className="w-full h-[400px] rounded-xl overflow-hidden border border-slate-200 z-0 relative bg-slate-100">
+      <iframe
+        width="100%"
+        height="100%"
+        frameBorder="0"
+        scrolling="no"
+        marginHeight={0}
+        marginWidth={0}
+        src={iframeSrc}
+        style={{ border: 0 }}
+        title="Property Vicinity Map"
+        className="w-full h-full"
+      ></iframe>
     </div>
   );
 }
