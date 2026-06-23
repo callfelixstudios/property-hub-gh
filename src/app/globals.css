@@ -29,3 +29,30 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* ── Leaflet CSS overrides ──────────────────────────────────────────────
+   Tailwind v4 preflight sets `img { max-width: 100%; height: auto; }`
+   which completely breaks Leaflet tile rendering. These rules restore
+   Leaflet's internal image and pane positioning with !important.
+   ───────────────────────────────────────────────────────────────────── */
+.leaflet-container img {
+  max-width: none !important;
+  max-height: none !important;
+  height: auto;
+}
+
+.leaflet-tile-pane img.leaflet-tile {
+  max-width: none !important;
+  max-height: none !important;
+  width: 256px !important;
+  height: 256px !important;
+}
+
+.leaflet-container .leaflet-control-zoom a,
+.leaflet-container .leaflet-control-attribution {
+  all: revert;
+}
+
+.leaflet-container {
+  font-family: inherit;
+}
