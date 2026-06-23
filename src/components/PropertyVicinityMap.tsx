@@ -1,20 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Circle, useMap } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-
-// Force Map Frame View Reset on Coordinate Update as requested
-function ChangeView({ center }: { center: [number, number] }) {
-  const map = useMap();
-  useEffect(() => {
-    if (center) {
-      map.setView(center, 14);
-      setTimeout(() => map.invalidateSize(), 100);
-    }
-  }, [center, map]);
-  return null;
-}
 
 interface PropertyVicinityMapProps {
   lat?: number | null;
@@ -34,22 +20,21 @@ export default function PropertyVicinityMap({ lat, lng, location }: PropertyVici
   useEffect(() => {
     let isMounted = true;
 
-    // Check for false DB default placeholders
+    // Convert to Number to handle string values from Supabase before checking
     const numLat = Number(lat);
     const numLng = Number(lng);
     const isPlaceholder = 
       (Math.abs(numLat - 5.6037) < 0.001 && Math.abs(numLng - (-0.1870)) < 0.001) || 
       (Math.abs(numLat) < 0.0001 && Math.abs(numLng) < 0.0001);
     
+    // Skip geocoding only if we have genuine coordinates from the database
     if (lat != null && lng != null && !isPlaceholder) {
       setCoordinates({ lat: numLat, lon: numLng });
       return;
     }
 
     async function fetchFromApiProxy() {
-      // Hardcode the Country Boundary into the Map Search Query per user instruction
       const query = `${location || 'Accra'}, Ghana`;
-      
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 6000);
 
@@ -82,25 +67,40 @@ export default function PropertyVicinityMap({ lat, lng, location }: PropertyVici
     return () => { isMounted = false; };
   }, [lat, lng, location]);
 
+  const offset = 0.008;
+  const bbox = `${coordinates.lon - offset},${coordinates.lat - offset},${coordinates.lon + offset},${coordinates.lat + offset}`;
+  const iframeSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik`;
+
   return (
-    <div className="w-full h-[400px] rounded-xl overflow-hidden border border-slate-200 z-0 relative">
-      <MapContainer 
-        center={[coordinates.lat, coordinates.lon]} 
-        zoom={14} 
-        scrollWheelZoom={false} 
-        style={{ height: '400px', width: '100%', zIndex: 0 }}
-      >
-        <ChangeView center={[coordinates.lat, coordinates.lon]} />
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        <Circle 
-          center={[coordinates.lat, coordinates.lon]} 
-          radius={900} 
-          pathOptions={{ color: '#0f172a', fillColor: '#38bdf8', fillOpacity: 0.35, weight: 2 }} 
-        />
-      </MapContainer>
+    <div className="w-full h-[400px] rounded-xl overflow-hidden border border-slate-200 z-0 relative bg-slate-100">
+      <iframe
+        width="100%"
+        height="100%"
+        frameBorder="0"
+        scrolling="no"
+        marginHeight={0}
+        marginWidth={0}
+        src={iframeSrc}
+        style={{ border: 0 }}
+        title="Property Vicinity Map"
+        className="w-full h-full pointer-events-none"
+      />
+      {/* Privacy-focused vicinity circle overlay rendering natively to bypass react-leaflet crash */}
+      <div 
+        style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: '180px',
+          height: '180px',
+          borderRadius: '50%',
+          border: '2px solid #0f172a',
+          backgroundColor: 'rgba(56, 189, 248, 0.35)',
+          pointerEvents: 'none',
+          zIndex: 10,
+        }}
+      />
     </div>
   );
 }
