@@ -1,27 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Circle, useMap } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
 
 interface PropertyVicinityMapProps {
   lat?: number | null;
   lng?: number | null;
   location?: string;
-}
-
-function RecenterMap({ lat, lon }: { lat: number; lon: number }) {
-  const map = useMap();
-  useEffect(() => {
-    if (lat && lon) {
-      map.setView([lat, lon], 14);
-      const timeoutId = setTimeout(() => {
-        map.invalidateSize();
-      }, 250);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [lat, lon, map]);
-  return null;
 }
 
 export default function PropertyVicinityMap({ lat, lng, location }: PropertyVicinityMapProps) {
@@ -36,15 +20,10 @@ export default function PropertyVicinityMap({ lat, lng, location }: PropertyVici
   useEffect(() => {
     let isMounted = true;
 
-    // If coordinates were explicitly provided in props, no geocoding needed.
-    if (lat != null && lng != null) {
-      return;
-    }
+    if (lat != null && lng != null) return;
 
     async function geocode() {
-      // Build the query directly from the pre-formatted location string
       const query = `${location || 'Accra'}, Ghana`;
-
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 2500);
 
@@ -55,7 +34,6 @@ export default function PropertyVicinityMap({ lat, lng, location }: PropertyVici
           signal: controller.signal,
         });
         const data = await res.json();
-
         if (data && data.length > 0 && isMounted) {
           clearTimeout(timeoutId);
           setCoordinates({ lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) });
@@ -72,37 +50,43 @@ export default function PropertyVicinityMap({ lat, lng, location }: PropertyVici
     }
 
     geocode();
-
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [lat, lng, location]);
+
+  const offset = 0.008;
+  const bbox = `${coordinates.lon - offset},${coordinates.lat - offset},${coordinates.lon + offset},${coordinates.lat + offset}`;
+  const iframeSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik`;
 
   return (
     <div className="w-full h-[400px] rounded-xl overflow-hidden border border-slate-200 z-0 relative bg-slate-100">
-      <MapContainer
-        key={`${coordinates.lat}-${coordinates.lon}`}
-        center={[coordinates.lat, coordinates.lon]}
-        zoom={14}
-        scrollWheelZoom={false}
-        style={{ height: '400px', width: '100%', zIndex: 0 }}
-      >
-        <RecenterMap lat={coordinates.lat} lon={coordinates.lon} />
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        <Circle
-          center={[coordinates.lat, coordinates.lon]}
-          radius={900}
-          pathOptions={{
-            color: '#0f172a',
-            fillColor: '#38bdf8',
-            fillOpacity: 0.35,
-            weight: 2,
-          }}
-        />
-      </MapContainer>
+      <iframe
+        width="100%"
+        height="100%"
+        frameBorder="0"
+        scrolling="no"
+        marginHeight={0}
+        marginWidth={0}
+        src={iframeSrc}
+        style={{ border: 0 }}
+        title="Property Vicinity Map"
+        className="w-full h-full"
+      />
+      {/* Privacy-focused vicinity circle overlay */}
+      <div 
+        style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: '180px',
+          height: '180px',
+          borderRadius: '50%',
+          border: '2px solid #0f172a',
+          backgroundColor: 'rgba(56, 189, 248, 0.35)',
+          pointerEvents: 'none',
+          zIndex: 10,
+        }}
+      />
     </div>
   );
 }
