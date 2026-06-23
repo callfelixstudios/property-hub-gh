@@ -22,8 +22,11 @@ export default function PropertyVicinityMap({ lat, lng, neighborhood, region }: 
     let isMounted = true;
 
     // If we already have explicit GPS coordinates, don't geocode
-    // CRITICAL FIX: Ignore placeholder coordinates that were saved to the DB by default
-    const isPlaceholder = (lat === 5.6037 && lng === -0.1870) || (lat === 0 && lng === 0);
+    // CRITICAL FIX: Convert to Number to handle string values from Supabase before checking
+    const numLat = Number(lat);
+    const numLng = Number(lng);
+    const isPlaceholder = (numLat === 5.6037 && numLng === -0.1870) || (numLat === 0 && numLng === 0);
+    
     if (lat != null && lng != null && !isPlaceholder) return;
 
     async function fetchWithFallback() {
@@ -48,16 +51,22 @@ export default function PropertyVicinityMap({ lat, lng, neighborhood, region }: 
       queries.push(`Accra, Ghana`);
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2500);
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
 
       try {
         for (const query of queries) {
           try {
             const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`;
             const res = await fetch(url, {
-              headers: { 'User-Agent': 'PropertyHubGH' },
+              headers: { 'User-Agent': 'PropertyHubGH (support@propertyhub.gh)' },
               signal: controller.signal,
             });
+            
+            if (!res.ok) {
+              console.warn(`Nominatim returned ${res.status} for ${query}`);
+              continue;
+            }
+            
             const data = await res.json();
             
             if (data && data.length > 0 && isMounted) {
