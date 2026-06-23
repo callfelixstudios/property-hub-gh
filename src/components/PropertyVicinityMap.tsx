@@ -12,11 +12,14 @@ interface PropertyVicinityMapProps {
   country?: string;
 }
 
-// Sub-component to safely shift map viewport
 function MapUpdater({ center }: { center: [number, number] }) {
   const map = useMap();
   useEffect(() => {
     map.setView(center, map.getZoom());
+    const timeoutId = setTimeout(() => {
+      map.invalidateSize();
+    }, 250);
+    return () => clearTimeout(timeoutId);
   }, [center, map]);
   return null;
 }
@@ -59,7 +62,7 @@ export default function PropertyVicinityMap({ lat, lng, neighborhood, region, co
   }, [lat, lng, neighborhood, region, country]);
 
   return (
-    <div className="w-full h-64 md:h-80 rounded-xl overflow-hidden border border-slate-200 z-0 relative">
+    <div className="w-full h-[350px] rounded-xl overflow-hidden border border-slate-200 z-0 relative">
       <MapContainer 
         center={center} 
         zoom={14} 
