@@ -7,12 +7,10 @@ import 'leaflet/dist/leaflet.css';
 interface PropertyVicinityMapProps {
   lat?: number | null;
   lng?: number | null;
-  neighborhood?: string;
-  region?: string;
-  country?: string;
+  location?: string;
 }
 
-function RecenterMap({ lat, lon }: { lat: number, lon: number }) {
+function RecenterMap({ lat, lon }: { lat: number; lon: number }) {
   const map = useMap();
   useEffect(() => {
     if (lat && lon) {
@@ -26,83 +24,67 @@ function RecenterMap({ lat, lon }: { lat: number, lon: number }) {
   return null;
 }
 
-export default function PropertyVicinityMap({ lat, lng, neighborhood, region, country }: PropertyVicinityMapProps) {
-  // Optimistically initialize with passed coordinates or the Accra fallback
-  // This completely eliminates any initial spinner UI state
+export default function PropertyVicinityMap({ lat, lng, location }: PropertyVicinityMapProps) {
   const defaultLat = lat ?? 5.6037;
   const defaultLng = lng ?? -0.1870;
-  
-  const [coordinates, setCoordinates] = useState<{lat: number, lon: number}>({ 
-    lat: defaultLat, 
-    lon: defaultLng 
+
+  const [coordinates, setCoordinates] = useState<{ lat: number; lon: number }>({
+    lat: defaultLat,
+    lon: defaultLng,
   });
 
   useEffect(() => {
     let isMounted = true;
 
-    // If coordinates were explicitly provided in props, we don't need to geocode.
+    // If coordinates were explicitly provided in props, no geocoding needed.
     if (lat != null && lng != null) {
       return;
     }
 
-    async function fetchWithFallback() {
-      const queries = [];
-      
-      if (neighborhood && region) queries.push(`${neighborhood}, ${region}, ${country || "Ghana"}`);
-      else if (neighborhood) queries.push(`${neighborhood}, ${country || "Ghana"}`);
-      if (region) queries.push(`${region}, ${country || "Ghana"}`);
-      queries.push(`Accra, ${country || "Ghana"}`);
+    async function geocode() {
+      // Build the query directly from the pre-formatted location string
+      const query = `${location || 'Accra'}, Ghana`;
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        controller.abort();
-      }, 2500);
+      const timeoutId = setTimeout(() => controller.abort(), 2500);
 
       try {
-        for (const query of queries) {
-          try {
-            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`;
-            const res = await fetch(url, { 
-              headers: { 'User-Agent': 'PropertyHubGH-App' },
-              signal: controller.signal 
-            });
-            const data = await res.json();
-            
-            if (data && data.length > 0) {
-              if (isMounted) {
-                clearTimeout(timeoutId);
-                setCoordinates({ lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) });
-              }
-              return; 
-            }
-          } catch (err: any) {
-            if (err.name === 'AbortError') throw err; 
-            console.error(`Geocoding lookup failed for query "${query}":`, err);
-          }
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`;
+        const res = await fetch(url, {
+          headers: { 'User-Agent': 'PropertyHubGH' },
+          signal: controller.signal,
+        });
+        const data = await res.json();
+
+        if (data && data.length > 0 && isMounted) {
+          clearTimeout(timeoutId);
+          setCoordinates({ lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) });
         }
       } catch (err: any) {
         if (err.name === 'AbortError') {
-          console.warn("Geocoding API timed out after 2500ms.");
+          console.warn('Geocoding timed out after 2500ms.');
+        } else {
+          console.error('Geocoding failed:', err);
         }
       } finally {
         clearTimeout(timeoutId);
       }
     }
 
-    fetchWithFallback();
+    geocode();
 
     return () => {
       isMounted = false;
     };
-  }, [lat, lng, neighborhood, region, country]);
+  }, [lat, lng, location]);
 
   return (
     <div className="w-full h-[400px] rounded-xl overflow-hidden border border-slate-200 z-0 relative bg-slate-100">
-      <MapContainer 
+      <MapContainer
         key={`${coordinates.lat}-${coordinates.lon}`}
-        center={[coordinates.lat, coordinates.lon]} 
-        zoom={14} 
-        scrollWheelZoom={false} 
+        center={[coordinates.lat, coordinates.lon]}
+        zoom={14}
+        scrollWheelZoom={false}
         style={{ height: '400px', width: '100%', zIndex: 0 }}
       >
         <RecenterMap lat={coordinates.lat} lon={coordinates.lon} />
@@ -110,15 +92,15 @@ export default function PropertyVicinityMap({ lat, lng, neighborhood, region, co
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <Circle 
-          center={[coordinates.lat, coordinates.lon]} 
-          radius={900} 
-          pathOptions={{ 
-            color: '#0f172a',      
-            fillColor: '#38bdf8',  
-            fillOpacity: 0.35,     
-            weight: 2              
-          }} 
+        <Circle
+          center={[coordinates.lat, coordinates.lon]}
+          radius={900}
+          pathOptions={{
+            color: '#0f172a',
+            fillColor: '#38bdf8',
+            fillOpacity: 0.35,
+            weight: 2,
+          }}
         />
       </MapContainer>
     </div>
