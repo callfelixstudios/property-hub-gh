@@ -477,8 +477,7 @@ export default async function ListingDetailPage({
 
             {/* Vicinity Map */}
             <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6">
-              <h2 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-2">Vicinity Map</h2>
-              <p className="text-xs text-slate-500 mb-4">Exact location provided upon scheduling a viewing.</p>
+              <h2 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4">Vicinity Map</h2>
               <MapLoader lat={row.latitude} lng={row.longitude} neighborhood={row.neighborhood} region={row.region} country="Ghana" />
             </div>
           </div>
