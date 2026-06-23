@@ -12,15 +12,17 @@ interface PropertyVicinityMapProps {
   country?: string;
 }
 
-function MapUpdater({ center }: { center: [number, number] }) {
+function RecenterMap({ lat, lon }: { lat: number, lon: number }) {
   const map = useMap();
   useEffect(() => {
-    map.setView(center, map.getZoom());
-    const timeoutId = setTimeout(() => {
-      map.invalidateSize();
-    }, 250);
-    return () => clearTimeout(timeoutId);
-  }, [center, map]);
+    if (lat && lon) {
+      map.setView([lat, lon], 14);
+      const timeoutId = setTimeout(() => {
+        map.invalidateSize();
+      }, 250);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [lat, lon, map]);
   return null;
 }
 
@@ -94,24 +96,22 @@ export default function PropertyVicinityMap({ lat, lng, neighborhood, region, co
     };
   }, [lat, lng, neighborhood, region, country]);
 
-  const centerTuple: [number, number] = [coordinates.lat, coordinates.lon];
-
   return (
     <div className="w-full h-[400px] rounded-xl overflow-hidden border border-slate-200 z-0 relative bg-slate-100">
       <MapContainer 
-        key={`${centerTuple[0]}-${centerTuple[1]}`}
-        center={centerTuple} 
+        key={`${coordinates.lat}-${coordinates.lon}`}
+        center={[coordinates.lat, coordinates.lon]} 
         zoom={14} 
         scrollWheelZoom={false} 
         style={{ height: '400px', width: '100%', zIndex: 0 }}
       >
-        <MapUpdater center={centerTuple} />
+        <RecenterMap lat={coordinates.lat} lon={coordinates.lon} />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <Circle 
-          center={centerTuple} 
+          center={[coordinates.lat, coordinates.lon]} 
           radius={900} 
           pathOptions={{ 
             color: '#0f172a',      
