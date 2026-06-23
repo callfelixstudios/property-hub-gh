@@ -88,13 +88,13 @@ export default function PropertyVicinityMap({ lat, lng, neighborhood, region, co
   const centerTuple: [number, number] = [coordinates.lat, coordinates.lon];
 
   return (
-    <div className="w-full h-[400px] rounded-xl overflow-hidden border border-slate-200 z-0 relative">
+    <div className="w-full rounded-xl overflow-hidden border border-slate-200 z-0 relative">
       <MapContainer 
+        key={`${centerTuple[0]}-${centerTuple[1]}`}
         center={centerTuple} 
         zoom={14} 
         scrollWheelZoom={false} 
-        className="w-full h-full z-0"
-        style={{ zIndex: 0 }}
+        style={{ height: '400px', width: '100%', zIndex: 0 }}
       >
         <MapUpdater center={centerTuple} />
         <TileLayer
