@@ -20,18 +20,9 @@ export default function PropertyVicinityMap({ lat, lng, location }: PropertyVici
   useEffect(() => {
     let isMounted = true;
 
-    // Convert to Number to handle string values from Supabase before checking
-    const numLat = Number(lat);
-    const numLng = Number(lng);
-    const isPlaceholder = 
-      (Math.abs(numLat - 5.6037) < 0.001 && Math.abs(numLng - (-0.1870)) < 0.001) || 
-      (Math.abs(numLat) < 0.0001 && Math.abs(numLng) < 0.0001);
-    
-    // Skip geocoding only if we have genuine coordinates from the database
-    if (lat != null && lng != null && !isPlaceholder) {
-      setCoordinates({ lat: numLat, lon: numLng });
-      return;
-    }
+    // ALWAYS geocode the neighborhood string to get the regional centroid.
+    // We explicitly ignore the exact database lat/lng to ensure the 900m privacy circle 
+    // is centered on the neighborhood itself, not the exact house, protecting user privacy.
 
     async function fetchFromApiProxy() {
       const query = `${location || 'Accra'}, Ghana`;
