@@ -25,15 +25,19 @@ function MapUpdater({ center }: { center: [number, number] }) {
 }
 
 export default function PropertyVicinityMap({ lat, lng, neighborhood, region, country }: PropertyVicinityMapProps) {
-  // Fallback to Accra central if coordinates are missing
-  const defaultLat = lat ?? 5.6037;
-  const defaultLng = lng ?? -0.1870;
-
-  const [center, setCenter] = useState<[number, number]>([defaultLat, defaultLng]);
+  const [coordinates, setCoordinates] = useState<{lat: number, lon: number} | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Only geocode if we have at least a neighborhood or region, and explicit lat/lng weren't fully provided
-    if ((lat == null || lng == null) && (neighborhood || region)) {
+    // If coordinates are explicitly provided
+    if (lat != null && lng != null) {
+      setCoordinates({ lat, lon: lng });
+      setIsLoading(false);
+      return;
+    }
+
+    // Otherwise attempt to geocode
+    if (neighborhood || region) {
       const searchParts = [];
       if (neighborhood) searchParts.push(neighborhood);
       searchParts.push(region || "Greater Accra");
@@ -50,33 +54,55 @@ export default function PropertyVicinityMap({ lat, lng, neighborhood, region, co
       .then(res => res.json())
       .then(data => {
         if (data && data.length > 0) {
-          setCenter([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
+          setCoordinates({ lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) });
+        } else {
+          // Fallback if geocoding yields no results
+          setCoordinates({ lat: 5.6037, lon: -0.1870 });
         }
       })
       .catch(err => {
         console.error("Geocoding failed:", err);
+        setCoordinates({ lat: 5.6037, lon: -0.1870 });
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
-    } else if (lat != null && lng != null) {
-      setCenter([lat, lng]);
+    } else {
+      // Fallback if no location data is provided at all
+      setCoordinates({ lat: 5.6037, lon: -0.1870 });
+      setIsLoading(false);
     }
   }, [lat, lng, neighborhood, region, country]);
 
+  if (isLoading || !coordinates) {
+    return (
+      <div className="w-full h-[400px] rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center relative">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-navy-base border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+          <p className="text-sm font-medium text-slate-500">Fetching neighborhood map view...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const centerTuple: [number, number] = [coordinates.lat, coordinates.lon];
+
   return (
-    <div className="w-full h-[350px] rounded-xl overflow-hidden border border-slate-200 z-0 relative">
+    <div className="w-full h-[400px] rounded-xl overflow-hidden border border-slate-200 z-0 relative">
       <MapContainer 
-        center={center} 
+        center={centerTuple} 
         zoom={14} 
         scrollWheelZoom={false} 
         className="w-full h-full z-0"
         style={{ zIndex: 0 }}
       >
-        <MapUpdater center={center} />
+        <MapUpdater center={centerTuple} />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <Circle 
-          center={center} 
+          center={centerTuple} 
           radius={400} 
           pathOptions={{ fillColor: "#ef4444", color: "#ef4444", fillOpacity: 0.15 }} 
         />
