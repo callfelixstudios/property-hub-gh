@@ -22,13 +22,17 @@ export default function PropertyVicinityMap({ lat, lng, neighborhood, region }: 
     let isMounted = true;
 
     // If we already have explicit GPS coordinates, don't geocode
-    if (lat != null && lng != null) return;
+    // CRITICAL FIX: Ignore placeholder coordinates that were saved to the DB by default
+    const isPlaceholder = (lat === 5.6037 && lng === -0.1870) || (lat === 0 && lng === 0);
+    if (lat != null && lng != null && !isPlaceholder) return;
 
     async function fetchWithFallback() {
       // Build a multi-tier fallback array using the exact format requested
       const queries = [];
       
-      // Tier 1: Highly specific Neighborhood + Region
+      // Tier 1: Region > Neighborhood exactly as requested
+      if (region && neighborhood) queries.push(`${region}, ${neighborhood}, Ghana`);
+      // Tier 2: Neighborhood > Region (Backup)
       if (neighborhood && region) queries.push(`${neighborhood}, ${region}, Ghana`);
       // Tier 2: Just Neighborhood
       else if (neighborhood) queries.push(`${neighborhood}, Ghana`);
