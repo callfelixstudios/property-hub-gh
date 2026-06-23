@@ -11,25 +11,24 @@ interface PropertyVicinityMapProps {
 }
 
 export default function PropertyVicinityMap({ lat, lng, neighborhood, region, country }: PropertyVicinityMapProps) {
-  const [coordinates, setCoordinates] = useState<{lat: number, lon: number} | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Optimistically initialize with passed coordinates or the Accra fallback
+  // This completely eliminates any initial spinner UI state
+  const defaultLat = lat ?? 5.6037;
+  const defaultLng = lng ?? -0.1870;
+  
+  const [coordinates, setCoordinates] = useState<{lat: number, lon: number}>({ 
+    lat: defaultLat, 
+    lon: defaultLng 
+  });
+  
+  // We no longer block the UI with an isLoading state. 
+  // We render the iframe immediately with default/passed coords.
 
   useEffect(() => {
     let isMounted = true;
 
-    // Ultimate Safety Kill Switch: Force render after 2500ms no matter what
-    const hardTimeout = setTimeout(() => {
-      if (isMounted) {
-        setCoordinates(prev => prev || { lat: 5.6037, lon: -0.1870 });
-        setIsLoading(false);
-      }
-    }, 2500);
-
-    // If coordinates are explicitly provided
+    // If coordinates were explicitly provided in props, we don't need to geocode.
     if (lat != null && lng != null) {
-      setCoordinates({ lat, lon: lng });
-      setIsLoading(false);
-      clearTimeout(hardTimeout);
       return;
     }
 
@@ -60,7 +59,6 @@ export default function PropertyVicinityMap({ lat, lng, neighborhood, region, co
               if (isMounted) {
                 clearTimeout(timeoutId);
                 setCoordinates({ lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) });
-                setIsLoading(false);
               }
               return; 
             }
@@ -71,16 +69,10 @@ export default function PropertyVicinityMap({ lat, lng, neighborhood, region, co
         }
       } catch (err: any) {
         if (err.name === 'AbortError') {
-          console.warn("Geocoding API timed out after 2500ms. Forcing fallback.");
+          console.warn("Geocoding API timed out after 2500ms.");
         }
       } finally {
         clearTimeout(timeoutId);
-      }
-
-      // Final Safe Coordinates Catch
-      if (isMounted) {
-        setCoordinates({ lat: 5.6037, lon: -0.1870 });
-        setIsLoading(false);
       }
     }
 
@@ -88,20 +80,10 @@ export default function PropertyVicinityMap({ lat, lng, neighborhood, region, co
 
     return () => {
       isMounted = false;
-      clearTimeout(hardTimeout);
     };
   }, [lat, lng, neighborhood, region, country]);
 
-  if (isLoading || !coordinates) {
-    return (
-      <div className="w-full h-[400px] rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center relative">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-navy-base border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-sm font-medium text-slate-500">Fetching neighborhood map view...</p>
-        </div>
-      </div>
-    );
-  }
+  // The spinner is completely removed. We ALWAYS have coordinates.
 
   // Calculate a reasonable bounding box for the iframe
   const offset = 0.005; // Roughly 500 meters
