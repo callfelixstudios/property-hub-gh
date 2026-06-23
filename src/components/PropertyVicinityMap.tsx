@@ -17,10 +17,19 @@ export default function PropertyVicinityMap({ lat, lng, neighborhood, region, co
   useEffect(() => {
     let isMounted = true;
 
+    // Ultimate Safety Kill Switch: Force render after 2500ms no matter what
+    const hardTimeout = setTimeout(() => {
+      if (isMounted) {
+        setCoordinates(prev => prev || { lat: 5.6037, lon: -0.1870 });
+        setIsLoading(false);
+      }
+    }, 2500);
+
     // If coordinates are explicitly provided
     if (lat != null && lng != null) {
       setCoordinates({ lat, lon: lng });
       setIsLoading(false);
+      clearTimeout(hardTimeout);
       return;
     }
 
@@ -79,6 +88,7 @@ export default function PropertyVicinityMap({ lat, lng, neighborhood, region, co
 
     return () => {
       isMounted = false;
+      clearTimeout(hardTimeout);
     };
   }, [lat, lng, neighborhood, region, country]);
 
