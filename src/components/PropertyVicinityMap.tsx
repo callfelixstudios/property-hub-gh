@@ -55,28 +55,49 @@ export default function PropertyVicinityMap({ lat, lng, neighborhood, region, co
       // Tier 3: National Baseline Fallback
       queries.push(`Accra, ${country || "Ghana"}`);
 
-      for (const query of queries) {
-        try {
-          const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`;
-          const res = await fetch(url, { headers: { 'User-Agent': 'PropertyHubGH-Directory-Agent' } });
-          const data = await res.json();
-          
-          if (data && data.length > 0) {
-            if (isMounted) {
-              setCoordinates({ lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) });
-              setIsLoading(false);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+      }, 2500);
+
+      try {
+        for (const query of queries) {
+          try {
+            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`;
+            const res = await fetch(url, { 
+              headers: { 'User-Agent': 'PropertyHubGH-App' },
+              signal: controller.signal 
+            });
+            const data = await res.json();
+            
+            if (data && data.length > 0) {
+              if (isMounted) {
+                clearTimeout(timeoutId);
+                setCoordinates({ lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) });
+                setIsLoading(false);
+              }
+              return; // Stop searching once we find a valid result
             }
-            return; // Stop searching once we find a valid result
+          } catch (err: any) {
+            if (err.name === 'AbortError') {
+              throw err; // Break out of the loop completely on timeout
+            }
+            console.error(`Geocoding lookup failed for query "${query}":`, err);
+            // Continue to the next fallback tier
           }
-        } catch (err) {
-          console.error(`Geocoding lookup failed for query "${query}":`, err);
-          // Continue to the next fallback tier
         }
+      } catch (err: any) {
+        if (err.name === 'AbortError') {
+          console.warn("Geocoding API timed out after 2500ms. Forcing fallback.");
+        } else {
+          console.error("Geocoding loop failed:", err);
+        }
+      } finally {
+        clearTimeout(timeoutId);
       }
 
       // Final Safe Coordinates Catch
       if (isMounted) {
-        console.warn("All geocoding tiers failed. Falling back to default Accra coordinates.");
         setCoordinates({ lat: 5.6037, lon: -0.1870 });
         setIsLoading(false);
       }
