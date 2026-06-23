@@ -5,10 +5,11 @@ import { useEffect, useState } from 'react';
 interface PropertyVicinityMapProps {
   lat?: number | null;
   lng?: number | null;
-  location?: string;
+  neighborhood?: string;
+  region?: string;
 }
 
-export default function PropertyVicinityMap({ lat, lng, location }: PropertyVicinityMapProps) {
+export default function PropertyVicinityMap({ lat, lng, neighborhood, region }: PropertyVicinityMapProps) {
   const defaultLat = lat ?? 5.6037;
   const defaultLng = lng ?? -0.1870;
 
@@ -20,38 +21,64 @@ export default function PropertyVicinityMap({ lat, lng, location }: PropertyVici
   useEffect(() => {
     let isMounted = true;
 
+    // If we already have explicit GPS coordinates, don't geocode
     if (lat != null && lng != null) return;
 
-    async function geocode() {
-      const query = `${location || 'Accra'}, Ghana`;
+    async function fetchWithFallback() {
+      // Build a multi-tier fallback array using the exact format requested
+      const queries = [];
+      
+      // Tier 1: Highly specific Neighborhood + Region
+      if (neighborhood && region) queries.push(`${neighborhood}, ${region}, Ghana`);
+      // Tier 2: Just Neighborhood
+      else if (neighborhood) queries.push(`${neighborhood}, Ghana`);
+      
+      // Tier 3: Just Region (Fallback)
+      if (region) {
+        // Nominatim sometimes needs "Region" appended to resolve Ghanaian regions properly
+        queries.push(`${region} Region, Ghana`);
+        queries.push(`${region}, Ghana`);
+      }
+      
+      // Tier 4: Ultimate fallback
+      queries.push(`Accra, Ghana`);
+
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 2500);
 
       try {
-        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`;
-        const res = await fetch(url, {
-          headers: { 'User-Agent': 'PropertyHubGH' },
-          signal: controller.signal,
-        });
-        const data = await res.json();
-        if (data && data.length > 0 && isMounted) {
-          clearTimeout(timeoutId);
-          setCoordinates({ lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) });
+        for (const query of queries) {
+          try {
+            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`;
+            const res = await fetch(url, {
+              headers: { 'User-Agent': 'PropertyHubGH' },
+              signal: controller.signal,
+            });
+            const data = await res.json();
+            
+            if (data && data.length > 0 && isMounted) {
+              clearTimeout(timeoutId);
+              setCoordinates({ lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) });
+              return; // Stop searching once we find a valid coordinate
+            }
+          } catch (err: any) {
+            if (err.name === 'AbortError') throw err; // Bubble up timeout to break the loop entirely
+            console.error(`Geocoding lookup failed for query "${query}":`, err);
+          }
         }
       } catch (err: any) {
         if (err.name === 'AbortError') {
-          console.warn('Geocoding timed out after 2500ms.');
-        } else {
-          console.error('Geocoding failed:', err);
+          console.warn('Geocoding timed out after 2500ms. Falling back to default.');
         }
       } finally {
         clearTimeout(timeoutId);
       }
     }
 
-    geocode();
+    fetchWithFallback();
+
     return () => { isMounted = false; };
-  }, [lat, lng, location]);
+  }, [lat, lng, neighborhood, region]);
 
   const offset = 0.008;
   const bbox = `${coordinates.lon - offset},${coordinates.lat - offset},${coordinates.lon + offset},${coordinates.lat + offset}`;
