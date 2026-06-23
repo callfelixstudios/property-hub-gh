@@ -5,11 +5,10 @@ import { useEffect, useState } from 'react';
 interface PropertyVicinityMapProps {
   lat?: number | null;
   lng?: number | null;
-  neighborhood?: string;
-  region?: string;
+  location?: string;
 }
 
-export default function PropertyVicinityMap({ lat, lng, neighborhood, region }: PropertyVicinityMapProps) {
+export default function PropertyVicinityMap({ lat, lng, location }: PropertyVicinityMapProps) {
   const defaultLat = lat ?? 5.6037;
   const defaultLng = lng ?? -0.1870;
 
@@ -21,36 +20,34 @@ export default function PropertyVicinityMap({ lat, lng, neighborhood, region }: 
   useEffect(() => {
     let isMounted = true;
 
-    // If we already have explicit GPS coordinates, don't geocode
-    // CRITICAL FIX: Convert to Number to handle string values from Supabase before checking
-    // Use Math.abs for floating point comparisons because DB values might be 5.60370001
+    // Convert to Number to handle string values from Supabase before checking
     const numLat = Number(lat);
     const numLng = Number(lng);
     const isPlaceholder = 
       (Math.abs(numLat - 5.6037) < 0.001 && Math.abs(numLng - (-0.1870)) < 0.001) || 
       (Math.abs(numLat) < 0.0001 && Math.abs(numLng) < 0.0001);
     
-    if (lat != null && lng != null && !isPlaceholder) return;
+    // Skip geocoding only if we have genuine coordinates from the database
+    if (lat != null && lng != null && !isPlaceholder) {
+      setCoordinates({ lat: numLat, lon: numLng });
+      return;
+    }
 
     async function fetchWithFallback() {
-      // Build a multi-tier fallback array using the exact format requested
       const queries = [];
       
-      // Tier 1: Region > Neighborhood exactly as requested
-      if (region && neighborhood) queries.push(`${region}, ${neighborhood}, Ghana`);
-      // Tier 2: Neighborhood > Region (Backup)
-      if (neighborhood && region) queries.push(`${neighborhood}, ${region}, Ghana`);
-      // Tier 3: Just Neighborhood
-      if (neighborhood) queries.push(`${neighborhood}, Ghana`);
-      
-      // Tier 3: Just Region (Fallback)
-      if (region) {
-        // Nominatim sometimes needs "Region" appended to resolve Ghanaian regions properly
-        queries.push(`${region} Region, Ghana`);
-        queries.push(`${region}, Ghana`);
+      // Tier 1: User explicitly requested `${listing.location}, Ghana`
+      if (location) {
+        queries.push(`${location}, Ghana`);
+        
+        // Tier 2: Split and fallback if the explicit string is too complex for Nominatim
+        if (location.includes(',')) {
+          const parts = location.split(',').map(s => s.trim());
+          if (parts.length > 0) queries.push(`${parts[0]}, Ghana`); // E.g. "East Legon, Ghana"
+        }
       }
       
-      // Tier 4: Ultimate fallback
+      // Tier 3: Ultimate fallback
       queries.push(`Accra, Ghana`);
 
       const controller = new AbortController();
@@ -60,10 +57,10 @@ export default function PropertyVicinityMap({ lat, lng, neighborhood, region }: 
         for (const query of queries) {
           try {
             const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`;
-            const res = await fetch(url, {
-              headers: { 'User-Agent': 'PropertyHubGH (support@propertyhub.gh)' },
-              signal: controller.signal,
-            });
+            
+            // CRITICAL FIX: Browsers block custom 'User-Agent' headers in client-side fetch.
+            // Using a standard fetch without it allows the browser's native User-Agent to pass through, satisfying Nominatim.
+            const res = await fetch(url, { signal: controller.signal });
             
             if (!res.ok) {
               console.warn(`Nominatim returned ${res.status} for ${query}`);
@@ -78,13 +75,13 @@ export default function PropertyVicinityMap({ lat, lng, neighborhood, region }: 
               return; // Stop searching once we find a valid coordinate
             }
           } catch (err: any) {
-            if (err.name === 'AbortError') throw err; // Bubble up timeout to break the loop entirely
+            if (err.name === 'AbortError') throw err;
             console.error(`Geocoding lookup failed for query "${query}":`, err);
           }
         }
       } catch (err: any) {
         if (err.name === 'AbortError') {
-          console.warn('Geocoding timed out after 2500ms. Falling back to default.');
+          console.warn('Geocoding timed out after 5000ms.');
         }
       } finally {
         clearTimeout(timeoutId);
@@ -94,7 +91,7 @@ export default function PropertyVicinityMap({ lat, lng, neighborhood, region }: 
     fetchWithFallback();
 
     return () => { isMounted = false; };
-  }, [lat, lng, neighborhood, region]);
+  }, [lat, lng, location]);
 
   const offset = 0.008;
   const bbox = `${coordinates.lon - offset},${coordinates.lat - offset},${coordinates.lon + offset},${coordinates.lat + offset}`;

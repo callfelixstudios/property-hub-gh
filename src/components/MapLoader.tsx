@@ -5,8 +5,7 @@ import PropertyVicinityMap from './PropertyVicinityMap';
 interface MapLoaderProps {
   lat?: number | null;
   lng?: number | null;
-  neighborhood?: string;
-  region?: string;
+  location?: string;
 }
 
 export default function MapLoader(props: MapLoaderProps) {
