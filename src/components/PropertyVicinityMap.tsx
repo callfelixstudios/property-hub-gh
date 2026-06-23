@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Circle, useMap } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
 
 interface PropertyVicinityMapProps {
   lat?: number | null;
