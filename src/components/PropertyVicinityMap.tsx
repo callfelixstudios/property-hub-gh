@@ -28,6 +28,8 @@ export default function PropertyVicinityMap({ lat, lng, neighborhood, region, co
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     // If coordinates are explicitly provided
     if (lat != null && lng != null) {
       setCoordinates({ lat, lon: lng });
@@ -35,42 +37,56 @@ export default function PropertyVicinityMap({ lat, lng, neighborhood, region, co
       return;
     }
 
-    // Otherwise attempt to geocode
-    if (neighborhood || region) {
-      const searchParts = [];
-      if (neighborhood) searchParts.push(neighborhood);
-      searchParts.push(region || "Greater Accra");
-      searchParts.push(country || "Ghana");
+    async function fetchWithFallback() {
+      const queries = [];
       
-      const queryString = searchParts.join(', ');
-      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(queryString)}&limit=1`;
+      // Tier 1: Specific
+      if (neighborhood && region) {
+        queries.push(`${neighborhood}, ${region}, ${country || "Ghana"}`);
+      } else if (neighborhood) {
+        queries.push(`${neighborhood}, ${country || "Ghana"}`);
+      }
 
-      fetch(url, {
-        headers: {
-          'User-Agent': 'PropertyHubGH-Directory-Agent'
+      // Tier 2: Regional Fallback
+      if (region) {
+        queries.push(`${region}, ${country || "Ghana"}`);
+      }
+
+      // Tier 3: National Baseline Fallback
+      queries.push(`Accra, ${country || "Ghana"}`);
+
+      for (const query of queries) {
+        try {
+          const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`;
+          const res = await fetch(url, { headers: { 'User-Agent': 'PropertyHubGH-Directory-Agent' } });
+          const data = await res.json();
+          
+          if (data && data.length > 0) {
+            if (isMounted) {
+              setCoordinates({ lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) });
+              setIsLoading(false);
+            }
+            return; // Stop searching once we find a valid result
+          }
+        } catch (err) {
+          console.error(`Geocoding lookup failed for query "${query}":`, err);
+          // Continue to the next fallback tier
         }
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.length > 0) {
-          setCoordinates({ lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) });
-        } else {
-          // Fallback if geocoding yields no results
-          setCoordinates({ lat: 5.6037, lon: -0.1870 });
-        }
-      })
-      .catch(err => {
-        console.error("Geocoding failed:", err);
+      }
+
+      // Final Safe Coordinates Catch
+      if (isMounted) {
+        console.warn("All geocoding tiers failed. Falling back to default Accra coordinates.");
         setCoordinates({ lat: 5.6037, lon: -0.1870 });
-      })
-      .finally(() => {
         setIsLoading(false);
-      });
-    } else {
-      // Fallback if no location data is provided at all
-      setCoordinates({ lat: 5.6037, lon: -0.1870 });
-      setIsLoading(false);
+      }
     }
+
+    fetchWithFallback();
+
+    return () => {
+      isMounted = false;
+    };
   }, [lat, lng, neighborhood, region, country]);
 
   if (isLoading || !coordinates) {
