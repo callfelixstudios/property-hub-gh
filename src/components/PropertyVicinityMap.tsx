@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { MapContainer, TileLayer, Circle, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
 
 interface PropertyVicinityMapProps {
   lat?: number | null;
@@ -8,6 +10,18 @@ interface PropertyVicinityMapProps {
   neighborhood?: string;
   region?: string;
   country?: string;
+}
+
+function MapUpdater({ center }: { center: [number, number] }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center, map.getZoom());
+    const timeoutId = setTimeout(() => {
+      map.invalidateSize();
+    }, 250);
+    return () => clearTimeout(timeoutId);
+  }, [center, map]);
+  return null;
 }
 
 export default function PropertyVicinityMap({ lat, lng, neighborhood, region, country }: PropertyVicinityMapProps) {
@@ -20,9 +34,6 @@ export default function PropertyVicinityMap({ lat, lng, neighborhood, region, co
     lat: defaultLat, 
     lon: defaultLng 
   });
-  
-  // We no longer block the UI with an isLoading state. 
-  // We render the iframe immediately with default/passed coords.
 
   useEffect(() => {
     let isMounted = true;
@@ -83,27 +94,33 @@ export default function PropertyVicinityMap({ lat, lng, neighborhood, region, co
     };
   }, [lat, lng, neighborhood, region, country]);
 
-  // The spinner is completely removed. We ALWAYS have coordinates.
-
-  // Calculate a reasonable bounding box for the iframe
-  const offset = 0.005; // Roughly 500 meters
-  const bbox = `${coordinates.lon - offset},${coordinates.lat - offset},${coordinates.lon + offset},${coordinates.lat + offset}`;
-  const iframeSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${coordinates.lat},${coordinates.lon}`;
+  const centerTuple: [number, number] = [coordinates.lat, coordinates.lon];
 
   return (
     <div className="w-full h-[400px] rounded-xl overflow-hidden border border-slate-200 z-0 relative bg-slate-100">
-      <iframe
-        width="100%"
-        height="100%"
-        frameBorder="0"
-        scrolling="no"
-        marginHeight={0}
-        marginWidth={0}
-        src={iframeSrc}
-        style={{ border: 0 }}
-        title="Property Vicinity Map"
-        className="w-full h-full"
-      ></iframe>
+      <MapContainer 
+        key={`${centerTuple[0]}-${centerTuple[1]}`}
+        center={centerTuple} 
+        zoom={14} 
+        scrollWheelZoom={false} 
+        style={{ height: '400px', width: '100%', zIndex: 0 }}
+      >
+        <MapUpdater center={centerTuple} />
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <Circle 
+          center={centerTuple} 
+          radius={900} 
+          pathOptions={{ 
+            color: '#0f172a',      
+            fillColor: '#38bdf8',  
+            fillOpacity: 0.35,     
+            weight: 2              
+          }} 
+        />
+      </MapContainer>
     </div>
   );
 }
