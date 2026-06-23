@@ -23,9 +23,12 @@ export default function PropertyVicinityMap({ lat, lng, neighborhood, region }: 
 
     // If we already have explicit GPS coordinates, don't geocode
     // CRITICAL FIX: Convert to Number to handle string values from Supabase before checking
+    // Use Math.abs for floating point comparisons because DB values might be 5.60370001
     const numLat = Number(lat);
     const numLng = Number(lng);
-    const isPlaceholder = (numLat === 5.6037 && numLng === -0.1870) || (numLat === 0 && numLng === 0);
+    const isPlaceholder = 
+      (Math.abs(numLat - 5.6037) < 0.001 && Math.abs(numLng - (-0.1870)) < 0.001) || 
+      (Math.abs(numLat) < 0.0001 && Math.abs(numLng) < 0.0001);
     
     if (lat != null && lng != null && !isPlaceholder) return;
 
@@ -37,8 +40,8 @@ export default function PropertyVicinityMap({ lat, lng, neighborhood, region }: 
       if (region && neighborhood) queries.push(`${region}, ${neighborhood}, Ghana`);
       // Tier 2: Neighborhood > Region (Backup)
       if (neighborhood && region) queries.push(`${neighborhood}, ${region}, Ghana`);
-      // Tier 2: Just Neighborhood
-      else if (neighborhood) queries.push(`${neighborhood}, Ghana`);
+      // Tier 3: Just Neighborhood
+      if (neighborhood) queries.push(`${neighborhood}, Ghana`);
       
       // Tier 3: Just Region (Fallback)
       if (region) {
