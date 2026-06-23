@@ -3,10 +3,7 @@
 import dynamic from 'next/dynamic';
 
 const PropertyVicinityMap = dynamic(
-  () => import('./PropertyVicinityMap').catch((err) => {
-    console.error('Failed to load map component:', err);
-    return { default: () => <div className="w-full h-[400px] rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center"><p className="text-sm text-slate-400">Map could not be loaded.</p></div> };
-  }),
+  () => import('./PropertyVicinityMap'),
   {
     ssr: false,
     loading: () => (
