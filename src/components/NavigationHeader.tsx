@@ -16,6 +16,7 @@ export default function NavigationHeader() {
 
   const [session, setSession] = useState<Session | null>(null);
 
+  // Auth state — universal, no coupling to scroll or other effects
   useEffect(() => {
     // Initial session check
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -33,15 +34,45 @@ export default function NavigationHeader() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
+  // Scroll listener — runs universally on all pages, no auth dependency
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 40);
     };
-    window.addEventListener("scroll", handleScroll);
+    // Set initial state in case page is already scrolled on mount
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const isSolidHeader = isScrolled || pathname === '/login' || pathname === '/register' || pathname === '/post-space' || pathname === '/safemove' || pathname === '/requests' || pathname === '/request-space' || pathname.startsWith('/dashboard') || pathname.startsWith('/listings/');
+  const isSolidHeader =
+    isScrolled ||
+    pathname === '/login' ||
+    pathname === '/register' ||
+    pathname === '/post-space' ||
+    pathname === '/safemove' ||
+    pathname === '/requests' ||
+    pathname === '/request-space' ||
+    pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/listings/');
+
+  // Auth-gated handler for "Request a Space"
+  const handleRequestSpace = () => {
+    if (!session) {
+      router.push('/login?next=/request-space&message=Please%20log%20in%20to%20submit%20a%20property%20request.');
+    } else {
+      router.push('/request-space');
+    }
+  };
+
+  // Auth-gated handler for "Post a Space" — preserves destination
+  const handlePostSpace = () => {
+    if (!session) {
+      router.push('/login?next=/post-space&message=Log%20in%20or%20create%20an%20account%20to%20list%20your%20property.');
+    } else {
+      router.push('/post-space');
+    }
+  };
 
   return (
     <header
@@ -217,8 +248,11 @@ export default function NavigationHeader() {
                 </Link>
               </>
             )}
-            <Link
-              href="/request-space"
+
+            {/* Request a Space — auth-gated */}
+            <button
+              type="button"
+              onClick={handleRequestSpace}
               className={`ml-1 font-bold py-2 px-5 rounded-full transition-all duration-200 border-2 ${
                 isSolidHeader
                   ? "border-emerald-600 text-emerald-700 hover:bg-emerald-50"
@@ -226,16 +260,12 @@ export default function NavigationHeader() {
               }`}
             >
               Request a Space
-            </Link>
+            </button>
+
+            {/* Post a Space — auth-gated with ?next= preservation */}
             <button
               type="button"
-              onClick={() => {
-                if (!session) {
-                  router.push('/login?message=Please%20log%20in%20or%20register%20an%20account%20to%20list%20a%20space');
-                } else {
-                  router.push('/post-space');
-                }
-              }}
+              onClick={handlePostSpace}
               className="ml-2 bg-accent-gold text-navy-base font-bold py-2 px-5 rounded-full transition-all duration-200 hover:brightness-105 hover:shadow-md"
             >
               + Post a Space
@@ -282,9 +312,19 @@ export default function NavigationHeader() {
               SafeMove
               <span className="ml-1.5 bg-accent-emerald text-white text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-full relative -top-1.5">Coming Soon</span>
             </Link>
-            <Link href="/request-space" className={`block px-3 py-2 rounded-md text-base font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 mt-2`}>
+
+            {/* Request a Space — auth-gated in mobile */}
+            <button
+              type="button"
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                handleRequestSpace();
+              }}
+              className="block w-full text-left px-3 py-2 rounded-md text-base font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 mt-2"
+            >
               Request a Space
-            </Link>
+            </button>
+
             <div className="px-3 py-2">
               <button
                 onClick={toggleCurrency}
@@ -293,6 +333,7 @@ export default function NavigationHeader() {
                 Currency: {displayCurrency === 'GHS' ? '₵ GHS' : '$ USD'}
               </button>
             </div>
+
             {session ? (
               <>
                 <Link href="/dashboard?tab=overview" className={`block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-navy-base hover:bg-slate-100 ${pathname === "/dashboard" ? "bg-slate-100 text-navy-base font-semibold" : ""}`}>
@@ -327,15 +368,14 @@ export default function NavigationHeader() {
                 <Link href="/register" className={`block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-navy-base hover:bg-slate-100 ${pathname === "/register" ? "bg-slate-100 text-navy-base font-semibold" : ""}`}>Register</Link>
               </>
             )}
+
+            {/* Post a Space — auth-gated with ?next= in mobile */}
             <div className="px-3 py-2">
               <button
                 type="button"
                 onClick={() => {
-                  if (!session) {
-                    router.push('/login?message=Please%20log%20in%20or%20register%20an%20account%20to%20list%20a%20space');
-                  } else {
-                    router.push('/post-space');
-                  }
+                  setIsMobileMenuOpen(false);
+                  handlePostSpace();
                 }}
                 className="block w-full text-center bg-accent-gold text-navy-base font-bold py-2 px-4 rounded-sm transition-opacity hover:opacity-90"
               >
