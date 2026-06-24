@@ -5,6 +5,8 @@ import Image from "next/image";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import imageCompression from 'browser-image-compression';
+import { ghanaLocations, regionToLocationKey } from "@/data/ghanaLocations";
+import { Combobox } from "@/components/ui/Combobox";
 
 const REGION_LABELS: Record<string, string> = {
   greater_accra:  "Greater Accra Region",
@@ -464,7 +466,10 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
                 </div>
                 <div>
                   <label className={labelCls}>Region</label>
-                  <select value={region} onChange={(e) => setRegion(e.target.value)} className={inputCls}>
+                  <select value={region} onChange={(e) => {
+                    setRegion(e.target.value);
+                    setNeighborhood("");
+                  }} className={inputCls}>
                     <option value="">Select Region...</option>
                     <option value="greater_accra">Greater Accra</option>
                     <option value="ashanti">Ashanti</option>
@@ -489,7 +494,13 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>Neighborhood</label>
-                  <input type="text" value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)} placeholder="e.g., East Legon, Cantonments" className={inputCls} />
+                  <Combobox
+                    options={region ? (ghanaLocations[regionToLocationKey[region]] || []) : []}
+                    value={neighborhood}
+                    onChange={setNeighborhood}
+                    disabled={!region}
+                    placeholder="e.g., East Legon, Cantonments"
+                  />
                 </div>
                 <div>
                   <label className={labelCls}>Nearest Landmark or Location Description</label>
