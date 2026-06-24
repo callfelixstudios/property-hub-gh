@@ -16,6 +16,11 @@ export default function NavigationHeader() {
   // Memoize client to prevent recreation on every scroll/render
   const supabase = useMemo(() => createClient(), []);
   const [session, setSession] = useState<Session | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Auth state — universal, no coupling to scroll or other effects
   useEffect(() => {
@@ -58,24 +63,6 @@ export default function NavigationHeader() {
     pathname === '/request-space' ||
     pathname.startsWith('/dashboard') ||
     pathname.startsWith('/listings/');
-
-  // Auth-gated handler for "Request a Space"
-  const handleRequestSpace = () => {
-    if (!session) {
-      router.push('/login?next=/request-space&message=Please%20log%20in%20to%20submit%20a%20property%20request.');
-    } else {
-      router.push('/request-space');
-    }
-  };
-
-  // Auth-gated handler for "Post a Space" — preserves destination
-  const handlePostSpace = () => {
-    if (!session) {
-      router.push('/login?next=/post-space&message=Log%20in%20or%20create%20an%20account%20to%20list%20your%20property.');
-    } else {
-      router.push('/post-space');
-    }
-  };
 
   return (
     <header
@@ -159,7 +146,7 @@ export default function NavigationHeader() {
                   : "border-white/30 text-white hover:bg-white/10"
               }`}
             >
-              {displayCurrency === 'GHS' ? '₵ GHS' : '$ USD'}
+              {isMounted ? (displayCurrency === 'GHS' ? '₵ GHS' : '$ USD') : '₵ GHS'}
             </button>
 
             {session ? (
@@ -253,26 +240,24 @@ export default function NavigationHeader() {
             )}
 
             {/* Request a Space — auth-gated */}
-            <button
-              type="button"
-              onClick={handleRequestSpace}
-              className={`ml-1 font-bold py-2 px-5 rounded-full transition-all duration-200 border-2 ${
+            <Link
+              href={session ? '/request-space' : '/login?next=/request-space&message=Please%20log%20in%20to%20submit%20a%20property%20request.'}
+              className={`ml-1 font-bold py-2 px-5 rounded-full transition-all duration-200 border-2 inline-flex items-center justify-center ${
                 isSolidHeader
                   ? "border-emerald-600 text-emerald-700 hover:bg-emerald-50"
                   : "border-white text-white hover:bg-white/10"
               }`}
             >
               Request a Space
-            </button>
+            </Link>
 
             {/* Post a Space — auth-gated with ?next= preservation */}
-            <button
-              type="button"
-              onClick={handlePostSpace}
-              className="ml-2 bg-accent-gold text-navy-base font-bold py-2 px-5 rounded-full transition-all duration-200 hover:brightness-105 hover:shadow-md"
+            <Link
+              href={session ? '/post-space' : '/login?next=/post-space&message=Log%20in%20or%20create%20an%20account%20to%20list%20your%20property.'}
+              className="ml-2 bg-accent-gold text-navy-base font-bold py-2 px-5 rounded-full transition-all duration-200 hover:brightness-105 hover:shadow-md inline-flex items-center justify-center"
             >
               + Post a Space
-            </button>
+            </Link>
           </div>
 
           {/* Mobile menu button */}
@@ -317,23 +302,20 @@ export default function NavigationHeader() {
             </Link>
 
             {/* Request a Space — auth-gated in mobile */}
-            <button
-              type="button"
-              onClick={() => {
-                setIsMobileMenuOpen(false);
-                handleRequestSpace();
-              }}
+            <Link
+              href={session ? '/request-space' : '/login?next=/request-space&message=Please%20log%20in%20to%20submit%20a%20property%20request.'}
+              onClick={() => setIsMobileMenuOpen(false)}
               className="block w-full text-left px-3 py-2 rounded-md text-base font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 mt-2"
             >
               Request a Space
-            </button>
+            </Link>
 
             <div className="px-3 py-2">
               <button
                 onClick={toggleCurrency}
                 className="w-full text-left px-4 py-2 rounded-md text-base font-bold bg-gray-100 text-navy-base border border-gray-200"
               >
-                Currency: {displayCurrency === 'GHS' ? '₵ GHS' : '$ USD'}
+                Currency: {isMounted ? (displayCurrency === 'GHS' ? '₵ GHS' : '$ USD') : '₵ GHS'}
               </button>
             </div>
 
@@ -374,16 +356,13 @@ export default function NavigationHeader() {
 
             {/* Post a Space — auth-gated with ?next= in mobile */}
             <div className="px-3 py-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsMobileMenuOpen(false);
-                  handlePostSpace();
-                }}
+              <Link
+                href={session ? '/post-space' : '/login?next=/post-space&message=Log%20in%20or%20create%20an%20account%20to%20list%20your%20property.'}
+                onClick={() => setIsMobileMenuOpen(false)}
                 className="block w-full text-center bg-accent-gold text-navy-base font-bold py-2 px-4 rounded-sm transition-opacity hover:opacity-90"
               >
                 + Post a Space
-              </button>
+              </Link>
             </div>
           </div>
         </div>
