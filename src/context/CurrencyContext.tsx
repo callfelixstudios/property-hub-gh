@@ -54,35 +54,32 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const toggleCurrency = () => {
-    setDisplayCurrency(prev => {
-      const next = prev === 'GHS' ? 'USD' : 'GHS';
+    const next = displayCurrency === 'GHS' ? 'USD' : 'GHS';
+    setDisplayCurrency(next);
 
-      // Always write to localStorage
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem('property_hub_currency', next);
-        // Dispatch storage event so all tabs / components react immediately
-        window.dispatchEvent(new StorageEvent('storage', {
-          key: 'property_hub_currency',
-          newValue: next,
-          storageArea: window.localStorage,
-        }));
+    // Always write to localStorage
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('property_hub_currency', next);
+      // Dispatch storage event so all tabs / components react immediately
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'property_hub_currency',
+        newValue: next,
+        storageArea: window.localStorage,
+      }));
+    }
+
+    // If authenticated, also persist to DB
+    const persist = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from('profiles')
+          .update({ preferred_currency: next })
+          .eq('id', user.id);
       }
-
-      // If authenticated, also persist to DB
-      const persist = async () => {
-        const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          await supabase
-            .from('profiles')
-            .update({ preferred_currency: next })
-            .eq('id', user.id);
-        }
-      };
-      persist();
-
-      return next;
-    });
+    };
+    persist();
   };
 
   const formatPrice = (amount: number, fromCurrency: string) => {

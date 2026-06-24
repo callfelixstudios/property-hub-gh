@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { createClient } from '@/utils/supabase/client';
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
@@ -9,11 +9,12 @@ import { useCurrency } from '@/context/CurrencyContext';
 import { Heart } from "lucide-react";
 
 export default function NavigationHeader() {
-  const supabase = createClient();
   const router = useRouter();
   const pathname = usePathname();
   const { displayCurrency, toggleCurrency } = useCurrency();
 
+  // Memoize client to prevent recreation on every scroll/render
+  const supabase = useMemo(() => createClient(), []);
   const [session, setSession] = useState<Session | null>(null);
 
   // Auth state — universal, no coupling to scroll or other effects
@@ -29,39 +30,26 @@ export default function NavigationHeader() {
     return () => {
       subscription?.unsubscribe?.();
     };
-  }, []);
+  }, [supabase]);
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
-  // Scroll listener — uses IntersectionObserver on a sentinel element for reliability
-  // and immunity to React hydration remounts
+  // Scroll listener — simple, robust, passive event listener
   useEffect(() => {
-    const sentinel = document.getElementById("header-scroll-sentinel");
-    if (!sentinel) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        // If the sentinel is intersecting (visible at the top), we haven't scrolled down.
-        // If it's NOT intersecting, we have scrolled down.
-        setIsScrolled(!entry.isIntersecting);
-      },
-      {
-        root: null,
-        rootMargin: "0px",
-        threshold: 0,
-      }
-    );
-
-    observer.observe(sentinel);
-
-    return () => {
-      observer.disconnect();
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 40);
     };
-  }, [pathname]); // Re-run if pathname changes to ensure sentinel is found if layouts change
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const isSolidHeader =
     isScrolled ||
+    pathname === '/' ||
+    pathname === '/rentals' ||
+    pathname === '/sales' ||
     pathname === '/login' ||
     pathname === '/register' ||
     pathname === '/post-space' ||
