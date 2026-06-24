@@ -30,6 +30,9 @@ export default function RootLayout({
         <Providers>
           <NavigationHeader />
           <main className="flex-grow">
+            {/* Sentinel element observed by NavigationHeader IntersectionObserver
+                to detect scroll reliably across all auth states */}
+            <div id="header-scroll-sentinel" aria-hidden="true" style={{ height: 0, pointerEvents: 'none' }} />
             {children}
           </main>
         </Providers>

@@ -34,16 +34,31 @@ export default function NavigationHeader() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
-  // Scroll listener — runs universally on all pages, no auth dependency
+  // Scroll listener — uses IntersectionObserver on a sentinel element for reliability
+  // and immunity to React hydration remounts
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 40);
+    const sentinel = document.getElementById("header-scroll-sentinel");
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // If the sentinel is intersecting (visible at the top), we haven't scrolled down.
+        // If it's NOT intersecting, we have scrolled down.
+        setIsScrolled(!entry.isIntersecting);
+      },
+      {
+        root: null,
+        rootMargin: "0px",
+        threshold: 0,
+      }
+    );
+
+    observer.observe(sentinel);
+
+    return () => {
+      observer.disconnect();
     };
-    // Set initial state in case page is already scrolled on mount
-    handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [pathname]); // Re-run if pathname changes to ensure sentinel is found if layouts change
 
   const isSolidHeader =
     isScrolled ||
