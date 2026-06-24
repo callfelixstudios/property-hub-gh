@@ -8,7 +8,7 @@
   --color-accent-emerald-alt: #2ec4b6;
   --color-accent-gold: #eab308;
   
-  --font-sans: var(--font-jakarta-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   
   --shadow-ambient: 0 0 15px rgba(13, 27, 42, 0.05); /* Navy tint ambient shadow */
   

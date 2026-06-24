@@ -1,0 +1,67 @@
+# CRITICAL RULES - MUST FOLLOW
+
+
+
+## RESPONSE
+
+- Keep response concise and to the point - unless the user asks otherwise.
+
+
+## PLANNING MODE
+
+- Always ask clarifying questions.
+- Never assume design, tech stack or features.
+- Use deep-dive sub-agents to assist with research.
+- Use deep-dive sub-agents to review the different aspects of your plan before presenting it to the user.
+
+
+
+
+
+## CHANGE / EDIT MODE
+
+- Never implement features yourself. When possible, use sub-agents!
+
+- Identify changes from the plan that can be implemented in parallel, and use sub-agents to implement the features efficiently.
+
+- When using sub-agents tot implement features, act as a coordinator only.
+
+- Use the best model for the best task - premium models for complex tasks (like coding) and mid-tier models for simpler tasks, like documentation.
+
+- After completing features (large or small), always sun commands like lint, type check and next build to check code quality.
+
+
+
+## DATABASE SCHEMA CHANGES
+
+- Whenever you make changes to the database schema, ALWAYS run the drizzle generate and migrate commands.
+- NEVER run drizzle push
+
+
+
+## TESTING
+
+- Use any testing tools, libraries available to the project for testing your change.
+- NEVER assume your changes simply work, always test !
+- If the project does not have any testing tools, scripts, MCP tools, skills etc. available for testing, ask the user whether testing should be skipped.
+
+
+
+## UI DESIGN
+
+- Always follow the UI design system when creating or reviewing components or pages.
+
+- Design system: @DESIGN.md
+
+
+## 🧠 Project Memory & Documentation State (Obsidian)
+
+- **Trigger:** Immediately following any successful `git push` to the remote repository.
+- **Action:** A sub-agent must automatically compile a technical update summary markdown file.
+- **Storage Target Vault Location:** `C:\Users\CallFELIX\Documents\PROJECT\property-hub-gh\obsidian-vault`
+- **File Naming Convention:** `YYYY-MM-DD-milestone-update.md`
+- **Required Report Structure:**
+  1. **Milestone Summary:** High-level summary of the pushed changes.
+  2. **Files Modified:** Bulleted list of altered file paths.
+  3. **Data/UI Architecture State:** Explicitly document current active object states (e.g., "Neighborhood field transitioned from text input to searchable combobox bound to local region data presets").
+  4. **Next Immediate Steps:** Remaining goals for the active feature branch.

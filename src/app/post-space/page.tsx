@@ -7,6 +7,27 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import imageCompression from 'browser-image-compression';
+import { ghanaLocations, regionToLocationKey } from "@/data/ghanaLocations";
+import { Combobox } from "@/components/ui/Combobox";
+
+const REGION_LABELS: Record<string, string> = {
+  greater_accra:  "Greater Accra Region",
+  ashanti:        "Ashanti Region",
+  central:        "Central Region",
+  ahafo:          "Ahafo Region",
+  bono:           "Bono Region",
+  bono_east:      "Bono East Region",
+  eastern:        "Eastern Region",
+  north_east:     "North East Region",
+  northern:       "Northern Region",
+  oti:            "Oti Region",
+  savannah:       "Savannah Region",
+  upper_east:     "Upper East Region",
+  upper_west:     "Upper West Region",
+  volta:          "Volta Region",
+  western:        "Western Region",
+  western_north:  "Western North Region",
+};
 
 export default function PostSpaceWizard() {
   const supabase = createClient();
@@ -234,7 +255,7 @@ export default function PostSpaceWizard() {
         rentAdvanceMonths = 24;
       }
 
-      const { error } = await supabase.from('listings').insert({
+      const { data: inserted, error } = await supabase.from('listings').insert({
         poster_id: user.id,
         transaction_type: listingType,
         listing_category_type: listingCategoryType,
@@ -268,9 +289,28 @@ export default function PostSpaceWizard() {
         parking_capacity: parkingCapacity ? parseInt(parkingCapacity, 10) : null,
         amenities: selectedAmenities.length > 0 ? selectedAmenities : null,
         poster_role: posterRole || null,
-      });
+      }).select('id');
 
       if (error) throw error;
+
+      // Fire-and-forget: geocode region/neighborhood into lat/lng
+      const listingId = inserted?.[0]?.id;
+      if (listingId && region && neighborhood) {
+        const regionName = REGION_LABELS[region] || region;
+        const geoQuery = `${neighborhood}, ${regionName}, Ghana`;
+        fetch(`/api/geocode?q=${encodeURIComponent(geoQuery)}`)
+          .then(r => r.json())
+          .then(data => {
+            if (data && data.length > 0) {
+              supabase
+                .from('listings')
+                .update({ latitude: parseFloat(data[0].lat), longitude: parseFloat(data[0].lon) })
+                .eq('id', listingId)
+                .then(() => {});
+            }
+          })
+          .catch(() => {});
+      }
 
       // Redirect upon success
       if (listingType === "rent") {
@@ -413,7 +453,10 @@ export default function PostSpaceWizard() {
                     <label className="block text-sm font-bold text-navy-base mb-2">Region</label>
                     <select 
                       value={region}
-                      onChange={(e) => setRegion(e.target.value)}
+                      onChange={(e) => {
+                        setRegion(e.target.value);
+                        setNeighborhood("");
+                      }}
                       className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
                     >
                       <option value="">Select Region...</option>
@@ -440,12 +483,12 @@ export default function PostSpaceWizard() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-bold text-navy-base mb-2">Neighborhood</label>
-                    <input 
-                      type="text" 
+                    <Combobox
+                      options={region ? (ghanaLocations[regionToLocationKey[region]] || []) : []}
                       value={neighborhood}
-                      onChange={(e) => setNeighborhood(e.target.value)}
-                      placeholder="e.g., East Legon, Cantoments" 
-                      className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
+                      onChange={setNeighborhood}
+                      disabled={!region}
+                      placeholder="e.g., East Legon, Cantonments"
                     />
                   </div>
                   <div>

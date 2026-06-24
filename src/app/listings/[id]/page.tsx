@@ -72,6 +72,25 @@ function formatCategory(cat: string) {
 const formatRegion = (str: string | undefined) =>
   str ? str.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') : '';
 
+const REGION_LABELS: Record<string, string> = {
+  greater_accra:  "Greater Accra Region",
+  ashanti:        "Ashanti Region",
+  central:        "Central Region",
+  ahafo:          "Ahafo Region",
+  bono:           "Bono Region",
+  bono_east:      "Bono East Region",
+  eastern:        "Eastern Region",
+  north_east:     "North East Region",
+  northern:       "Northern Region",
+  oti:            "Oti Region",
+  savannah:       "Savannah Region",
+  upper_east:     "Upper East Region",
+  upper_west:     "Upper West Region",
+  volta:          "Volta Region",
+  western:        "Western Region",
+  western_north:  "Western North Region",
+};
+
 function formatCurrency(amount?: number) {
   if (!amount && amount !== 0) return '—';
   return `₵${Number(amount).toLocaleString()}`;
@@ -235,7 +254,7 @@ export default async function ListingDetailPage({
 
   // Build display values
   const displayTitle = `${formatCategory(row.category)} in ${row.neighborhood || formatRegion(row.region) || 'Ghana'}`;
-  const displayLocation = [row.neighborhood, formatRegion(row.region)].filter(Boolean).join(', ');
+  const displayLocation = [row.neighborhood, row.region ? (REGION_LABELS[row.region] || formatRegion(row.region)) : null].filter(Boolean).join(', ');
   const allImages = Array.from(new Set([row.image_url, ...(row.media_urls || [])].filter(Boolean) as string[]));
   const isRent = row.transaction_type === 'rent';
   const primaryPrice = isRent ? row.base_rent : row.outright_price;
@@ -478,7 +497,7 @@ export default async function ListingDetailPage({
             {/* Vicinity Map */}
             <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6">
               <h2 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4">Vicinity Map</h2>
-              <MapLoader lat={row.latitude} lng={row.longitude} location={displayLocation} />
+              <MapLoader lat={row.latitude} lng={row.longitude} location={displayLocation} region={row.region} />
             </div>
           </div>
 

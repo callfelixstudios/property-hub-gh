@@ -6,6 +6,25 @@ import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import imageCompression from 'browser-image-compression';
 
+const REGION_LABELS: Record<string, string> = {
+  greater_accra:  "Greater Accra Region",
+  ashanti:        "Ashanti Region",
+  central:        "Central Region",
+  ahafo:          "Ahafo Region",
+  bono:           "Bono Region",
+  bono_east:      "Bono East Region",
+  eastern:        "Eastern Region",
+  north_east:     "North East Region",
+  northern:       "Northern Region",
+  oti:            "Oti Region",
+  savannah:       "Savannah Region",
+  upper_east:     "Upper East Region",
+  upper_west:     "Upper West Region",
+  volta:          "Volta Region",
+  western:        "Western Region",
+  western_north:  "Western North Region",
+};
+
 interface Listing {
   id: string;
   title: string;
@@ -297,6 +316,26 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
       } else {
         onSaved({ ...listing, ...updatePayload });
         router.refresh();
+
+        // Fire-and-forget: re-geocode neighborhood into lat/lng
+        const newRegion = region || listing.region;
+        const newNeighborhood = neighborhood || listing.neighborhood;
+        if (newRegion && newNeighborhood) {
+          const regionName = REGION_LABELS[newRegion] || newRegion;
+          const geoQuery = `${newNeighborhood}, ${regionName}, Ghana`;
+          fetch(`/api/geocode?q=${encodeURIComponent(geoQuery)}`)
+            .then(r => r.json())
+            .then(data => {
+              if (data && data.length > 0) {
+                supabase
+                  .from('listings')
+                  .update({ latitude: parseFloat(data[0].lat), longitude: parseFloat(data[0].lon) })
+                  .eq('id', listing.id)
+                  .then(() => {});
+              }
+            })
+            .catch(() => {});
+        }
       }
     } catch (error: any) {
       console.error("Update error:", error);
