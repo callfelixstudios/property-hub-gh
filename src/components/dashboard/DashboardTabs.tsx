@@ -77,6 +77,7 @@ export default function DashboardTabs({
   const [whatsappInput, setWhatsappInput] = useState(() => extractPhoneFromWaLink(initialProfile?.whatsapp_link));
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [profileMessage, setProfileMessage] = useState('');
+  const [restoreError, setRestoreError] = useState<string | null>(null);
 
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
 
@@ -98,7 +99,36 @@ export default function DashboardTabs({
     router.refresh();
   };
 
+  const ACTIVE_LISTING_LIMIT = 2;
+
   const handleRestoreListing = async (listingId: string) => {
+    setRestoreError(null);
+
+    // ── Pre-restoration limit guard ──────────────────────────────────────
+    // Count the user's currently active (non-archived, non-sold/rented)
+    // listings. If the limit is already reached, block the restore and
+    // surface a descriptive error instead of performing the DB write.
+    const { data: activeListings, error: countError } = await supabase
+      .from('listings')
+      .select('id')
+      .eq('poster_id', userId)
+      .in('status', ['active']);
+
+    if (countError) {
+      console.error('Failed to count active listings:', countError.message);
+      setRestoreError('Unable to verify your active listing count. Please try again.');
+      return;
+    }
+
+    if ((activeListings?.length ?? 0) >= ACTIVE_LISTING_LIMIT) {
+      setRestoreError(
+        `Limit reached. You can only have ${ACTIVE_LISTING_LIMIT} active listings at a time as a free user. ` +
+        `Archive or delete an existing listing before restoring this one.`
+      );
+      return;
+    }
+    // ─────────────────────────────────────────────────────────────────────
+
     const { error } = await supabase
       .from('listings')
       .update({ status: 'active' })
@@ -107,7 +137,7 @@ export default function DashboardTabs({
     
     if (error) {
       console.error('Restore failed:', error.message, error);
-      alert(`Failed to restore listing: ${error.message}`);
+      setRestoreError(`Failed to restore listing: ${error.message}`);
       return;
     }
     setListings(prev => prev.map(l => l.id === listingId ? { ...l, status: 'active' } : l));
@@ -335,6 +365,18 @@ export default function DashboardTabs({
         {activeTab === 'archived' && (
           <div>
             <h2 className="text-2xl font-bold text-navy-base mb-6">Archived Listings</h2>
+            {restoreError && (
+              <div className="mb-6 flex items-start gap-3 bg-red-50 border border-red-200 text-red-800 rounded-md px-4 py-3">
+                <svg className="w-5 h-5 mt-0.5 flex-shrink-0 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold">Restore Blocked</p>
+                  <p className="text-sm mt-0.5">{restoreError}</p>
+                </div>
+                <button onClick={() => setRestoreError(null)} className="text-red-400 hover:text-red-600 transition-colors" aria-label="Dismiss error">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                </button>
+              </div>
+            )}
             {listings.filter(l => l.status === 'archived').length === 0 ? (
               <p className="text-gray-500">You don't have any archived listings.</p>
             ) : (
