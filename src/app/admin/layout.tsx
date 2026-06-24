@@ -1,8 +1,15 @@
 import { createClient } from '@/utils/supabase/server';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { LayoutDashboard, LogOut } from 'lucide-react';
 import NavigationHeader from '@/components/NavigationHeader';
+
+async function signOut() {
+  'use server';
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  redirect('/');
+}
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -28,8 +35,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             </Link>
           </nav>
           <div className="p-4 border-t border-gray-200">
-            <form action="/auth/signout" method="post">
-              <button className="flex items-center gap-3 px-4 py-3 w-full text-left text-gray-600 hover:bg-gray-50 hover:text-red-600 rounded-xl font-medium transition-colors">
+            <form action={signOut}>
+              <button
+                type="submit"
+                className="flex items-center gap-3 px-4 py-3 w-full text-left text-gray-600 hover:bg-gray-50 hover:text-red-600 rounded-xl font-medium transition-colors"
+              >
                 <LogOut className="w-5 h-5" />
                 Sign Out
               </button>

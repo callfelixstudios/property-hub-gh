@@ -1,32 +1,41 @@
 "use client";
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, Suspense } from "react";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const supabase = createClient();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const handleRegister = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName },
-        // you can optionally set email redirect URL here
-      },
-    });
-    if (error) {
-      alert(error.message);
-    } else {
-      // After successful signup, redirect to login page or directly to post-space if you prefer
-      router.push("/login?message=Account%20created%20please%20log%20in");
+    setErrorMsg(null);
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: fullName },
+          // you can optionally set email redirect URL here
+        },
+      });
+      if (error) {
+        setErrorMsg(error.message);
+      } else {
+        // After successful signup, redirect to login page or directly to post-space if you prefer
+        router.push("/login?message=Account%20created%20please%20log%20in");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -46,7 +55,7 @@ export default function RegisterPage() {
             Fill in the details below to get started
           </p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleRegister}>
+        <form method="POST" className="mt-8 space-y-6" onSubmit={handleRegister}>
           <div className="space-y-4 rounded-md shadow-sm">
             <div>
               <label htmlFor="fullName" className="block text-sm font-medium text-navy-base">
@@ -94,12 +103,20 @@ export default function RegisterPage() {
               />
             </div>
           </div>
+          
+          {errorMsg && (
+            <div role="alert" className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
+              {errorMsg}
+            </div>
+          )}
+
           <div className="flex flex-col space-y-3">
             <button
               type="submit"
-              className="group relative flex w-full justify-center rounded-sm bg-slate-900 text-white font-medium py-2 px-4 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 transition-colors"
+              disabled={loading}
+              className="group relative flex w-full justify-center rounded-sm bg-slate-900 text-white font-medium py-2 px-4 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Register
+              {loading ? 'Creating account...' : 'Register'}
             </button>
           </div>
           <p className="mt-4 text-center text-sm text-navy-base">
@@ -108,5 +125,13 @@ export default function RegisterPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <RegisterForm />
+    </Suspense>
   );
 }

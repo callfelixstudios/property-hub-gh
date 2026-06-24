@@ -1,23 +1,35 @@
 "use client";
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, Suspense } from "react";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const supabase = createClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const message = searchParams.get('message');
+  const next = searchParams.get('next');
 
   const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      alert(error.message);
-    } else {
-      router.push("/rentals");
+    setErrorMsg(null);
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        setErrorMsg(error.message);
+      } else {
+        router.push(next || "/rentals");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -30,6 +42,11 @@ export default function LoginPage() {
             <Link href="/login" className={`font-medium pb-1 transition-colors ${pathname === "/login" ? "text-navy-base border-b-2 border-accent-gold" : "text-slate-400 hover:text-navy-base"}`}>Login</Link>
             <Link href="/register" className={`font-medium pb-1 transition-colors ${pathname === "/register" ? "text-navy-base border-b-2 border-accent-gold" : "text-slate-400 hover:text-navy-base"}`}>Register</Link>
           </div>
+          {message && (
+            <div role="status" className="mt-4 rounded-md bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800">
+              {message}
+            </div>
+          )}
           <h2 className="mt-2 text-center text-3xl font-bold tracking-tight text-navy-base">
             Sign in to Property Hub
           </h2>
@@ -37,7 +54,7 @@ export default function LoginPage() {
             Enter your email and password to continue
           </p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleLogin}>
+        <form method="POST" className="mt-8 space-y-6" onSubmit={handleLogin}>
           <div className="space-y-4 rounded-md shadow-sm">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
@@ -71,19 +88,34 @@ export default function LoginPage() {
             </div>
           </div>
 
+          {errorMsg && (
+            <div role="alert" className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
+              {errorMsg}
+            </div>
+          )}
+
           <div className="flex flex-col space-y-3">
                 <button
                   type="submit"
-                  className="group relative flex w-full justify-center rounded-sm bg-slate-900 text-white font-medium py-2 px-4 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 transition-colors"
+                  disabled={loading}
+                  className="group relative flex w-full justify-center rounded-sm bg-slate-900 text-white font-medium py-2 px-4 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                Sign in
+                {loading ? 'Signing in...' : 'Sign in'}
               </button>
           </div>
           <p className="mt-4 text-center text-sm text-navy-base">
-            Don’t have an account? <Link href="/register" className="font-medium text-slate-900 hover:underline">Register</Link>
+            Don't have an account? <Link href="/register" className="font-medium text-slate-900 hover:underline">Register</Link>
           </p>
         </form>
       </div>
     </div>
   )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <LoginForm />
+    </Suspense>
+  );
 }
