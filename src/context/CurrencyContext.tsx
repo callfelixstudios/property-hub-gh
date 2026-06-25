@@ -1,8 +1,8 @@
 'use client';
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { createContext, useContext, useState, useRef, ReactNode, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-
-type Currency = 'GHS' | 'USD';
+import type { Currency } from '@/utils/currency-cookie';
+import { getClientCurrency, setClientCurrency } from '@/utils/currency-cookie';
 
 interface CurrencyContextType {
   displayCurrency: Currency;
@@ -13,18 +13,20 @@ interface CurrencyContextType {
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
 
-export function CurrencyProvider({ children }: { children: ReactNode }) {
-  const [displayCurrency, setDisplayCurrency] = useState<Currency>('GHS');
+export function CurrencyProvider({ children, initialCurrency }: { children: ReactNode; initialCurrency: Currency }) {
+  const [displayCurrency, setDisplayCurrency] = useState<Currency>(initialCurrency);
   const exchangeRate = 11.25;
+  const hasInteracted = useRef(false);
 
-  // On mount: load from DB if authenticated, else fall back to localStorage
+  // On mount: sync the source of truth into state (unless user already toggled)
   useEffect(() => {
     const init = async () => {
       const supabase = createClient();
+
       const { data: { user } } = await supabase.auth.getUser();
 
-      if (user) {
-        // Authenticated — source of truth is the DB profile
+      if (!hasInteracted.current && user) {
+        // Logged in — DB is the source of truth
         const { data: profile } = await supabase
           .from('profiles')
           .select('preferred_currency')
@@ -32,35 +34,34 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
           .single();
 
         if (profile?.preferred_currency === 'USD' || profile?.preferred_currency === 'GHS') {
-          setDisplayCurrency(profile.preferred_currency as Currency);
-          // Keep localStorage in sync
+          const dbCurrency = profile.preferred_currency as Currency;
+          setDisplayCurrency(dbCurrency);
+          setClientCurrency(dbCurrency);
           if (typeof window !== 'undefined') {
-            window.localStorage.setItem('property_hub_currency', profile.preferred_currency);
+            window.localStorage.setItem('property_hub_currency', dbCurrency);
           }
-          return;
         }
-      }
-
-      // Unauthenticated — fall back to localStorage
-      if (typeof window !== 'undefined') {
-        const stored = window.localStorage.getItem('property_hub_currency') as Currency;
-        if (stored === 'USD' || stored === 'GHS') {
-          setDisplayCurrency(stored);
-        }
+      } else if (!hasInteracted.current) {
+        // Not logged in — the client-side cookie is the source of truth.
+        // Correct any mismatch between the server-rendered initialCurrency
+        // and the actual cookie value in the browser.
+        const cookieCurrency = getClientCurrency();
+        setDisplayCurrency(cookieCurrency);
       }
     };
-
     init();
   }, []);
 
   const toggleCurrency = () => {
-    const next = displayCurrency === 'GHS' ? 'USD' : 'GHS';
+    hasInteracted.current = true;
+
+    const next: Currency = displayCurrency === 'GHS' ? 'USD' : 'GHS';
     setDisplayCurrency(next);
 
-    // Always write to localStorage
+    setClientCurrency(next);
+
     if (typeof window !== 'undefined') {
       window.localStorage.setItem('property_hub_currency', next);
-      // Dispatch storage event so all tabs / components react immediately
       window.dispatchEvent(new StorageEvent('storage', {
         key: 'property_hub_currency',
         newValue: next,
@@ -68,15 +69,18 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
       }));
     }
 
-    // If authenticated, also persist to DB
     const persist = async () => {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase
-          .from('profiles')
-          .update({ preferred_currency: next })
-          .eq('id', user.id);
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase
+            .from('profiles')
+            .update({ preferred_currency: next })
+            .eq('id', user.id);
+        }
+      } catch {
+        // DB persistence is best-effort — never block the toggle
       }
     };
     persist();

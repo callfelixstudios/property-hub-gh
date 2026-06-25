@@ -6,6 +6,7 @@ import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import imageCompression from 'browser-image-compression';
 import { ghanaLocations, regionToLocationKey } from "@/data/ghanaLocations";
+import { RESIDENTIAL_CATEGORIES, COMMERCIAL_CATEGORIES } from "@/data/propertyCategories";
 import { Combobox } from "@/components/ui/Combobox";
 
 const REGION_LABELS: Record<string, string> = {
@@ -431,37 +432,10 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
                   <label className={labelCls}>Property Type</label>
                   <select value={category} onChange={(e) => handleCategoryChange(e.target.value)} className={inputCls}>
                     <option value="">Select Property Type...</option>
-                    {listingCategoryType === 'residential' ? (
-                      <>
-                        <option value="Apartment">Apartment</option>
-                        <option value="House">House</option>
-                        <option value="Townhouse / Terrace">Townhouse / Terrace</option>
-                        <option value="Single Room Self-Contain">Single Room Self-Contain</option>
-                        <option value="Chamber and Hall">Chamber and Hall</option>
-                        <option value="Hostel">Hostel</option>
-                        <option value="Boys Quarters (BQ)">Boys Quarters (BQ)</option>
-                        <option value="Studio Apartment">Studio Apartment</option>
-                        <option value="Penthouse">Penthouse</option>
-                        <option value="Villa / Mansion">Villa / Mansion</option>
-                        <option value="Bungalow">Bungalow</option>
-                        <option value="Shared Apartment">Shared Apartment</option>
-                        <option value="Block of Flat">Block of Flat</option>
-                        <option value="Farm House">Farm House</option>
-                        <option value="Plot of Land">Plot of Land</option>
-                      </>
-                    ) : (
-                      <>
-                        <option value="Business Center">Business Center</option>
-                        <option value="Office Space">Office Space</option>
-                        <option value="Hotel">Hotel</option>
-                        <option value="Hostel">Hostel</option>
-                        <option value="Shop">Shop</option>
-                        <option value="Warehouse">Warehouse</option>
-                        <option value="Open Space">Open Space</option>
-                        <option value="Farm">Farm</option>
-                        <option value="Plot of Land">Plot of Land</option>
-                      </>
-                    )}
+                    {listingCategoryType === 'residential'
+                      ? RESIDENTIAL_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)
+                      : COMMERCIAL_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)
+                    }
                   </select>
                 </div>
                 <div>

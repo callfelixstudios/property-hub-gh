@@ -59,9 +59,10 @@
 - **Trigger:** Immediately following any successful `git push` to the remote repository.
 - **Action:** A sub-agent must automatically compile a technical update summary markdown file.
 - **Storage Target Vault Location:** `C:\Users\CallFELIX\Documents\PROJECT\property-hub-gh\obsidian-vault`
-- **File Naming Convention:** `YYYY-MM-DD-milestone-update.md`
+- **Dynamic File Naming Hook:** Antigravity must generate the filename dynamically using the runtime system date: `YYYY-MM-DD-HHmm-milestone-update.md` (e.g., `2026-06-24-1445-listing-limit-patch.md`).
 - **Required Report Structure:**
-  1. **Milestone Summary:** High-level summary of the pushed changes.
-  2. **Files Modified:** Bulleted list of altered file paths.
-  3. **Data/UI Architecture State:** Explicitly document current active object states (e.g., "Neighborhood field transitioned from text input to searchable combobox bound to local region data presets").
-  4. **Next Immediate Steps:** Remaining goals for the active feature branch.
+  1. **Execution Timestamp:** `Executed on: YYYY-MM-DD at HH:mm:ss GMT` (Generated dynamically via local system clock).
+  2. **Milestone Summary:** High-level summary of the pushed changes.
+  3. **Files Modified:** Bulleted list of altered file paths.
+  4. **Data/UI Architecture State:** Explicitly document current active object states.
+  5. **Next Immediate Steps:** Remaining goals for the active feature branch.

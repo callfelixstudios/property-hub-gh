@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from 'next/headers';
 import "./globals.css";
 import NavigationHeader from "@/components/NavigationHeader";
 import { Providers } from "@/components/Providers";
@@ -8,11 +9,14 @@ export const metadata: Metadata = {
   description: "Utility-First Luxury Property Hub",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const initialCurrency = cookieStore.get('property_hub_currency')?.value === 'USD' ? 'USD' : 'GHS';
+
   return (
     <html
       lang="en"
@@ -27,7 +31,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
-        <Providers>
+        <Providers initialCurrency={initialCurrency}>
           <NavigationHeader />
           <main className="flex-grow">
             {/* Sentinel element observed by NavigationHeader IntersectionObserver

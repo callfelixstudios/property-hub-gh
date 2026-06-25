@@ -16,11 +16,6 @@ export default function NavigationHeader() {
   // Memoize client to prevent recreation on every scroll/render
   const supabase = useMemo(() => createClient(), []);
   const [session, setSession] = useState<Session | null>(null);
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   // Auth state — universal, no coupling to scroll or other effects
   useEffect(() => {
@@ -146,7 +141,7 @@ export default function NavigationHeader() {
                   : "border-white/30 text-white hover:bg-white/10"
               }`}
             >
-              {isMounted ? (displayCurrency === 'GHS' ? '₵ GHS' : '$ USD') : '₵ GHS'}
+              {displayCurrency === 'GHS' ? '₵ GHS' : '$ USD'}
             </button>
 
             {session ? (
@@ -315,7 +310,7 @@ export default function NavigationHeader() {
                 onClick={toggleCurrency}
                 className="w-full text-left px-4 py-2 rounded-md text-base font-bold bg-gray-100 text-navy-base border border-gray-200"
               >
-                Currency: {isMounted ? (displayCurrency === 'GHS' ? '₵ GHS' : '$ USD') : '₵ GHS'}
+                Currency: {displayCurrency === 'GHS' ? '₵ GHS' : '$ USD'}
               </button>
             </div>
 

@@ -3,23 +3,31 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
-import { CheckCircle2, AlertCircle } from 'lucide-react';
+import { CheckCircle2, AlertCircle, ChevronDown } from 'lucide-react';
 import NavigationHeader from '@/components/NavigationHeader';
 import Footer from '@/components/Footer';
+import { RESIDENTIAL_CATEGORIES, COMMERCIAL_CATEGORIES, GHANA_REGIONS } from '@/data/propertyCategories';
+import { useCurrency } from '@/context/CurrencyContext';
+import type { Currency } from '@/utils/currency-cookie';
 
 export default function RequestSpacePage() {
   const router = useRouter();
   const supabase = createClient();
+  const { displayCurrency } = useCurrency();
 
   const [formData, setFormData] = useState({
     seeker_name: '',
     whatsapp_number: '',
-    location: '',
-    property_type: 'apartment',
-    budget: '',
     purpose: 'Residential',
+    property_type: 'Apartment',
+    region: '',
+    neighborhood: '',
     additional_details: ''
   });
+
+  const [budgetAmount, setBudgetAmount] = useState("");
+  const [budgetCurrency, setBudgetCurrency] = useState<Currency>(displayCurrency);
+  const [paymentTerm, setPaymentTerm] = useState<"month" | "year">("month");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -30,24 +38,34 @@ export default function RequestSpacePage() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handlePurposeChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      purpose: value,
+      property_type: value === 'Residential' ? 'Apartment' : 'Business Center'
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
     setIsSubmitting(true);
 
-    if (!formData.seeker_name || !formData.whatsapp_number || !formData.location || !formData.budget) {
+    if (!formData.seeker_name || !formData.whatsapp_number || !formData.region || !budgetAmount) {
       setErrorMsg("Please fill in all required fields.");
       setIsSubmitting(false);
       return;
     }
 
+    const locationPreview = [formData.neighborhood, formData.region].filter(Boolean).join(', ');
+
     try {
       const { error } = await supabase.from('space_requests').insert({
         seeker_name: formData.seeker_name,
         whatsapp_number: formData.whatsapp_number,
-        location: formData.location,
+        location: locationPreview,
         property_type: formData.property_type,
-        budget: Number(formData.budget),
+        budget: Number(budgetAmount),
         purpose: formData.purpose,
         additional_details: formData.additional_details
       });
@@ -58,14 +76,13 @@ export default function RequestSpacePage() {
       } else {
         setSuccess(true);
 
-        // Dispatch live notification if webhook URL is configured
         const webhookUrl = process.env.NEXT_PUBLIC_ADMIN_WEBHOOK_URL;
         if (webhookUrl) {
           fetch(webhookUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              content: `🔔 **New Space Request**\n**Seeker:** ${formData.seeker_name}\n**Location:** ${formData.location}\n**Budget:** GHS ${formData.budget}\n**Category:** ${formData.property_type.replace('_', ' ')} (${formData.purpose})\n**Contact:** ${formData.whatsapp_number}`
+              content: `🔔 **New Space Request**\n**Seeker:** ${formData.seeker_name}\n**Location:** ${locationPreview}\n**Budget:** ${budgetCurrency} ${budgetAmount} / ${paymentTerm === 'month' ? 'month' : 'year'}\n**Category:** ${formData.property_type} (${formData.purpose})\n**Contact:** ${formData.whatsapp_number}`
             })
           }).catch(err => console.error("Webhook notification failed:", err));
         }
@@ -105,7 +122,7 @@ export default function RequestSpacePage() {
                     View Notice Board
                   </button>
                   <button
-                    onClick={() => { setSuccess(false); setFormData({ seeker_name: '', whatsapp_number: '', location: '', property_type: 'apartment', budget: '', purpose: 'Residential', additional_details: '' }); }}
+                    onClick={() => { setSuccess(false); setFormData({ seeker_name: '', whatsapp_number: '', purpose: 'Residential', property_type: 'Apartment', region: '', neighborhood: '', additional_details: '' }); setBudgetAmount(""); setBudgetCurrency(displayCurrency); setPaymentTerm("month"); }}
                     className="px-6 py-3 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
                   >
                     Post Another
@@ -122,6 +139,27 @@ export default function RequestSpacePage() {
                   </div>
                 )}
 
+                {/* Purpose — moved first so category dropdown is immediately contextual */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">I am looking for *</label>
+                  <div className="flex gap-4">
+                    {['Residential', 'Commercial'].map((opt) => (
+                      <label key={opt} className={`flex-1 flex items-center justify-center py-3 px-4 rounded-xl border cursor-pointer transition-all ${formData.purpose === opt ? 'border-emerald-500 bg-emerald-50 text-emerald-800 shadow-sm ring-1 ring-emerald-500' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'}`}>
+                        <input
+                          type="radio"
+                          name="purpose"
+                          value={opt}
+                          checked={formData.purpose === opt}
+                          onChange={() => handlePurposeChange(opt)}
+                          className="sr-only"
+                        />
+                        <span className="font-medium">{opt}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Name + WhatsApp */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Your Name *</label>
@@ -151,19 +189,7 @@ export default function RequestSpacePage() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Target Location *</label>
-                  <input
-                    type="text"
-                    name="location"
-                    value={formData.location}
-                    onChange={handleChange}
-                    placeholder="e.g. East Legon, Spintex, or Osu"
-                    className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white shadow-sm transition-shadow"
-                    required
-                  />
-                </div>
-
+                {/* Property Category + Region */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Property Category *</label>
@@ -175,14 +201,15 @@ export default function RequestSpacePage() {
                         className="w-full border border-gray-300 rounded-xl px-4 py-3 appearance-none focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white shadow-sm transition-shadow"
                         required
                       >
-                        <option value="single_room">Single Room</option>
-                        <option value="chamber_hall">Chamber and Hall</option>
-                        <option value="apartment">Apartment</option>
-                        <option value="house">House / Villa</option>
-                        <option value="block_of_flat">Block of Flats</option>
-                        <option value="hostel">Hostel</option>
-                        <option value="commercial">Commercial Space</option>
-                        <option value="land">Land</option>
+                        {formData.purpose === 'Residential' ? (
+                          RESIDENTIAL_CATEGORIES.map(cat => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))
+                        ) : (
+                          COMMERCIAL_CATEGORIES.map(cat => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))
+                        )}
                       </select>
                       <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
@@ -191,39 +218,82 @@ export default function RequestSpacePage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Maximum Budget (GHS) *</label>
-                    <input
-                      type="number"
-                      name="budget"
-                      value={formData.budget}
-                      onChange={handleChange}
-                      placeholder="e.g. 2000"
-                      min="0"
-                      className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white shadow-sm transition-shadow"
-                      required
-                    />
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Region *</label>
+                    <div className="relative">
+                      <select
+                        name="region"
+                        value={formData.region}
+                        onChange={handleChange}
+                        className="w-full border border-gray-300 rounded-xl px-4 py-3 appearance-none focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white shadow-sm transition-shadow"
+                        required
+                      >
+                        <option value="">Select Region...</option>
+                        {GHANA_REGIONS.map(r => (
+                          <option key={r} value={r}>{r}</option>
+                        ))}
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
+                {/* Neighborhood — standalone full-width */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Purpose *</label>
-                  <div className="flex gap-4">
-                    {['Residential', 'Commercial'].map((opt) => (
-                      <label key={opt} className={`flex-1 flex items-center justify-center py-3 px-4 rounded-xl border cursor-pointer transition-all ${formData.purpose === opt ? 'border-emerald-500 bg-emerald-50 text-emerald-800 shadow-sm ring-1 ring-emerald-500' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'}`}>
-                        <input
-                          type="radio"
-                          name="purpose"
-                          value={opt}
-                          checked={formData.purpose === opt}
-                          onChange={handleChange}
-                          className="sr-only"
-                        />
-                        <span className="font-medium">{opt}</span>
-                      </label>
-                    ))}
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Neighborhood / Area (Optional)</label>
+                  <input
+                    type="text"
+                    name="neighborhood"
+                    value={formData.neighborhood}
+                    onChange={handleChange}
+                    placeholder="e.g. East Legon, Spintex, Osu"
+                    className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white shadow-sm transition-shadow"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Specific area within the region for better targeting.</p>
+                </div>
+
+                {/* Maximum Budget — isolated full-width row */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Maximum Budget *</label>
+                  <div className="flex flex-col sm:flex-row gap-3 w-full items-start sm:items-center">
+                    <div className="flex-1 w-full">
+                      <input
+                        type="number"
+                        value={budgetAmount}
+                        onChange={(e) => setBudgetAmount(e.target.value)}
+                        placeholder="e.g. 2,500"
+                        min="0"
+                        className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white shadow-sm transition-shadow"
+                        required
+                      />
+                    </div>
+                    <div className="relative w-full sm:w-[110px]">
+                      <select
+                        value={budgetCurrency}
+                        onChange={(e) => setBudgetCurrency(e.target.value as Currency)}
+                        className="w-full border border-gray-300 rounded-xl px-3 py-3 appearance-none focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white shadow-sm transition-shadow text-sm font-medium"
+                      >
+                        <option value="GHS">₵ GHS</option>
+                        <option value="USD">$ USD</option>
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                    </div>
+                    <div className="relative w-full sm:w-[170px]">
+                      <select
+                        value={paymentTerm}
+                        onChange={(e) => setPaymentTerm(e.target.value as "month" | "year")}
+                        className="w-full border border-gray-300 rounded-xl px-3 py-3 appearance-none focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white shadow-sm transition-shadow text-sm"
+                      >
+                        <option value="month">per month</option>
+                        <option value="year">per year (Advance)</option>
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                    </div>
                   </div>
                 </div>
 
+                {/* Additional Details */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Additional Details (Optional)</label>
                   <textarea

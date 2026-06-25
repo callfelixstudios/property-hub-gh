@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import imageCompression from 'browser-image-compression';
 import { ghanaLocations, regionToLocationKey } from "@/data/ghanaLocations";
+import { RESIDENTIAL_CATEGORIES, COMMERCIAL_CATEGORIES } from "@/data/propertyCategories";
 import { Combobox } from "@/components/ui/Combobox";
 
 const REGION_LABELS: Record<string, string> = {
@@ -71,16 +72,7 @@ export default function PostSpaceWizard() {
   const isCommercial = listingCategoryType === 'commercial' || ['Commercial Property / Office'].includes(category);
   const isResidential = !isLand && !isCommercial;
 
-  const RESIDENTIAL_TYPES = [
-    'Apartment', 'House', 'Townhouse / Terrace', 'Single Room Self-Contain',
-    'Chamber and Hall', 'Hostel', 'Boys Quarters (BQ)', 'Studio Apartment',
-    'Penthouse', 'Villa / Mansion', 'Bungalow', 'Shared Apartment',
-    'Block of Flat', 'Farm House', 'Plot of Land'
-  ];
-  const COMMERCIAL_TYPES = [
-    'Business Center', 'Office Space', 'Hotel', 'Hostel', 'Shop',
-    'Warehouse', 'Open Space', 'Farm', 'Plot of Land'
-  ];
+
 
   const AMENITIES_LIST = isResidential 
     ? ["Air Conditioning", "Standby Generator / Plant", "Solar Power System", "Water Reservoir (Polytank)", "24/7 Security", "Fitted Kitchen Cabinets"]
@@ -444,8 +436,8 @@ export default function PostSpaceWizard() {
                     >
                       <option value="">Select Property Type...</option>
                       {listingCategoryType === 'residential' 
-                        ? RESIDENTIAL_TYPES.map(type => <option key={type} value={type}>{type}</option>)
-                        : COMMERCIAL_TYPES.map(type => <option key={type} value={type}>{type}</option>)
+                        ? RESIDENTIAL_CATEGORIES.map(type => <option key={type} value={type}>{type}</option>)
+                        : COMMERCIAL_CATEGORIES.map(type => <option key={type} value={type}>{type}</option>)
                       }
                     </select>
                   </div>

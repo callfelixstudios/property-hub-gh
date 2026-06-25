@@ -13,6 +13,18 @@
       "skillPath": "skills/nextjs/SKILL.md",
       "computedHash": "d3a48eada4dbae95856d643a0c9c54a38974ee7896a4d34f93aead13d26c343a"
     },
+    "nextjs-app-router-patterns": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "skillPath": "plugins/frontend-mobile-development/skills/nextjs-app-router-patterns/SKILL.md",
+      "computedHash": "3a46e9093baecb3a85819529ce05006f817663f48d9e872868c32ae6049c0d5c"
+    },
+    "nextjs-approuter-2026": {
+      "source": "krishamaze/skills",
+      "sourceType": "github",
+      "skillPath": "skills-lab/nextjs-approuter-2026/SKILL.md",
+      "computedHash": "6e47fee286ef69a43f8674d108953c2316cb02dd7a81ae2358d7c756097f5910"
+    },
     "shadcn": {
       "source": "shadcn/ui",
       "sourceType": "github",
