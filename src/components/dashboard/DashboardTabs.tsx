@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import EditListingModal from '@/components/listings/EditListingModal';
-import { Heart } from 'lucide-react';
+import imageCompression from 'browser-image-compression';
+import { Heart, Camera, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 
 interface Listing {
   id: string;
@@ -23,6 +24,7 @@ interface Profile {
   full_name?: string;
   contact_phone?: string;
   whatsapp_link?: string;
+  avatar_url?: string;
   [key: string]: any;
 }
 
@@ -50,6 +52,7 @@ export default function DashboardTabs({
   initialProfile,
   initialSafemoveTransactions = [],
   userId,
+  userEmail,
   activeTabOverride,
   children
 }: {
@@ -57,6 +60,7 @@ export default function DashboardTabs({
   initialProfile?: Profile;
   initialSafemoveTransactions?: SafemoveTransaction[];
   userId: string;
+  userEmail?: string;
   activeTabOverride?: string;
   children?: React.ReactNode;
 }) {
@@ -80,6 +84,20 @@ export default function DashboardTabs({
   const [restoreError, setRestoreError] = useState<string | null>(null);
 
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
+
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarMsg, setAvatarMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [newEmail, setNewEmail] = useState('');
+  const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
+  const [emailMsg, setEmailMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [passwordMsg, setPasswordMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const supabase = createClient();
 
@@ -192,6 +210,142 @@ export default function DashboardTabs({
   const handleListingSaved = (updatedListing: Listing) => {
     setListings(listings.map(l => l.id === updatedListing.id ? { ...l, ...updatedListing } : l));
     closeEditModal();
+  };
+
+  const handleAvatarSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingAvatar(true);
+    setAvatarMsg(null);
+
+    try {
+      const compressed = await imageCompression(file, {
+        maxWidthOrHeight: 400,
+        maxSizeMB: 0.15,
+        useWebWorker: true,
+        fileType: 'image/jpeg',
+      });
+
+      const ext = 'jpg';
+      const fileName = `avatars/${userId}/avatar-${Date.now()}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, compressed, { cacheControl: '3600', upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      const avatarUrl = publicUrlData.publicUrl;
+
+      const { error: dbError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: avatarUrl })
+        .eq('id', userId);
+
+      if (dbError) throw dbError;
+
+      setProfile(prev => ({ ...prev, avatar_url: avatarUrl }));
+      setAvatarMsg({ type: 'success', text: 'Profile photo updated!' });
+    } catch (err: any) {
+      console.error('Avatar upload error:', err);
+      setAvatarMsg({ type: 'error', text: err.message || 'Failed to upload photo.' });
+    } finally {
+      setIsUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    const currentUrl = profile.avatar_url;
+    if (!currentUrl) return;
+
+    setIsUploadingAvatar(true);
+    setAvatarMsg(null);
+
+    try {
+      const pathParts = currentUrl.split('/avatars/');
+      const storagePath = pathParts.length > 1 ? `avatars/${pathParts[1]}` : null;
+
+      if (storagePath) {
+        await supabase.storage.from('avatars').remove([storagePath]);
+      }
+
+      const { error: dbError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: null })
+        .eq('id', userId);
+
+      if (dbError) throw dbError;
+
+      setProfile(prev => ({ ...prev, avatar_url: undefined }));
+      setAvatarMsg({ type: 'success', text: 'Profile photo removed.' });
+    } catch (err: any) {
+      console.error('Avatar remove error:', err);
+      setAvatarMsg({ type: 'error', text: err.message || 'Failed to remove photo.' });
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
+  const handleUpdateEmail = async () => {
+    if (!newEmail.trim()) {
+      setEmailMsg({ type: 'error', text: 'Please enter a new email address.' });
+      return;
+    }
+
+    setIsUpdatingEmail(true);
+    setEmailMsg(null);
+
+    try {
+      const { error } = await supabase.auth.updateUser({ email: newEmail });
+      if (error) throw error;
+      setEmailMsg({ type: 'success', text: 'Verification link sent! Please check your new email to confirm the change.' });
+      setNewEmail('');
+    } catch (err: any) {
+      console.error('Email update error:', err);
+      setEmailMsg({ type: 'error', text: err.message || 'Failed to update email.' });
+    } finally {
+      setIsUpdatingEmail(false);
+    }
+  };
+
+  const handleUpdatePassword = async () => {
+    if (!newPassword.trim() || !confirmPassword.trim()) {
+      setPasswordMsg({ type: 'error', text: 'Please fill in all password fields.' });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setPasswordMsg({ type: 'error', text: 'New password must be at least 6 characters.' });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordMsg({ type: 'error', text: 'New passwords do not match.' });
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    setPasswordMsg(null);
+
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      setPasswordMsg({ type: 'success', text: 'Password updated successfully!' });
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: any) {
+      console.error('Password update error:', err);
+      setPasswordMsg({ type: 'error', text: err.message || 'Failed to update password.' });
+    } finally {
+      setIsUpdatingPassword(false);
+    }
   };
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
@@ -504,17 +658,76 @@ export default function DashboardTabs({
 
         {/* PROFILE SETTINGS TAB */}
         {activeTab === 'profile' && (
-          <div>
-            <h2 className="text-2xl font-bold text-navy-base mb-6">Profile Settings</h2>
-            
-            <form onSubmit={handleProfileSubmit} className="max-w-xl space-y-5">
+          <div className="max-w-xl">
+            <h2 className="text-2xl font-bold text-navy-base mb-8">Profile Settings</h2>
+
+            {/* ─── Avatar Management ─────────────────────────────────── */}
+            <div className="mb-10 flex flex-col items-center sm:items-start sm:flex-row gap-6">
+              <div className="relative group flex-shrink-0">
+                {profile.avatar_url ? (
+                  <img
+                    src={profile.avatar_url}
+                    alt="Profile"
+                    className="w-24 h-24 rounded-full object-cover border-2 border-gray-200"
+                  />
+                ) : (
+                  <div className="w-24 h-24 rounded-full bg-emerald-600 flex items-center justify-center text-white text-3xl font-bold border-2 border-emerald-200">
+                    {(profile.full_name || userEmail || '?').charAt(0).toUpperCase()}
+                  </div>
+                )}
+
+                {/* Hover overlay */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingAvatar}
+                  className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/50 flex items-center justify-center transition-all duration-200 cursor-pointer"
+                >
+                  {isUploadingAvatar ? (
+                    <Loader2 className="w-6 h-6 text-white animate-spin opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                  ) : (
+                    <Camera className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                  )}
+                </button>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarSelect}
+                  className="hidden"
+                />
+              </div>
+
+              <div className="flex flex-col items-center sm:items-start gap-2">
+                {profile.avatar_url && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveAvatar}
+                    disabled={isUploadingAvatar}
+                    className="text-sm text-red-500 hover:text-red-700 font-medium transition-colors disabled:opacity-50"
+                  >
+                    Remove Photo
+                  </button>
+                )}
+                {avatarMsg && (
+                  <div className={`flex items-center gap-1.5 text-sm font-medium ${avatarMsg.type === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>
+                    {avatarMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+                    {avatarMsg.text}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ─── Profile Info Form ─────────────────────────────────── */}
+            <form onSubmit={handleProfileSubmit} className="space-y-5 mb-10">
               <div>
                 <label className="block text-sm font-semibold text-navy-base mb-1">Agent Display Name</label>
                 <input
                   type="text"
                   value={profile.full_name || ''}
                   onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-navy-base focus:ring-1 focus:ring-navy-base text-gray-900"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 text-gray-900 transition-shadow"
                   placeholder="e.g. John Doe Properties"
                 />
               </div>
@@ -525,7 +738,7 @@ export default function DashboardTabs({
                   type="tel"
                   value={profile.contact_phone || ''}
                   onChange={(e) => setProfile({ ...profile, contact_phone: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-navy-base focus:ring-1 focus:ring-navy-base text-gray-900"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 text-gray-900 transition-shadow"
                   placeholder="e.g. 055 123 4567"
                 />
               </div>
@@ -536,7 +749,7 @@ export default function DashboardTabs({
                   type="text"
                   value={whatsappInput}
                   onChange={(e) => setWhatsappInput(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-navy-base focus:ring-1 focus:ring-navy-base text-gray-900"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 text-gray-900 transition-shadow"
                   placeholder="e.g., 024 412 3456"
                 />
                 <p className="text-xs text-gray-500 mt-1">Buyers/Renters will use this number to contact you via WhatsApp directly.</p>
@@ -551,12 +764,123 @@ export default function DashboardTabs({
                   {isUpdatingProfile ? 'Saving...' : 'Save Profile Changes'}
                 </button>
                 {profileMessage && (
-                  <span className={`text-sm font-medium ${profileMessage.includes('Error') ? 'text-red-500' : 'text-accent-emerald'}`}>
+                  <span className={`text-sm font-medium ${profileMessage.includes('Error') ? 'text-red-500' : 'text-emerald-600'}`}>
                     {profileMessage}
                   </span>
                 )}
               </div>
             </form>
+
+            {/* ─── Account Settings Card ─────────────────────────────── */}
+            <div className="border border-gray-200 rounded-lg p-6 space-y-6">
+              <h3 className="text-lg font-bold text-navy-base">Account Settings</h3>
+
+              {/* Email Section */}
+              <div>
+                <label className="block text-sm font-semibold text-navy-base mb-1">Current Email</label>
+                <input
+                  type="email"
+                  value={userEmail || ''}
+                  disabled
+                  className="w-full px-4 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-500 cursor-not-allowed"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-navy-base mb-1">New Email Address</label>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <input
+                    type="email"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    placeholder="Enter new email"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 text-gray-900 transition-shadow"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleUpdateEmail}
+                    disabled={isUpdatingEmail || !newEmail.trim()}
+                    className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white font-bold py-2 px-5 rounded-md transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
+                  >
+                    {isUpdatingEmail ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                    {isUpdatingEmail ? 'Sending...' : 'Update Email'}
+                  </button>
+                </div>
+                {emailMsg && (
+                  <div className={`mt-2 flex items-center gap-1.5 text-sm font-medium animate-fade-in ${emailMsg.type === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>
+                    {emailMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 flex-shrink-0" />}
+                    {emailMsg.text}
+                  </div>
+                )}
+              </div>
+
+              {/* Divider */}
+              <hr className="border-gray-200" />
+
+              {/* Password Section */}
+              <div>
+                <label className="block text-sm font-semibold text-navy-base mb-1">Current Password</label>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Enter current password"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 text-gray-900 transition-shadow"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-navy-base mb-1">New Password</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="At least 6 characters"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 text-gray-900 transition-shadow"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  {newPassword.length > 0 && newPassword.length < 6 ? (
+                    <span className="text-amber-600 font-medium">Password too short — minimum 6 characters.</span>
+                  ) : newPassword.length >= 6 ? (
+                    <span className="text-emerald-600 font-medium">Secure password</span>
+                  ) : (
+                    'Must be at least 6 characters.'
+                  )}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-navy-base mb-1">Confirm New Password</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Re-enter new password"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 text-gray-900 transition-shadow"
+                />
+                {confirmPassword.length > 0 && newPassword !== confirmPassword && (
+                  <p className="text-xs text-red-500 font-medium mt-1">Passwords do not match.</p>
+                )}
+              </div>
+
+              <div>
+                <button
+                  type="button"
+                  onClick={handleUpdatePassword}
+                  disabled={isUpdatingPassword || !newPassword.trim() || !confirmPassword.trim()}
+                  className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white font-bold py-2.5 px-6 rounded-md transition-colors flex items-center justify-center gap-2"
+                >
+                  {isUpdatingPassword ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                  {isUpdatingPassword ? 'Updating...' : 'Update Password'}
+                </button>
+                {passwordMsg && (
+                  <div className={`mt-2 flex items-center gap-1.5 text-sm font-medium animate-fade-in ${passwordMsg.type === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>
+                    {passwordMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 flex-shrink-0" />}
+                    {passwordMsg.text}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
           </>
