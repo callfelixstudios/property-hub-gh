@@ -52,24 +52,6 @@ export default function ListingGallery({ allImages, displayTitle, videoUrl }: Li
 
   return (
     <div className="w-full flex flex-col gap-4">
-      {/* Media Switcher */}
-      {videoUrl && (
-        <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
-          <button
-            onClick={() => setActiveMediaTab('photos')}
-            className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${activeMediaTab === 'photos' ? 'bg-navy-base text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
-          >
-            📸 Photos
-          </button>
-          <button
-            onClick={() => setActiveMediaTab('video')}
-            className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${activeMediaTab === 'video' ? 'bg-navy-base text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
-          >
-            🎥 Video Tour
-          </button>
-        </div>
-      )}
-
       {/* Main Content Area */}
       {activeMediaTab === 'video' && videoUrl ? (
         <VideoEmbedPlayer url={videoUrl} />
@@ -81,11 +63,11 @@ export default function ListingGallery({ allImages, displayTitle, videoUrl }: Li
           <span className="text-sm font-medium">No photos available</span>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-2 rounded-xl overflow-hidden">
-          {/* Main Image */}
+        <div className="flex flex-col gap-2 w-full">
+          {/* Main Image - Now spans full width with responsive mobile height */}
           <div 
             onClick={() => handleOpenLightbox(0)}
-            className="lg:col-span-3 relative h-[450px] bg-slate-200 rounded-xl overflow-hidden shadow-sm cursor-pointer hover:opacity-95 transition-opacity group"
+            className="relative h-[280px] sm:h-[380px] md:h-[480px] w-full bg-slate-200 rounded-xl overflow-hidden shadow-sm cursor-pointer hover:opacity-95 transition-opacity group"
           >
             <Image 
               src={heroImage} 
@@ -101,8 +83,8 @@ export default function ListingGallery({ allImages, displayTitle, videoUrl }: Li
             </div>
           </div>
 
-          {/* Side Thumbnails */}
-          <div className="hidden lg:flex flex-col gap-2">
+          {/* Thumbnails Row Underneath (Jiji Style) - Visible on both Mobile and Desktop */}
+          <div className="grid grid-cols-3 gap-2 w-full">
             {[0, 1, 2].map((i) => {
               const hasImage = !!sideImages[i];
               const imgIndex = i + 1;
@@ -110,7 +92,7 @@ export default function ListingGallery({ allImages, displayTitle, videoUrl }: Li
                 <div 
                   key={i} 
                   onClick={() => hasImage && handleOpenLightbox(imgIndex)}
-                  className={`relative flex-1 bg-slate-200 min-h-[145px] rounded-xl overflow-hidden shadow-sm ${
+                  className={`relative h-[80px] sm:h-[110px] md:h-[140px] bg-slate-200 rounded-xl overflow-hidden shadow-sm ${
                     hasImage ? "cursor-pointer hover:opacity-90 transition-opacity group" : ""
                   }`}
                 >
@@ -123,15 +105,15 @@ export default function ListingGallery({ allImages, displayTitle, videoUrl }: Li
                         className="object-cover group-hover:scale-105 transition-transform duration-500" 
                       />
                       {i === 2 && allImages.length > 4 && (
-                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-bold text-lg">
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-bold text-sm md:text-base">
                           +{allImages.length - 4} More
                         </div>
                       )}
                     </>
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center text-slate-300">
-                      <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      <svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                     </div>
                   )}
@@ -139,6 +121,38 @@ export default function ListingGallery({ allImages, displayTitle, videoUrl }: Li
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* Media Switcher — repositioned below gallery/no-photos area */}
+      {videoUrl && (
+        <div className="flex items-center gap-6 border-b border-slate-100 mt-2 pb-1">
+          <button
+            onClick={() => setActiveMediaTab('photos')}
+            className={`relative text-sm font-bold transition-colors pb-2 ${
+              activeMediaTab === 'photos'
+                ? 'text-navy-base'
+                : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            📸 Photos
+            {activeMediaTab === 'photos' && (
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-navy-base rounded-full" />
+            )}
+          </button>
+          <button
+            onClick={() => setActiveMediaTab('video')}
+            className={`relative text-sm font-bold transition-colors pb-2 ${
+              activeMediaTab === 'video'
+                ? 'text-navy-base'
+                : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            🎥 Video Tour
+            {activeMediaTab === 'video' && (
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-navy-base rounded-full" />
+            )}
+          </button>
         </div>
       )}
 

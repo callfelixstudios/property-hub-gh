@@ -60,6 +60,7 @@ interface PosterProfile {
   company_name?: string;
   whatsapp_link?: string;
   is_verified_agent?: boolean;
+  avatar_url?: string | null;
 }
 
 function formatCategory(cat: string) {
@@ -243,7 +244,7 @@ export default async function ListingDetailPage({
 
   const { data: poster } = await supabase
     .from('profiles')
-    .select('id, full_name, company_name, whatsapp_link, is_verified_agent')
+    .select('id, full_name, company_name, whatsapp_link, is_verified_agent, avatar_url')
     .eq('id', row.poster_id)
     .single();
 
@@ -281,17 +282,15 @@ export default async function ListingDetailPage({
         </div>
       </div>
 
-      {/* ── Image Gallery ───────────────────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4">
-        <ListingGallery allImages={allImages} displayTitle={displayTitle} videoUrl={row.video_url} />
-      </div>
-
-      {/* ── Two-Column Content Grid ─────────────────────────────────────── */}
+      {/* ── Two-Column Content Grid (Jiji Style) ──────────────────────────── */}
       <div className="max-w-7xl mx-auto px-4 py-10">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 items-start">
 
           {/* ──────────────────── LEFT COLUMN (2/3) ──────────────────── */}
-          <div className="lg:col-span-2 space-y-7">
+          <div className="lg:col-span-2 space-y-6 md:space-y-8">
+
+            {/* Gallery inside main content column */}
+            <ListingGallery allImages={allImages} displayTitle={displayTitle} videoUrl={row.video_url} />
 
             {/* Title & Location Ribbon */}
             <div>
@@ -502,81 +501,9 @@ export default async function ListingDetailPage({
           </div>
 
           {/* ──────────────────── RIGHT SIDEBAR (1/3) ────────────────── */}
-          <div className="lg:col-span-1">
-            <div className="lg:sticky lg:top-28 space-y-4">
+          <div className="lg:col-span-1 space-y-6 sticky top-24">
 
-              {/* ── Price Card (TOP of sidebar, prominent) ─────────────── */}
-              <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                <div className="p-6">
-                  <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">
-                    Financial Overview
-                  </h3>
-                  
-                  <div className="flex justify-between items-center text-sm py-2">
-                    <span className="text-slate-500">{isRent ? 'Base Monthly Rent' : 'Asking Price'}</span>
-                    <span className="font-bold text-slate-900 text-lg">
-                      <PriceDisplay
-                        rawPrice={row.base_rent || row.outright_price || 0}
-                        currency={row.currency || 'GHS'}
-                        priceSuffix={isRent ? '/ mo' : ''}
-                        rentAdvanceMonths={1}
-                        serviceCharge={0}
-                        isRental={isRent}
-                        isInline={true}
-                      />
-                    </span>
-                  </div>
-                  
-                  {isRent && row.service_charge != null && row.service_charge > 0 && (
-                    <div className="flex justify-between items-center text-sm border-t border-slate-100 py-3 mt-1">
-                      <span className="text-slate-500">Service Charge / mo</span>
-                      <span className="font-semibold text-slate-700">
-                        <PriceDisplay
-                          rawPrice={row.service_charge}
-                          currency={row.currency || 'GHS'}
-                          isInline={true}
-                        />
-                      </span>
-                    </div>
-                  )}
-                  
-                  {/* Cost breakdown */}
-                  {!isRent && row.legal_status && (
-                    <div className="flex justify-between items-center mt-4 border-t border-slate-100 pt-3">
-                      <span className="text-sm text-slate-500">Legal Status</span>
-                      <span className="text-sm font-bold text-slate-800">
-                        {row.legal_status.charAt(0).toUpperCase() + row.legal_status.slice(1)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-                
-                {isRent && row.rent_advance_months != null && row.rent_advance_months > 0 && (
-                  <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 flex flex-col gap-1">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-semibold text-slate-700">Total Upfront Required</span>
-                      <span className="text-lg font-extrabold text-navy-base">
-                        <PriceDisplay
-                          rawPrice={(row.base_rent || 0) * row.rent_advance_months}
-                          currency={row.currency || 'GHS'}
-                          isInline={true}
-                        />
-                      </span>
-                    </div>
-                    <span className="text-xs text-slate-500">
-                      Based on {row.advance_period || `${row.rent_advance_months} months advance`}
-                    </span>
-                  </div>
-                )}
-                
-                <div className="px-6 pb-6 pt-4 text-xs text-slate-400 text-center border-t border-slate-100">
-                  Posted {row.created_at
-                    ? new Date(row.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-                    : 'recently'}
-                </div>
-              </div>
-
-              {/* ── Locked Agent Card / Agent Card Conditional ───────────── */}
+              {/* ── Agent Card (TOP of sidebar) ──────────────────────────── */}
               {!user ? (
                 <div className="bg-slate-50 border border-slate-200 rounded-xl shadow-sm p-6 flex flex-col items-center text-center relative overflow-hidden">
                   <div className="absolute inset-0 bg-slate-100/50 backdrop-blur-[1px] pointer-events-none" />
@@ -597,8 +524,16 @@ export default async function ListingDetailPage({
                 <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
                   <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">Listed By</h3>
                   <div className="flex items-center gap-3 mb-5">
-                    <div className="w-11 h-11 bg-navy-base rounded-full flex items-center justify-center text-white font-extrabold text-base flex-shrink-0">
-                      {(profile.full_name || 'A').charAt(0).toUpperCase()}
+                    <div className="w-11 h-11 bg-navy-base rounded-full overflow-hidden flex items-center justify-center text-white font-extrabold text-base flex-shrink-0">
+                      {profile.avatar_url ? (
+                        <img 
+                          src={profile.avatar_url} 
+                          alt={profile.full_name || 'Agent'} 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        (profile.full_name || 'A').charAt(0).toUpperCase()
+                      )}
                     </div>
                     <div>
                       <p className="font-bold text-slate-900">
@@ -643,6 +578,76 @@ export default async function ListingDetailPage({
                   )}
                 </div>
               )}
+
+              {/* ── Price Card (underneath agent) ────────────────────────── */}
+              <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div className="p-6">
+                  <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">
+                    Financial Overview
+                  </h3>
+                  
+                  <div className="flex justify-between items-center text-sm py-2">
+                    <span className="text-slate-500">{isRent ? 'Base Monthly Rent' : 'Asking Price'}</span>
+                    <span className="font-bold text-slate-900 text-lg">
+                      <PriceDisplay
+                        rawPrice={row.base_rent || row.outright_price || 0}
+                        currency={row.currency || 'GHS'}
+                        priceSuffix={isRent ? '/ mo' : ''}
+                        rentAdvanceMonths={1}
+                        serviceCharge={0}
+                        isRental={isRent}
+                        isInline={true}
+                      />
+                    </span>
+                  </div>
+                  
+                  {isRent && row.service_charge != null && row.service_charge > 0 && (
+                    <div className="flex justify-between items-center text-sm border-t border-slate-100 py-3 mt-1">
+                      <span className="text-slate-500">Service Charge / mo</span>
+                      <span className="font-semibold text-slate-700">
+                        <PriceDisplay
+                          rawPrice={row.service_charge}
+                          currency={row.currency || 'GHS'}
+                          isInline={true}
+                        />
+                      </span>
+                    </div>
+                  )}
+                  
+                  {!isRent && row.legal_status && (
+                    <div className="flex justify-between items-center mt-4 border-t border-slate-100 pt-3">
+                      <span className="text-sm text-slate-500">Legal Status</span>
+                      <span className="text-sm font-bold text-slate-800">
+                        {row.legal_status.charAt(0).toUpperCase() + row.legal_status.slice(1)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                
+                {isRent && row.rent_advance_months != null && row.rent_advance_months > 0 && (
+                  <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 flex flex-col gap-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-semibold text-slate-700">Total Upfront Required</span>
+                      <span className="text-lg font-extrabold text-navy-base">
+                        <PriceDisplay
+                          rawPrice={(row.base_rent || 0) * row.rent_advance_months}
+                          currency={row.currency || 'GHS'}
+                          isInline={true}
+                        />
+                      </span>
+                    </div>
+                    <span className="text-xs text-slate-500">
+                      Based on {row.advance_period || `${row.rent_advance_months} months advance`}
+                    </span>
+                  </div>
+                )}
+                
+                <div className="px-6 pb-6 pt-4 text-xs text-slate-400 text-center border-t border-slate-100">
+                  Posted {row.created_at
+                    ? new Date(row.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                    : 'recently'}
+                </div>
+              </div>
 
               {/* ── Verified Trust Banner ────────────────────────────────── */}
               {row.is_verified && (
@@ -689,7 +694,6 @@ export default async function ListingDetailPage({
               {/* ── Report Listing ─────────────────────────────────────── */}
               <ReportModal listingId={id} />
 
-            </div>
           </div>
           {/* ─────────────────────────────────────────────────────────── */}
         </div>

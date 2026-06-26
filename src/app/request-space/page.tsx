@@ -60,6 +60,7 @@ export default function RequestSpacePage() {
     const locationPreview = [formData.neighborhood, formData.region].filter(Boolean).join(', ');
 
     try {
+      const { data: { user } } = await supabase.auth.getUser();
       const { error } = await supabase.from('space_requests').insert({
         seeker_name: formData.seeker_name,
         whatsapp_number: formData.whatsapp_number,
@@ -67,7 +68,9 @@ export default function RequestSpacePage() {
         property_type: formData.property_type,
         budget: Number(budgetAmount),
         purpose: formData.purpose,
-        additional_details: formData.additional_details
+        additional_details: formData.additional_details,
+        user_id: user?.id || null,
+        status: 'active'
       });
 
       if (error) {

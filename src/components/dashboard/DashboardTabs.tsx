@@ -28,6 +28,20 @@ interface Profile {
   [key: string]: any;
 }
 
+interface SpaceRequest {
+  id: string;
+  seeker_name: string;
+  whatsapp_number: string;
+  property_type: string;
+  purpose: string;
+  location: string;
+  budget: number;
+  additional_details?: string;
+  status: string;
+  user_id?: string;
+  created_at: string;
+}
+
 interface SafemoveTransaction {
   id: string;
   status: string;
@@ -66,12 +80,12 @@ export default function DashboardTabs({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const tabParam = searchParams.get('tab') as 'overview' | 'listings' | 'archived' | 'safemove' | 'profile' | null;
+  const tabParam = searchParams.get('tab') as 'overview' | 'listings' | 'archived' | 'safemove' | 'profile' | 'space-requests' | null;
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'listings' | 'archived' | 'safemove' | 'profile'>(tabParam || 'overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'listings' | 'archived' | 'safemove' | 'profile' | 'space-requests'>(tabParam || 'overview');
 
   useEffect(() => {
-    if (tabParam && ['overview', 'listings', 'archived', 'safemove', 'profile'].includes(tabParam)) {
+    if (tabParam && ['overview', 'listings', 'archived', 'safemove', 'profile', 'space-requests'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [tabParam]);
@@ -98,6 +112,166 @@ export default function DashboardTabs({
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [passwordMsg, setPasswordMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const [spaceRequests, setSpaceRequests] = useState<SpaceRequest[]>([]);
+  const [srLoading, setSrLoading] = useState(false);
+  const [srFilter, setSrFilter] = useState<'all' | 'active' | 'archived'>('active');
+  const [editingSr, setEditingSr] = useState<SpaceRequest | null>(null);
+  const [srMsg, setSrMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const fetchSpaceRequests = async () => {
+    setSrLoading(true);
+    try {
+      let query = supabase
+        .from('space_requests')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (srFilter === 'active') query = query.eq('status', 'active');
+      else if (srFilter === 'archived') query = query.eq('status', 'archived');
+
+      const { data, error } = await query;
+      if (error) throw error;
+      setSpaceRequests(data || []);
+    } catch (err: any) {
+      console.error('Failed to fetch space requests:', err);
+    } finally {
+      setSrLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'space-requests') fetchSpaceRequests();
+  }, [activeTab, srFilter]);
+
+  const handleEditSr = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSr) return;
+    setSrMsg(null);
+    try {
+      const { data, error } = await supabase
+        .from('space_requests')
+        .update({
+          seeker_name: editingSr.seeker_name,
+          whatsapp_number: editingSr.whatsapp_number,
+          property_type: editingSr.property_type,
+          purpose: editingSr.purpose,
+          location: editingSr.location,
+          budget: editingSr.budget,
+          additional_details: editingSr.additional_details,
+        })
+        .eq('id', editingSr.id)
+        .select();
+
+      if (error) {
+        console.error('Edit space request — Supabase error detail:', error);
+        setSrMsg({ type: 'error', text: error.message || 'Update failed.' });
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        console.warn('Edit space request — no rows returned (permission or id mismatch)');
+        setSrMsg({ type: 'error', text: 'No matching record found. The row may have been deleted or you lack permission.' });
+        return;
+      }
+
+      setSrMsg({ type: 'success', text: 'Request updated!' });
+      setEditingSr(null);
+      setSpaceRequests(prev => prev.map(r => r.id === data[0].id ? data[0] : r));
+    } catch (err: any) {
+      console.error('Edit space request — unexpected error:', err);
+      setSrMsg({ type: 'error', text: err.message || 'Update failed.' });
+    }
+  };
+
+  const handleArchiveSr = async (id: string) => {
+    setSrMsg(null);
+    try {
+      const { data, error } = await supabase
+        .from('space_requests')
+        .update({ status: 'archived' })
+        .eq('id', id)
+        .select();
+
+      if (error) {
+        console.error('Archive space request — Supabase error detail:', error);
+        setSrMsg({ type: 'error', text: error.message || 'Archive failed.' });
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        console.warn('Archive space request — no rows returned (permission or id mismatch)');
+        setSrMsg({ type: 'error', text: 'No matching record found. The row may have been deleted or you lack permission.' });
+        return;
+      }
+
+      setSpaceRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'archived' } : r));
+      setSrMsg({ type: 'success', text: 'Request archived.' });
+    } catch (err: any) {
+      console.error('Archive space request — unexpected error:', err);
+      setSrMsg({ type: 'error', text: err.message || 'Archive failed.' });
+    }
+  };
+
+  const handleDeleteSr = async (id: string) => {
+    if (!confirm('Are you sure you want to permanently delete this request? This cannot be undone.')) return;
+    setSrMsg(null);
+    try {
+      const { data, error } = await supabase
+        .from('space_requests')
+        .delete()
+        .eq('id', id)
+        .select();
+
+      if (error) {
+        console.error('Delete space request — Supabase error detail:', error);
+        setSrMsg({ type: 'error', text: error.message || 'Delete failed.' });
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        console.warn('Delete space request — no rows returned (permission or id mismatch)');
+        setSrMsg({ type: 'error', text: 'No matching record found. The row may have been deleted or you lack permission.' });
+        return;
+      }
+
+      setSpaceRequests(prev => prev.filter(r => r.id !== id));
+      setSrMsg({ type: 'success', text: 'Request permanently deleted.' });
+    } catch (err: any) {
+      console.error('Delete space request — unexpected error:', err);
+      setSrMsg({ type: 'error', text: err.message || 'Delete failed.' });
+    }
+  };
+
+  const handleRestoreSr = async (id: string) => {
+    setSrMsg(null);
+    try {
+      const { data, error } = await supabase
+        .from('space_requests')
+        .update({ status: 'active' })
+        .eq('id', id)
+        .select();
+
+      if (error) {
+        console.error('Restore space request — Supabase error detail:', error);
+        setSrMsg({ type: 'error', text: error.message || 'Restore failed.' });
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        console.warn('Restore space request — no rows returned (permission or id mismatch)');
+        setSrMsg({ type: 'error', text: 'No matching record found. The row may have been deleted or you lack permission.' });
+        return;
+      }
+
+      setSpaceRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'active' } : r));
+      setSrMsg({ type: 'success', text: 'Request restored to active successfully!' });
+    } catch (err: any) {
+      console.error('Restore space request — unexpected error:', err);
+      setSrMsg({ type: 'error', text: err.message || 'Restore failed.' });
+    }
+  };
 
   const supabase = createClient();
 
@@ -228,7 +402,7 @@ export default function DashboardTabs({
       });
 
       const ext = 'jpg';
-      const fileName = `avatars/${userId}/avatar-${Date.now()}.${ext}`;
+      const fileName = `${userId}/avatar-${Date.now()}.${ext}`;
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
@@ -384,7 +558,7 @@ export default function DashboardTabs({
     { id: 'listings', label: 'My Listings', path: '/dashboard?tab=listings' },
     { id: 'archived', label: 'Archived Listings', path: '/dashboard?tab=archived' },
     { id: 'safemove', label: 'SafeMove Tracker', path: '/dashboard?tab=safemove' },
-    { id: 'requests', label: 'Seeker Requests', path: '/requests' },
+    { id: 'space-requests', label: 'My Space Requests', path: '/dashboard?tab=space-requests' },
     { id: 'saved', label: 'Saved Listings', path: '/dashboard/saved', icon: <Heart className="w-4 h-4 mr-2 inline-block opacity-70" /> },
     { id: 'profile', label: 'Profile Settings', path: '/dashboard?tab=profile' },
   ];
@@ -435,7 +609,7 @@ export default function DashboardTabs({
             {activeTab === 'overview' && (
           <div>
             <h2 className="text-2xl font-bold text-navy-base mb-6">Overview</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="bg-slate-50 p-6 rounded-md border border-gray-100">
                 <p className="text-sm text-gray-500 font-medium mb-1">Total Listings</p>
                 <p className="text-3xl font-bold text-navy-base">{listings.length}</p>
@@ -447,6 +621,51 @@ export default function DashboardTabs({
               <div className="bg-slate-50 p-6 rounded-md border border-gray-100">
                 <p className="text-sm text-gray-500 font-medium mb-1">Total Views</p>
                 <p className="text-3xl font-bold text-navy-base">{listings.reduce((sum, listing) => sum + (listing.views_count || 0), 0)}</p>
+              </div>
+              <div className="bg-emerald-50 p-6 rounded-md border border-emerald-100">
+                <p className="text-sm text-emerald-700 font-medium mb-1">WhatsApp Leads</p>
+                <p className="text-3xl font-bold text-emerald-600">
+                  {listings.reduce((sum, listing) => sum + (listing.whatsapp_leads_count || 0), 0)}
+                </p>
+              </div>
+            </div>
+
+            {/* Listing Performance Breakdown */}
+            <div className="mt-8">
+              <h3 className="text-lg font-bold text-navy-base mb-4">Listing Performance</h3>
+              <div className="bg-white border border-gray-100 rounded-lg overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-gray-100 text-xs font-bold text-navy-base uppercase">
+                      <th className="p-4">Property</th>
+                      <th className="p-4">Status</th>
+                      <th className="p-4 text-center">Views</th>
+                      <th className="p-4 text-center">WhatsApp Leads</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50 text-sm">
+                    {listings.map(listing => (
+                      <tr key={listing.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="p-4 font-semibold text-navy-base max-w-xs truncate">
+                          {listing.title || 'Untitled Property'}
+                        </td>
+                        <td className="p-4">
+                          <span className={`inline-flex px-2 py-0.5 text-xs font-bold rounded-full ${
+                            listing.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            {listing.status}
+                          </span>
+                        </td>
+                        <td className="p-4 text-center font-medium text-slate-700">
+                          {listing.views_count || 0}
+                        </td>
+                        <td className="p-4 text-center font-bold text-emerald-600">
+                          {listing.whatsapp_leads_count || 0}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
@@ -651,6 +870,197 @@ export default function DashboardTabs({
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* MY SPACE REQUESTS TAB */}
+        {activeTab === 'space-requests' && (
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-navy-base">My Space Requests</h2>
+              <div className="flex gap-2">
+                {['active', 'archived', 'all'].map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setSrFilter(f as any)}
+                    className={`px-3 py-1.5 rounded-md text-sm font-bold transition-colors ${
+                      srFilter === f
+                        ? 'bg-navy-base text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {f.charAt(0).toUpperCase() + f.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {srLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+              </div>
+            ) : spaceRequests.length === 0 ? (
+              <div className="bg-slate-50 rounded-xl border border-gray-200 p-12 text-center">
+                <p className="text-gray-500 font-medium">No {srFilter !== 'all' ? srFilter : ''} space requests found.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {spaceRequests.map((sr) => (
+                  <div key={sr.id} className="bg-slate-50 rounded-xl border border-gray-200 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-bold text-navy-base text-base truncate">
+                          {sr.property_type} — {sr.location}
+                        </h3>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-bold whitespace-nowrap ${
+                          sr.status === 'active'
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : 'bg-gray-200 text-gray-500'
+                        }`}>
+                          {sr.status.charAt(0).toUpperCase() + sr.status.slice(1)}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        Budget: ₵{sr.budget.toLocaleString()} · {sr.purpose} · {sr.seeker_name}
+                      </p>
+                    </div>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <button
+                        onClick={() => setEditingSr(sr)}
+                        className="text-sm font-bold py-1.5 px-3 rounded-md bg-slate-700 hover:bg-slate-800 text-white transition-colors"
+                      >
+                        Edit
+                      </button>
+                      {sr.status === 'active' ? (
+                        <button
+                          onClick={() => handleArchiveSr(sr.id)}
+                          className="text-sm font-bold py-1.5 px-3 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 transition-colors"
+                        >
+                          Archive
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleRestoreSr(sr.id)}
+                          className="text-sm font-bold py-1.5 px-3 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition-colors"
+                        >
+                          Restore
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDeleteSr(sr.id)}
+                        className="text-sm font-bold py-1.5 px-3 rounded-md text-red-600 hover:bg-red-50 border border-red-200 transition-colors"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Edit Space Request Modal */}
+            {editingSr && (
+              <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4" onClick={() => { setEditingSr(null); setSrMsg(null); }}>
+                <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                  <h3 className="text-lg font-bold text-navy-base mb-4">Edit Space Request</h3>
+                  <form onSubmit={handleEditSr} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Name</label>
+                      <input
+                        type="text"
+                        value={editingSr.seeker_name}
+                        onChange={(e) => setEditingSr({ ...editingSr, seeker_name: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-600 focus:border-emerald-600"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">WhatsApp</label>
+                      <input
+                        type="tel"
+                        value={editingSr.whatsapp_number}
+                        onChange={(e) => setEditingSr({ ...editingSr, whatsapp_number: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-600 focus:border-emerald-600"
+                        required
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1">Purpose</label>
+                        <select
+                          value={editingSr.purpose}
+                          onChange={(e) => setEditingSr({ ...editingSr, purpose: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-600 focus:border-emerald-600"
+                        >
+                          <option>Residential</option>
+                          <option>Commercial</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1">Property Type</label>
+                        <input
+                          type="text"
+                          value={editingSr.property_type}
+                          onChange={(e) => setEditingSr({ ...editingSr, property_type: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-600 focus:border-emerald-600"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Location</label>
+                      <input
+                        type="text"
+                        value={editingSr.location}
+                        onChange={(e) => setEditingSr({ ...editingSr, location: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-600 focus:border-emerald-600"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Budget (GHS)</label>
+                      <input
+                        type="number"
+                        value={editingSr.budget}
+                        onChange={(e) => setEditingSr({ ...editingSr, budget: Number(e.target.value) })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-600 focus:border-emerald-600"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Additional Details</label>
+                      <textarea
+                        value={editingSr.additional_details || ''}
+                        onChange={(e) => setEditingSr({ ...editingSr, additional_details: e.target.value })}
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-600 focus:border-emerald-600"
+                      />
+                    </div>
+                    {srMsg && (
+                      <div className={`flex items-center gap-1.5 text-sm font-medium ${srMsg.type === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>
+                        {srMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+                        {srMsg.text}
+                      </div>
+                    )}
+                    <div className="flex gap-3 pt-2">
+                      <button
+                        type="submit"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-5 rounded-md transition-colors"
+                      >
+                        Save Changes
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setEditingSr(null); setSrMsg(null); }}
+                        className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-5 rounded-md transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </div>
               </div>
             )}
           </div>

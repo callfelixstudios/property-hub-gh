@@ -36,7 +36,8 @@ export default async function DashboardPage() {
       initialListings={listings || []} 
       initialProfile={profile || {}} 
       initialSafemoveTransactions={safemoveTransactions || []}
-      userId={user.id} 
+      userId={user.id}
+      userEmail={user.email || ''}
     />
   );
 }

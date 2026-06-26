@@ -2,8 +2,10 @@ import React from 'react';
 import { createClient } from '@/utils/supabase/server';
 import NavigationHeader from '@/components/NavigationHeader';
 import Footer from '@/components/Footer';
-import { MapPin, Wallet, Calendar, Search, ArrowRight } from 'lucide-react';
+import { MapPin, Wallet, Calendar, Search } from 'lucide-react';
 import Link from 'next/link';
+import RequestsBudget from '@/components/RequestsBudget';
+import SeekerCardActions from '@/components/requests/SeekerCardActions';
 
 export const revalidate = 0; // Disable caching to always show latest requests
 
@@ -14,6 +16,7 @@ export default async function RequestsPage() {
   const { data: requests, error } = await supabase
     .from('space_requests')
     .select('*')
+    .eq('status', 'active')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -25,11 +28,9 @@ export default async function RequestsPage() {
   };
 
   const generateWhatsAppLink = (request: any) => {
-    const message = `Hi ${request.seeker_name}, I saw your request for a ${request.property_type.replace('_', ' ')} in ${request.location} with a budget of ${formatCurrency(request.budget)} on Property Hub. I have a property that might fit your needs!`;
-    const encodedMessage = encodeURIComponent(message);
-    // Remove any non-numeric characters from the phone number except the leading +
+    const message = `Hi ${request.seeker_name}, I saw your request for a ${formatPropertyType(request.property_type)} in ${request.location} with a budget of ${formatCurrency(request.budget)} on Property Hub. I have a property that might fit your needs!`;
     const cleanPhone = request.whatsapp_number.replace(/[^\d+]/g, '');
-    return `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
+    return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
   };
 
   const formatPropertyType = (type: string) => {
@@ -71,9 +72,11 @@ export default async function RequestsPage() {
                     <span className="text-xs text-gray-500 font-medium">{timeAgo(req.created_at)}</span>
                   </div>
                   
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">
-                    Looking for a {formatPropertyType(req.property_type)}
-                  </h3>
+                  <Link href={`/requests/${req.id}`} className="group">
+                    <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-emerald-700 transition-colors">
+                      Looking for a {formatPropertyType(req.property_type)}
+                    </h3>
+                  </Link>
                   
                   <div className="space-y-2 mb-4">
                     <div className="flex items-center text-gray-600">
@@ -82,7 +85,7 @@ export default async function RequestsPage() {
                     </div>
                     <div className="flex items-center text-gray-600">
                       <Wallet className="w-4 h-4 mr-2 text-gray-400" />
-                      <span className="text-sm font-medium">Up to {formatCurrency(req.budget)}</span>
+                      <RequestsBudget amount={req.budget} />
                     </div>
                     <div className="flex items-center text-gray-600">
                       <Calendar className="w-4 h-4 mr-2 text-gray-400" />
@@ -99,16 +102,11 @@ export default async function RequestsPage() {
                   )}
                 </div>
                 
-                <div className="p-4 bg-gray-50 border-t border-gray-100">
-                  <a
-                    href={generateWhatsAppLink(req)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full py-3 px-4 bg-[#25D366] hover:bg-[#128C7E] text-white font-medium rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2"
-                  >
-                    Pitch Available Property
-                    <ArrowRight className="w-4 h-4" />
-                  </a>
+                <div className="p-4 bg-gray-50 border-t border-gray-100 flex gap-2">
+                  <SeekerCardActions
+                    requestId={req.id}
+                    whatsappLink={generateWhatsAppLink(req)}
+                  />
                 </div>
               </div>
             ))}

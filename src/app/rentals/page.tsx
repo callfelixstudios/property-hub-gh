@@ -5,6 +5,9 @@ import PropertyFilters from '@/components/PropertyFilters';
 import PriceDisplay from '@/components/PriceDisplay';
 import VerifiedBadge from '@/components/VerifiedBadge';
 import { generateListingSlug } from '@/utils/slugify';
+import { RESIDENTIAL_CATEGORIES, COMMERCIAL_CATEGORIES } from '@/data/propertyCategories';
+import { normalizeRegionForDb, formatRegionForUi } from '@/utils/regionMapper';
+import { convertFilterPriceToDb } from '@/utils/currency';
 
 // Fetch live rental listings from Supabase
 interface Listing {
@@ -35,7 +38,7 @@ function formatCategory(cat?: string) {
     .join(' ');
 }
 
-async function fetchRentalListings(searchParams: { [key: string]: string | string[] | undefined }): Promise<Listing[]> {
+async function fetchRentalListings(searchParams: { [key: string]: string | string[] | undefined }, displayCurrency: string): Promise<Listing[]> {
   const supabase = await createClient();
   let query = supabase
     .from('listings')
@@ -43,39 +46,66 @@ async function fetchRentalListings(searchParams: { [key: string]: string | strin
     .eq('transaction_type', 'rent')
     .eq('status', 'active');
 
-  const minPrice = searchParams.minPrice as string;
-  const maxPrice = searchParams.maxPrice as string;
   const posterRole = searchParams.posterRole as string;
   const beds = searchParams.beds as string;
   const baths = searchParams.baths as string;
   const furnishing = searchParams.furnishing as string;
   const region = searchParams.region as string;
   const neighborhood = searchParams.neighborhood as string;
+  const propertyUse = searchParams.propertyUse as string;
   const propertyType = searchParams.propertyType as string;
-  const listingCategoryType = searchParams.listing_category_type as string;
   const condition = searchParams.condition as string;
   const parkingSpace = searchParams.parking_space as string;
+  const ac = searchParams.ac as string;
   const generator = searchParams.generator as string;
+  const solar = searchParams.solar as string;
   const water = searchParams.water as string;
+  const security = searchParams.security as string;
+  const kitchen = searchParams.kitchen as string;
   const meter = searchParams.meter as string;
   const gated = searchParams.gated as string;
 
-  if (minPrice) query = query.gte('base_rent', minPrice);
-  if (maxPrice) query = query.lte('base_rent', maxPrice);
+  const minPriceGhs = convertFilterPriceToDb(searchParams.minPrice, displayCurrency);
+  const maxPriceGhs = convertFilterPriceToDb(searchParams.maxPrice, displayCurrency);
+  if (minPriceGhs !== null) query = query.gte('base_rent', minPriceGhs);
+  if (maxPriceGhs !== null) query = query.lte('base_rent', maxPriceGhs);
   if (posterRole && posterRole !== 'all') query = query.eq('poster_role', posterRole);
   if (beds) query = query.gte('bedrooms', beds);
   if (baths) query = query.gte('bathrooms', baths);
   if (furnishing) query = query.eq('furnishing_status', furnishing);
-  if (region) query = query.eq('region', region);
-  if (neighborhood) query = query.eq('neighborhood', neighborhood);
-  if (propertyType && propertyType !== 'all') query = query.eq('category', propertyType);
-  if (listingCategoryType && listingCategoryType !== 'all') query = query.eq('listing_category_type', listingCategoryType);
+  if (region && region !== 'All') {
+    const dbSnakeRegion = normalizeRegionForDb(region);
+    const uiTitleRegion = formatRegionForUi(dbSnakeRegion);
+    if (dbSnakeRegion) {
+      query = query.in('region', [region, dbSnakeRegion, uiTitleRegion]);
+    } else {
+      query = query.ilike('region', `%${region}%`);
+    }
+  }
+  if (neighborhood) query = query.ilike('neighborhood', `%${neighborhood}%`);
+
+  // Category filter routing: maps UI propertyUse/propertyType → DB category column
+  if (propertyType && propertyType !== 'All') {
+    query = query.eq('category', propertyType);
+  } else if (propertyUse === 'Residential') {
+    query = query.in('category', RESIDENTIAL_CATEGORIES);
+  } else if (propertyUse === 'Commercial') {
+    query = query.in('category', COMMERCIAL_CATEGORIES);
+  }
   if (condition && condition !== 'any') query = query.eq('condition', condition);
   if (parkingSpace && parkingSpace !== 'any') query = query.eq('parking_space', parkingSpace);
-  if (generator === 'true') query = query.eq('has_generator', true);
-  if (water === 'true') query = query.eq('has_water_reservoir', true);
-  if (meter === 'true') query = query.eq('has_independent_meter', true);
-  if (gated === 'true') query = query.eq('is_walled_gated', true);
+  const targetAmenities: string[] = [];
+  if (ac === 'true') targetAmenities.push('Air Conditioning');
+  if (generator === 'true') targetAmenities.push('Standby Generator / Plant');
+  if (solar === 'true') targetAmenities.push('Solar Power System');
+  if (water === 'true') targetAmenities.push('Water Reservoir (Polytank)');
+  if (security === 'true') targetAmenities.push('24/7 Security');
+  if (kitchen === 'true') targetAmenities.push('Fitted Kitchen Cabinets');
+  if (meter === 'true') targetAmenities.push('Prepaid Meter');
+  if (gated === 'true') targetAmenities.push('Walled & Gated');
+  if (targetAmenities.length > 0) {
+    query = query.contains('amenities', targetAmenities);
+  }
 
   const { data, error } = await query.order('created_at', { ascending: false });
   if (error) {
@@ -113,9 +143,13 @@ async function fetchRentalListings(searchParams: { [key: string]: string | strin
   });
 }
 
+import { cookies } from 'next/headers';
+
 export default async function RentalsPage(props: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
   const searchParams = await props.searchParams;
-  const rentalListings = await fetchRentalListings(searchParams);
+  const cookieStore = await cookies();
+  const displayCurrency = cookieStore.get('property_hub_currency')?.value || 'GHS';
+  const rentalListings = await fetchRentalListings(searchParams, displayCurrency);
   return (
     <div className="w-full min-h-screen bg-surface-primary pb-20">
       {/* Search Header */}

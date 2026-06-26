@@ -3,6 +3,7 @@ import { createContext, useContext, useState, useRef, ReactNode, useEffect } fro
 import { createClient } from '@/utils/supabase/client';
 import type { Currency } from '@/utils/currency-cookie';
 import { getClientCurrency, setClientCurrency } from '@/utils/currency-cookie';
+import { USD_TO_GHS_RATE } from '@/utils/currency';
 
 interface CurrencyContextType {
   displayCurrency: Currency;
@@ -15,7 +16,7 @@ const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined
 
 export function CurrencyProvider({ children, initialCurrency }: { children: ReactNode; initialCurrency: Currency }) {
   const [displayCurrency, setDisplayCurrency] = useState<Currency>(initialCurrency);
-  const exchangeRate = 11.25;
+  const exchangeRate = USD_TO_GHS_RATE;
   const hasInteracted = useRef(false);
 
   // On mount: sync the source of truth into state (unless user already toggled)

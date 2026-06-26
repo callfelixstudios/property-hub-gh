@@ -1,20 +1,15 @@
 'use client';
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useState, Suspense } from 'react';
+import { useCallback, useState, Suspense, useMemo } from 'react';
 import { useCurrency } from '@/context/CurrencyContext';
+import { RESIDENTIAL_CATEGORIES, COMMERCIAL_CATEGORIES, GHANA_REGIONS } from '@/data/propertyCategories';
+import { ghanaLocations } from '@/data/ghanaLocations';
 
-const GHANA_LOCATIONS: Record<string, string[]> = {
-  "Greater Accra": ["All", "East Legon", "Spintex", "Dzorwulu", "Airport Residential", "Osu", "Cantonments", "Labone", "Madina", "Tema", "Kasoa", "Adenta", "Dansoman"],
-  "Ashanti": ["All", "Ahodwo", "Nhyiaeso", "Asokwa", "Bantama", "Adum", "Kwadaso", "Suame", "Tafo", "Knust / Oduom"],
-  "Western": ["All", "Takoradi Central", "Anaji", "Effiakuma", "Kwame Nkrumah Circle", "Tarkwa"],
-  "Central": ["All", "Cape Coast Castle Area", "Elmina", "Winneba", "Swedru"],
-  "Eastern": ["All", "Koforidua", "Nkawkaw", "Aburi", "Nsawam"]
+const PROPERTY_TYPES_BY_USE: Record<string, string[]> = {
+  Residential: [...RESIDENTIAL_CATEGORIES],
+  Commercial: [...COMMERCIAL_CATEGORIES],
 };
-const PROPERTY_TYPES = [
-  'Apartment/Flat', 'Standalone House', 'Townhouse', 'Chamber & Hall',
-  'Single Room', 'Commercial / Office Space', 'Land / Plot'
-];
 
 function PropertyFiltersContent() {
   const pathname = usePathname();
@@ -46,6 +41,9 @@ function PropertyFiltersContent() {
     }
   }
 
+  const currentUse = searchParams.get('propertyUse') || 'All';
+  const currentType = searchParams.get('propertyType') || 'All';
+  const currentRegion = searchParams.get('region') || 'All';
   const minPrice = searchParams.get('minPrice') || '';
   const maxPrice = searchParams.get('maxPrice') || '';
   const posterRole = searchParams.get('posterRole') || 'all';
@@ -53,40 +51,63 @@ function PropertyFiltersContent() {
   const baths = searchParams.get('baths') || '';
   const furnishing = searchParams.get('furnishing') || '';
   const litigationFree = searchParams.get('litigationFree') === 'true';
-  
-  const region = searchParams.get('region') || '';
   const neighborhood = searchParams.get('neighborhood') || '';
-  const propertyType = searchParams.get('propertyType') || 'all';
-  const listingCategoryType = searchParams.get('listing_category_type') || 'all';
   const condition = searchParams.get('condition') || 'any';
   const parkingSpace = searchParams.get('parking_space') || 'any';
+  const ac = searchParams.get('ac') === 'true';
   const generator = searchParams.get('generator') === 'true';
+  const solar = searchParams.get('solar') === 'true';
   const water = searchParams.get('water') === 'true';
+  const security = searchParams.get('security') === 'true';
+  const kitchen = searchParams.get('kitchen') === 'true';
   const meter = searchParams.get('meter') === 'true';
   const gated = searchParams.get('gated') === 'true';
 
-  const updateFilters = useCallback((newFilters: Record<string, string | null>) => {
+  const updateFilters = useCallback((updates: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString());
-    Object.entries(newFilters).forEach(([key, value]) => {
-      if (value === null || value === '') {
+
+    Object.entries(updates).forEach(([key, value]) => {
+      if (!value || value === 'All' || value === '') {
         params.delete(key);
       } else {
         params.set(key, value);
       }
     });
-    router.push(`?${params.toString()}`);
-  }, [searchParams, router]);
 
-  const handleRegionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const val = e.target.value;
-    updateFilters({ region: val || null, neighborhood: null });
-  };
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [searchParams, pathname, router]);
+
+  const activePropertyTypes = useMemo(() =>
+    currentUse === 'All'
+      ? Array.from(new Set([...PROPERTY_TYPES_BY_USE.Residential, ...PROPERTY_TYPES_BY_USE.Commercial])).sort()
+      : PROPERTY_TYPES_BY_USE[currentUse] || [],
+    [currentUse]
+  );
+
+  const getAvailableNeighborhoods = useCallback((regionKey: string): string[] => {
+    if (regionKey === 'All') return [];
+
+    if (regionKey in ghanaLocations) {
+      return (ghanaLocations as Record<string, string[]>)[regionKey] || [];
+    }
+
+    const matchedKey = Object.keys(ghanaLocations).find(
+      (key) => key.toLowerCase().trim().replace(/_/g, ' ') === regionKey.toLowerCase().trim().replace(/_/g, ' ')
+    );
+
+    return matchedKey ? (ghanaLocations as Record<string, string[]>)[matchedKey] : [];
+  }, []);
+
+  const availableNeighborhoods = useMemo(
+    () => getAvailableNeighborhoods(currentRegion),
+    [currentRegion, getAvailableNeighborhoods]
+  );
 
   return (
     <aside className="w-full md:w-72 flex-shrink-0 bg-white rounded-md shadow-ambient border border-gray-100 p-6 sticky top-24">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-bold text-navy-base">Filters</h2>
-        <button 
+        <button
           onClick={() => router.push(pathname)}
           className="text-sm text-gray-500 hover:text-navy-base transition-colors"
         >
@@ -114,48 +135,77 @@ function PropertyFiltersContent() {
         </div>
       </div>
 
-      {/* 🌍 Select Region */}
+      {/* Property Use — Pill Tabs */}
       <div className="mb-6">
-        <h3 className="text-sm font-semibold text-navy-base mb-3">🌍 Select Region</h3>
-        <select
-          value={region}
-          onChange={handleRegionChange}
-          className="w-full bg-white border border-gray-200 text-sm rounded-sm px-3 py-2 text-navy-base outline-none cursor-pointer hover:border-navy-light transition-colors"
-        >
-          <option value="">Any Region</option>
-          {Object.keys(GHANA_LOCATIONS).map((reg) => (
-            <option key={reg} value={reg}>{reg}</option>
-          ))}
-        </select>
+        <h3 className="text-sm font-semibold text-navy-base mb-3">Property Use</h3>
+        <div className="inline-flex rounded-xl bg-slate-100 p-1 w-full">
+          {['All', 'Residential', 'Commercial'].map((use) => {
+            const isActive = currentUse === use;
+            return (
+              <button
+                key={use}
+                type="button"
+                onClick={() => {
+                  updateFilters({
+                    propertyUse: use,
+                    propertyType: 'All'
+                  });
+                }}
+                className={`flex-1 text-center py-2 text-xs font-semibold rounded-lg transition-all duration-200 ${
+                  isActive
+                    ? 'bg-white text-slate-950 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {use}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* 📍 Select Neighborhood */}
-      <div className="mb-6">
-        <h3 className="text-sm font-semibold text-navy-base mb-3">📍 Select Neighborhood</h3>
-        <select
-          value={neighborhood}
-          onChange={(e) => updateFilters({ neighborhood: e.target.value === 'All' ? null : e.target.value })}
-          disabled={!region}
-          className="w-full bg-white border border-gray-200 text-sm rounded-sm px-3 py-2 text-navy-base outline-none cursor-pointer hover:border-navy-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <option value="">Any Location</option>
-          {region && GHANA_LOCATIONS[region]?.map((loc) => (
-            <option key={loc} value={loc === 'All' ? '' : loc}>{loc}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* Property Type */}
+      {/* Dynamic Property Type */}
       <div className="mb-6">
         <h3 className="text-sm font-semibold text-navy-base mb-3">Property Type</h3>
         <select
-          value={propertyType}
-          onChange={(e) => updateFilters({ propertyType: e.target.value === 'all' ? null : e.target.value })}
+          value={currentType}
+          onChange={(e) => updateFilters({ propertyType: e.target.value })}
           className="w-full bg-white border border-gray-200 text-sm rounded-sm px-3 py-2 text-navy-base outline-none cursor-pointer hover:border-navy-light transition-colors"
         >
-          <option value="all">All Types</option>
-          {PROPERTY_TYPES.map((type) => (
+          <option value="All">All Types</option>
+          {activePropertyTypes.map((type) => (
             <option key={type} value={type}>{type}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* 16 Regions */}
+      <div className="mb-6">
+        <h3 className="text-sm font-semibold text-navy-base mb-3">Region</h3>
+        <select
+          value={currentRegion}
+          onChange={(e) => updateFilters({ region: e.target.value, neighborhood: null })}
+          className="w-full bg-white border border-gray-200 text-sm rounded-sm px-3 py-2 text-navy-base outline-none cursor-pointer hover:border-navy-light transition-colors"
+        >
+          <option value="All">All of Ghana</option>
+          {GHANA_REGIONS.map((region) => (
+            <option key={region} value={region}>{region}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Neighborhood */}
+      <div className="mb-6">
+        <h3 className="text-sm font-semibold text-navy-base mb-3">Neighborhood</h3>
+        <select
+          value={neighborhood}
+          onChange={(e) => updateFilters({ neighborhood: e.target.value || null })}
+          disabled={!currentRegion || currentRegion === 'All'}
+          className="w-full bg-white border border-gray-200 text-sm rounded-sm px-3 py-2 text-navy-base outline-none cursor-pointer hover:border-navy-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <option value="">Any Location</option>
+          {availableNeighborhoods.map((n) => (
+            <option key={n} value={n}>{n}</option>
           ))}
         </select>
       </div>
@@ -171,29 +221,9 @@ function PropertyFiltersContent() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
           </svg>
         </button>
-        
+
         {showAdvanced && (
           <div className="space-y-6 pt-2 animate-in fade-in slide-in-from-top-2 duration-200">
-            {/* Category Type */}
-            <div>
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Category Type</h3>
-              <div className="flex bg-gray-100 p-1 rounded-sm">
-                {['all', 'residential', 'commercial'].map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => updateFilters({ listing_category_type: cat === 'all' ? null : cat, propertyType: null })}
-                    className={`flex-1 text-xs py-1.5 rounded-sm capitalize font-medium transition-colors ${
-                      listingCategoryType === cat
-                        ? 'bg-white shadow-sm text-navy-base'
-                        : 'text-gray-500 hover:text-navy-base'
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Condition */}
             <div>
               <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Property Condition</h3>
@@ -249,7 +279,7 @@ function PropertyFiltersContent() {
         )}
       </div>
 
-      {/* Total Price */}
+      {/* Price Range */}
       <div className="mb-6">
         <h3 className="text-sm font-semibold text-navy-base mb-3">
           {isRentalContext ? `Monthly Rent (${displayCurrency})` : `Total Price (${displayCurrency})`}
@@ -328,46 +358,30 @@ function PropertyFiltersContent() {
         </select>
       </div>
 
-      {/* 🛡️ Essential Amenities */}
+      {/* Essential Amenities */}
       <div className="mb-6">
-        <h3 className="text-sm font-semibold text-navy-base mb-3">🛡️ Essential Amenities</h3>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="flex items-center gap-2 cursor-pointer group">
-            <input
-              type="checkbox"
-              checked={generator}
-              onChange={(e) => updateFilters({ generator: e.target.checked ? 'true' : null })}
-              className="w-4 h-4 rounded border-gray-300 text-navy-base focus:ring-navy-light cursor-pointer"
-            />
-            <span className="text-xs font-medium text-navy-base group-hover:text-navy-light">Standby Generator</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer group">
-            <input
-              type="checkbox"
-              checked={water}
-              onChange={(e) => updateFilters({ water: e.target.checked ? 'true' : null })}
-              className="w-4 h-4 rounded border-gray-300 text-navy-base focus:ring-navy-light cursor-pointer"
-            />
-            <span className="text-xs font-medium text-navy-base group-hover:text-navy-light">Borehole / Polyank</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer group">
-            <input
-              type="checkbox"
-              checked={meter}
-              onChange={(e) => updateFilters({ meter: e.target.checked ? 'true' : null })}
-              className="w-4 h-4 rounded border-gray-300 text-navy-base focus:ring-navy-light cursor-pointer"
-            />
-            <span className="text-xs font-medium text-navy-base group-hover:text-navy-light">Prepaid Meter</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer group">
-            <input
-              type="checkbox"
-              checked={gated}
-              onChange={(e) => updateFilters({ gated: e.target.checked ? 'true' : null })}
-              className="w-4 h-4 rounded border-gray-300 text-navy-base focus:ring-navy-light cursor-pointer"
-            />
-            <span className="text-xs font-medium text-navy-base group-hover:text-navy-light">Walled & Gated</span>
-          </label>
+        <h3 className="text-sm font-semibold text-navy-base mb-3">Essential Amenities</h3>
+        <div className="grid grid-cols-1 gap-3">
+          {[
+            { id: 'ac', label: 'Air Conditioning', checked: ac },
+            { id: 'generator', label: 'Standby Generator / Plant', checked: generator },
+            { id: 'solar', label: 'Solar Power System', checked: solar },
+            { id: 'water', label: 'Water Reservoir (Polytank)', checked: water },
+            { id: 'security', label: '24/7 Security', checked: security },
+            { id: 'kitchen', label: 'Fitted Kitchen Cabinets', checked: kitchen },
+            { id: 'meter', label: 'Prepaid Meter', checked: meter },
+            { id: 'gated', label: 'Walled & Gated', checked: gated },
+          ].map(({ id, label, checked }) => (
+            <label key={id} className="flex items-center gap-2 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={(e) => updateFilters({ [id]: e.target.checked ? 'true' : null })}
+                className="w-4 h-4 rounded border-gray-300 text-navy-base focus:ring-navy-light cursor-pointer"
+              />
+              <span className="text-xs font-medium text-navy-base group-hover:text-navy-light">{label}</span>
+            </label>
+          ))}
         </div>
       </div>
 
@@ -399,7 +413,16 @@ function PropertyFiltersContent() {
 
 export default function PropertyFilters() {
   return (
-    <Suspense fallback={<aside className="w-full md:w-72 flex-shrink-0 bg-white rounded-md shadow-ambient border border-gray-100 p-6 sticky top-24"><div className="animate-pulse flex space-x-4"><div className="flex-1 space-y-6 py-1"><div className="h-2 bg-slate-200 rounded"></div><div className="space-y-3"><div className="grid grid-cols-3 gap-4"><div className="h-2 bg-slate-200 rounded col-span-2"></div><div className="h-2 bg-slate-200 rounded col-span-1"></div></div><div className="h-2 bg-slate-200 rounded"></div></div></div></div></aside>}>
+    <Suspense fallback={
+      <aside className="w-full md:w-72 flex-shrink-0 bg-white rounded-md border border-gray-100 p-6 space-y-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-4 bg-slate-100 rounded w-1/3"></div>
+          <div className="h-10 bg-slate-100 rounded"></div>
+          <div className="h-4 bg-slate-100 rounded w-1/2"></div>
+          <div className="h-10 bg-slate-100 rounded"></div>
+        </div>
+      </aside>
+    }>
       <PropertyFiltersContent />
     </Suspense>
   );

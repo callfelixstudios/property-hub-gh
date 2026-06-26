@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import imageCompression from 'browser-image-compression';
 import { ghanaLocations, regionToLocationKey } from "@/data/ghanaLocations";
 import { RESIDENTIAL_CATEGORIES, COMMERCIAL_CATEGORIES } from "@/data/propertyCategories";
+import { normalizeRegionForDb } from '@/utils/regionMapper';
 import { Combobox } from "@/components/ui/Combobox";
 
 const REGION_LABELS: Record<string, string> = {
@@ -106,9 +107,9 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
   const isResidential = !isLand && !isCommercial;
 
   const AMENITIES_LIST = isResidential
-    ? ["Air Conditioning", "Standby Generator / Plant", "Solar Power System", "Water Reservoir (Polytank)", "24/7 Security", "Fitted Kitchen Cabinets"]
+    ? ["Air Conditioning", "Standby Generator / Plant", "Solar Power System", "Water Reservoir (Polytank)", "24/7 Security", "Fitted Kitchen Cabinets", "Prepaid Meter", "Walled & Gated"]
     : isCommercial
-      ? ["Air Conditioning", "Standby Generator / Plant", "Solar Power System", "Water Reservoir (Polytank)", "24/7 Security", "Fitted Kitchen Cabinets"]
+      ? ["Air Conditioning", "Standby Generator / Plant", "Solar Power System", "Water Reservoir (Polytank)", "24/7 Security", "Fitted Kitchen Cabinets", "Prepaid Meter", "Walled & Gated"]
       : ["Fenced / Walled Compound", "Tarred / Graded Road Access", "Electricity Grid Connected", "Water Pipe Connected", "Registered Indenture / Title Docs", "Non-Waterlogged Area"];
 
   const handleCategoryChange = (val: string) => {
@@ -281,7 +282,7 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
         title: title || null,
         description: description || null,
         category: category || 'Apartment',
-        region: region || null,
+        region: normalizeRegionForDb(region) || region || null,
         neighborhood: neighborhood || null,
         gps_address: gpsAddress || null,
         base_rent: parseInt(baseRent, 10) || 0,
