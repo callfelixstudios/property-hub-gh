@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useTransition } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import EditListingModal from '@/components/listings/EditListingModal';
 import imageCompression from 'browser-image-compression';
 import { Heart, Camera, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import TimeframeSelector, { TimeframePeriod } from './TimeframeSelector';
+import { fetchTimeframeAnalytics } from '@/app/actions/analytics';
 
 interface Listing {
   id: string;
@@ -96,6 +98,34 @@ export default function DashboardTabs({
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [profileMessage, setProfileMessage] = useState('');
   const [restoreError, setRestoreError] = useState<string | null>(null);
+
+  const [period, setPeriod] = useState<TimeframePeriod>('all');
+  const [isAnalyticsPending, startAnalyticsTransition] = useTransition();
+  const [analyticsData, setAnalyticsData] = useState(() => {
+    const tViews = initialListings?.reduce((sum, l) => sum + (l.views_count || 0), 0) || 0;
+    const tLeads = initialListings?.reduce((sum, l) => sum + (l.whatsapp_leads_count || 0), 0) || 0;
+    return {
+      totalViews: tViews,
+      totalLeads: tLeads,
+      conversionRate: tViews > 0 ? ((tLeads / tViews) * 100).toFixed(1) : '0.0',
+      listingBreakdown: initialListings?.map(l => ({
+        id: l.id,
+        title: l.title,
+        status: l.status || 'active',
+        views_count: l.views_count || 0,
+        whatsapp_leads_count: l.whatsapp_leads_count || 0,
+        conversion_rate: l.views_count > 0 ? ((l.whatsapp_leads_count || 0) / l.views_count * 100).toFixed(1) : '0.0'
+      })) || []
+    };
+  });
+
+  const handleTimeframeChange = (newPeriod: TimeframePeriod) => {
+    setPeriod(newPeriod);
+    startAnalyticsTransition(async () => {
+      const updated = await fetchTimeframeAnalytics(userId, newPeriod);
+      setAnalyticsData(updated);
+    });
+  };
 
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
 
@@ -607,63 +637,74 @@ export default function DashboardTabs({
           <>
             {/* OVERVIEW TAB */}
             {activeTab === 'overview' && (
-          <div>
-            <h2 className="text-2xl font-bold text-navy-base mb-6">Overview</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-slate-50 p-6 rounded-md border border-gray-100">
-                <p className="text-sm text-gray-500 font-medium mb-1">Total Listings</p>
-                <p className="text-3xl font-bold text-navy-base">{listings.length}</p>
+          <div className="space-y-6">
+            {/* Header Control Header Grid Layout */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gray-100 pb-4 gap-4">
+              <div>
+                <h2 className="text-xl font-extrabold text-navy-base">Performance Overview</h2>
+                <p className="text-xs text-gray-500">Track and optimize exposure, buyer interest, and conversion response windows.</p>
               </div>
-              <div className="bg-slate-50 p-6 rounded-md border border-gray-100">
-                <p className="text-sm text-gray-500 font-medium mb-1">SafeMove Transactions</p>
-                <p className="text-3xl font-bold text-navy-base">{initialSafemoveTransactions.length}</p>
+              <TimeframeSelector value={period} onChange={handleTimeframeChange} isPending={isAnalyticsPending} />
+            </div>
+
+            {/* Metric Overview Metrics Ribbon */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="bg-white border border-slate-100 shadow-sm rounded-xl p-5">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Views</p>
+                <p className="text-3xl font-extrabold text-navy-base">{analyticsData.totalViews.toLocaleString()}</p>
               </div>
-              <div className="bg-slate-50 p-6 rounded-md border border-gray-100">
-                <p className="text-sm text-gray-500 font-medium mb-1">Total Views</p>
-                <p className="text-3xl font-bold text-navy-base">{listings.reduce((sum, listing) => sum + (listing.views_count || 0), 0)}</p>
+              
+              <div className="bg-white border border-slate-100 shadow-sm rounded-xl p-5">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">WhatsApp Leads</p>
+                <p className="text-3xl font-extrabold text-emerald-600">{analyticsData.totalLeads.toLocaleString()}</p>
               </div>
-              <div className="bg-emerald-50 p-6 rounded-md border border-emerald-100">
-                <p className="text-sm text-emerald-700 font-medium mb-1">WhatsApp Leads</p>
-                <p className="text-3xl font-bold text-emerald-600">
-                  {listings.reduce((sum, listing) => sum + (listing.whatsapp_leads_count || 0), 0)}
-                </p>
+
+              <div className="bg-white border border-slate-100 shadow-sm rounded-xl p-5">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Lead Conversion Rate</p>
+                <div className="flex items-baseline gap-1.5">
+                  <p className="text-3xl font-extrabold text-indigo-600">{analyticsData.conversionRate}%</p>
+                  <span className="text-xs font-medium text-slate-400">views to clicks</span>
+                </div>
               </div>
             </div>
 
-            {/* Listing Performance Breakdown */}
-            <div className="mt-8">
-              <h3 className="text-lg font-bold text-navy-base mb-4">Listing Performance</h3>
-              <div className="bg-white border border-gray-100 rounded-lg overflow-x-auto">
+            {/* Property Breakdown Data Sheet Matrix */}
+            <div className="bg-white border border-slate-100 rounded-xl shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-slate-50 border-b border-gray-100 text-xs font-bold text-navy-base uppercase">
-                      <th className="p-4">Property</th>
+                    <tr className="bg-slate-50 border-b border-slate-100 text-xs font-bold text-navy-base uppercase tracking-wider">
+                      <th className="p-4">Listing Title</th>
                       <th className="p-4">Status</th>
                       <th className="p-4 text-center">Views</th>
-                      <th className="p-4 text-center">WhatsApp Leads</th>
+                      <th className="p-4 text-center">WhatsApp Clicks</th>
+                      <th className="p-4 text-center">Conversion</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50 text-sm">
-                    {listings.map(listing => (
-                      <tr key={listing.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="p-4 font-semibold text-navy-base max-w-xs truncate">
-                          {listing.title || 'Untitled Property'}
-                        </td>
-                        <td className="p-4">
-                          <span className={`inline-flex px-2 py-0.5 text-xs font-bold rounded-full ${
-                            listing.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-600'
-                          }`}>
-                            {listing.status}
-                          </span>
-                        </td>
-                        <td className="p-4 text-center font-medium text-slate-700">
-                          {listing.views_count || 0}
-                        </td>
-                        <td className="p-4 text-center font-bold text-emerald-600">
-                          {listing.whatsapp_leads_count || 0}
+                  <tbody className="divide-y divide-slate-50 text-sm">
+                    {analyticsData.listingBreakdown.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="p-8 text-center text-sm text-gray-400 font-medium">
+                          No property activities logged within this timeframe selection range.
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      analyticsData.listingBreakdown.map((listing) => (
+                        <tr key={listing.id} className="hover:bg-slate-50/40 transition-colors">
+                          <td className="p-4 font-semibold text-navy-base max-w-xs truncate">{listing.title}</td>
+                          <td className="p-4">
+                            <span className={`inline-flex px-2.5 py-0.5 text-xs font-bold rounded-full ${
+                              listing.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'
+                            }`}>
+                              {listing.status}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center font-medium text-slate-600">{listing.views_count.toLocaleString()}</td>
+                          <td className="p-4 text-center font-bold text-emerald-600">{listing.whatsapp_leads_count.toLocaleString()}</td>
+                          <td className="p-4 text-center font-bold text-indigo-600">{listing.conversion_rate}%</td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
