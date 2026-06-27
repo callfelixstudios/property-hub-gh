@@ -61,8 +61,10 @@ export default function PostSpaceWizard() {
   const [bathrooms, setBathrooms] = useState("");
   const [furnishingStatus, setFurnishingStatus] = useState("");
   const [landSize, setLandSize] = useState("");
+  const [landUnit, setLandUnit] = useState<string>('Plots');
   const [landUse, setLandUse] = useState("");
-  const [squareMeters, setSquareMeters] = useState("");
+  const [propertySize, setPropertySize] = useState("");
+  const [sizeUnit, setSizeUnit] = useState<string>('m²');
   const [parkingCapacity, setParkingCapacity] = useState("");
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [posterRole, setPosterRole] = useState<"owner" | "agent" | "">("")
@@ -276,9 +278,9 @@ export default function PostSpaceWizard() {
         furnishing_status: furnishingStatus || null,
         condition: conditionValue || null,
         parking_space: parkingSpace || null,
-        land_size: landSize || null,
+        land_size: landSize ? `${landSize} ${landUnit}` : null,
         land_use: landUse || null,
-        square_meters: squareMeters ? parseFloat(squareMeters) : null,
+        square_meters: sizeUnit === 'Acres' ? (propertySize ? parseFloat(propertySize) * 4046.86 : null) : (propertySize ? parseFloat(propertySize) : null),
         parking_capacity: parkingCapacity ? parseInt(parkingCapacity, 10) : null,
         amenities: selectedAmenities.length > 0 ? selectedAmenities : null,
         poster_role: posterRole || null,
@@ -656,14 +658,29 @@ export default function PostSpaceWizard() {
                 {isLand ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-bold text-navy-base mb-2">Land Size</label>
-                      <input 
-                        type="text" 
-                        value={landSize} 
-                        onChange={(e) => setLandSize(e.target.value)} 
-                        placeholder="e.g. 70x100 sqft or 2 acres" 
-                        className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
-                      />
+                      <label className="block text-sm font-bold text-navy-base mb-2">Land Size / Area</label>
+                      <div className="relative mt-1 rounded-sm shadow-sm">
+                        <input
+                          type="number"
+                          value={landSize}
+                          onChange={(e) => setLandSize(e.target.value)}
+                          placeholder={landUnit === 'Plots' ? 'e.g., 1' : landUnit === 'Acres' ? 'e.g., 2.5' : 'e.g., 500'}
+                          className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors pr-24"
+                          min="0"
+                          step="any"
+                        />
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-1">
+                          <select
+                            value={landUnit}
+                            onChange={(e) => setLandUnit(e.target.value)}
+                            className="h-full rounded-md border-0 bg-transparent py-0 pl-2 pr-8 text-xs font-semibold text-slate-500 focus:outline-none focus:ring-0 cursor-pointer"
+                          >
+                            <option value="Plots">Plots</option>
+                            <option value="Acres">Acres</option>
+                            <option value="m²">m²</option>
+                          </select>
+                        </div>
+                      </div>
                     </div>
                     <div>
                       <label className="block text-sm font-bold text-navy-base mb-2">Land Use Classification</label>
@@ -680,17 +697,31 @@ export default function PostSpaceWizard() {
                       </select>
                     </div>
                   </div>
-                                ) : isCommercial ? (
+                                 ) : isCommercial ? (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
-                      <label className="block text-sm font-bold text-navy-base mb-2">Square Meters</label>
-                      <input 
-                        type="number" 
-                        value={squareMeters} 
-                        onChange={(e) => setSquareMeters(e.target.value)} 
-                        placeholder="e.g. 150"
-                        className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
-                      />
+                      <label className="block text-sm font-bold text-navy-base mb-2">Property Size / Area</label>
+                      <div className="relative mt-1 rounded-sm shadow-sm">
+                        <input 
+                          type="number" 
+                          value={propertySize} 
+                          onChange={(e) => setPropertySize(e.target.value)} 
+                          placeholder={sizeUnit === 'm²' ? 'e.g., 120' : 'e.g., 2.5'}
+                          className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors pr-20"
+                          min="0"
+                          step="any"
+                        />
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-1">
+                          <select
+                            value={sizeUnit}
+                            onChange={(e) => setSizeUnit(e.target.value)}
+                            className="h-full rounded-md border-0 bg-transparent py-0 pl-2 pr-8 text-xs font-semibold text-slate-500 focus:outline-none focus:ring-0 cursor-pointer"
+                          >
+                            <option value="m²">m²</option>
+                            <option value="Acres">Acres</option>
+                          </select>
+                        </div>
+                      </div>
                     </div>
                     <div>
                       <label className="block text-sm font-bold text-navy-base mb-2">Bathrooms / Washrooms</label>
@@ -746,6 +777,30 @@ export default function PostSpaceWizard() {
                         ))}
                         <option value="10+">10+</option>
                       </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-navy-base mb-2">Property Size / Area</label>
+                      <div className="relative mt-1 rounded-sm shadow-sm">
+                        <input
+                          type="number"
+                          value={propertySize}
+                          onChange={(e) => setPropertySize(e.target.value)}
+                          placeholder={sizeUnit === 'm²' ? 'e.g., 120' : 'e.g., 2.5'}
+                          className="w-full rounded-sm border border-gray-200 bg-surface-primary px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors pr-20"
+                          min="0"
+                          step="any"
+                        />
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-1">
+                          <select
+                            value={sizeUnit}
+                            onChange={(e) => setSizeUnit(e.target.value)}
+                            className="h-full rounded-md border-0 bg-transparent py-0 pl-2 pr-8 text-xs font-semibold text-slate-500 focus:outline-none focus:ring-0 cursor-pointer"
+                          >
+                            <option value="m²">m²</option>
+                            <option value="Acres">Acres</option>
+                          </select>
+                        </div>
+                      </div>
                     </div>
                     <div>
                       <label className="block text-sm font-bold text-navy-base mb-2">Furnishing Status</label>

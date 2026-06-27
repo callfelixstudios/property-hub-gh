@@ -8,6 +8,7 @@ import imageCompression from 'browser-image-compression';
 import { Heart, Camera, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import TimeframeSelector, { TimeframePeriod } from './TimeframeSelector';
 import { fetchTimeframeAnalytics } from '@/app/actions/analytics';
+import { SidebarProfile } from './SidebarProfile';
 
 interface Listing {
   id: string;
@@ -84,6 +85,8 @@ export default function DashboardTabs({
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab') as 'overview' | 'listings' | 'archived' | 'safemove' | 'profile' | 'space-requests' | null;
 
+  const timeframeParam = searchParams.get('timeframe') as TimeframePeriod | null;
+
   const [activeTab, setActiveTab] = useState<'overview' | 'listings' | 'archived' | 'safemove' | 'profile' | 'space-requests'>(tabParam || 'overview');
 
   useEffect(() => {
@@ -92,6 +95,22 @@ export default function DashboardTabs({
     }
   }, [tabParam]);
 
+  useEffect(() => {
+    if (timeframeParam) {
+      setPeriod(timeframeParam);
+      if (timeframeParam !== 'all') {
+        startAnalyticsTransition(async () => {
+          try {
+            const updated = await fetchTimeframeAnalytics(userId, timeframeParam);
+            setAnalyticsData(updated);
+          } catch (err) {
+            console.error('Failed to fetch timeframe analytics:', err);
+          }
+        });
+      }
+    }
+  }, [timeframeParam]);
+
   const [listings, setListings] = useState<Listing[]>(initialListings || []);
   const [profile, setProfile] = useState<Profile>(initialProfile || {});
   const [whatsappInput, setWhatsappInput] = useState(() => extractPhoneFromWaLink(initialProfile?.whatsapp_link));
@@ -99,7 +118,7 @@ export default function DashboardTabs({
   const [profileMessage, setProfileMessage] = useState('');
   const [restoreError, setRestoreError] = useState<string | null>(null);
 
-  const [period, setPeriod] = useState<TimeframePeriod>('all');
+  const [period, setPeriod] = useState<TimeframePeriod>(timeframeParam || 'all');
   const [isAnalyticsPending, startAnalyticsTransition] = useTransition();
   const [analyticsData, setAnalyticsData] = useState(() => {
     const tViews = initialListings?.reduce((sum, l) => sum + (l.views_count || 0), 0) || 0;
@@ -114,17 +133,16 @@ export default function DashboardTabs({
         status: l.status || 'active',
         views_count: l.views_count || 0,
         whatsapp_leads_count: l.whatsapp_leads_count || 0,
-        conversion_rate: l.views_count > 0 ? ((l.whatsapp_leads_count || 0) / l.views_count * 100).toFixed(1) : '0.0'
+        conversion_rate: (l.views_count || 0) > 0 ? ((l.whatsapp_leads_count || 0) / (l.views_count || 0) * 100).toFixed(1) : '0.0'
       })) || []
     };
   });
 
   const handleTimeframeChange = (newPeriod: TimeframePeriod) => {
     setPeriod(newPeriod);
-    startAnalyticsTransition(async () => {
-      const updated = await fetchTimeframeAnalytics(userId, newPeriod);
-      setAnalyticsData(updated);
-    });
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('timeframe', newPeriod);
+    router.replace(`?${params.toString()}`, { scroll: false });
   };
 
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
@@ -597,6 +615,13 @@ export default function DashboardTabs({
     <div className="flex flex-col md:flex-row gap-8">
       {/* Left Navigation Rail */}
       <aside className="w-full md:w-64 flex-shrink-0">
+        <SidebarProfile
+          avatarUrl={profile.avatar_url}
+          fullName={profile.full_name}
+          userEmail={userEmail}
+          isUploading={isUploadingAvatar}
+          onAvatarClick={() => fileInputRef.current?.click()}
+        />
         <nav className="flex md:flex-col gap-2 overflow-x-auto pb-4 md:pb-0 hide-scrollbar">
           {tabs.map((tab) => {
             const isActive = (activeTabOverride || activeTab) === tab.id;
@@ -669,7 +694,7 @@ export default function DashboardTabs({
             </div>
 
             {/* Property Breakdown Data Sheet Matrix */}
-            <div className="bg-white border border-slate-100 rounded-xl shadow-sm overflow-hidden">
+            <div className={`bg-white border border-slate-100 rounded-xl shadow-sm overflow-hidden transition-opacity duration-300 ${isAnalyticsPending ? 'opacity-50' : ''}`}>
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
@@ -694,7 +719,9 @@ export default function DashboardTabs({
                           <td className="p-4 font-semibold text-navy-base max-w-xs truncate">{listing.title}</td>
                           <td className="p-4">
                             <span className={`inline-flex px-2.5 py-0.5 text-xs font-bold rounded-full ${
-                              listing.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'
+                              listing.status === 'active' ? 'bg-emerald-50 text-emerald-700' :
+                              listing.status === 'rented' || listing.status === 'sold' ? 'bg-amber-50 text-amber-700' :
+                              'bg-slate-100 text-slate-600'
                             }`}>
                               {listing.status}
                             </span>
@@ -1141,13 +1168,6 @@ export default function DashboardTabs({
                   )}
                 </button>
 
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarSelect}
-                  className="hidden"
-                />
               </div>
 
               <div className="flex flex-col items-center sm:items-start gap-2">
@@ -1337,6 +1357,14 @@ export default function DashboardTabs({
           </>
         )}
       </main>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleAvatarSelect}
+        className="hidden"
+      />
 
       {/* Editor Modal */}
       {editingListing && (

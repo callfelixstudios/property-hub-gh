@@ -61,10 +61,17 @@ export default async function SavedListingsPage() {
     }
   }
 
+  // Fetch profile for sidebar
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+
   const hasListings = finalListings.length > 0;
 
   return (
-    <DashboardTabs activeTabOverride="saved" userId={user.id}>
+    <DashboardTabs activeTabOverride="saved" userId={user.id} initialProfile={profile || {}} userEmail={user.email || ''}>
       <div>
 
         {/* Header Banner */}
@@ -119,6 +126,12 @@ export default async function SavedListingsPage() {
                       baths={listing.bathrooms}
                       category={listing.category}
                       badge={listing.safemove_active ? "safemove" : undefined}
+                      base_rent={listing.base_rent}
+                      outright_price={listing.outright_price}
+                      service_charge={listing.service_charge}
+                      advance_period={listing.advance_period}
+                      rent_advance_months={listing.rent_advance_months}
+                      is_rental={listing.transaction_type === 'rent'}
                     />
                   </Link>
                 );

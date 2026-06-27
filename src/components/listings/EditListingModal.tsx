@@ -92,9 +92,26 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
   const [bedrooms, setBedrooms] = useState(listing.bedrooms?.toString() || "");
   const [bathrooms, setBathrooms] = useState(listing.bathrooms?.toString() || "");
   const [furnishingStatus, setFurnishingStatus] = useState(listing.furnishing_status || "");
-  const [landSize, setLandSize] = useState(listing.land_size || "");
+
+  const extractLandData = (rawLandSize: string | null | undefined) => {
+    if (!rawLandSize) return { size: "", unit: "Plots" };
+    const cleanString = String(rawLandSize).trim();
+    const match = cleanString.match(/^([\d.]+)\s*(.*)$/);
+    if (match) {
+      return {
+        size: match[1],
+        unit: match[2] || "Plots"
+      };
+    }
+    return { size: cleanString, unit: "Plots" };
+  };
+
+  const landData = extractLandData(listing.land_size);
+  const [landSize, setLandSize] = useState<string>(landData.size);
+  const [landUnit, setLandUnit] = useState<string>(landData.unit);
   const [landUse, setLandUse] = useState(listing.land_use || "");
-  const [squareMeters, setSquareMeters] = useState(listing.square_meters?.toString() || "");
+  const [propertySize, setPropertySize] = useState(listing.square_meters?.toString() || "");
+  const [sizeUnit, setSizeUnit] = useState<string>('m²');
   const [parkingCapacity, setParkingCapacity] = useState(listing.parking_capacity?.toString() || "");
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>(listing.amenities || []);
   const [posterRole, setPosterRole] = useState<"owner" | "agent" | "">(listing.poster_role || "");
@@ -298,9 +315,9 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
         bedrooms: bedrooms ? parseInt(bedrooms, 10) : null,
         bathrooms: bathrooms ? parseInt(bathrooms, 10) : null,
         furnishing_status: furnishingStatus || null,
-        land_size: landSize || null,
+        land_size: landSize ? `${landSize} ${landUnit}` : null,
         land_use: landUse || null,
-        square_meters: squareMeters ? parseFloat(squareMeters) : null,
+        square_meters: sizeUnit === 'Acres' ? (propertySize ? parseFloat(propertySize) * 4046.86 : null) : (propertySize ? parseFloat(propertySize) : null),
         parking_capacity: parkingCapacity ? parseInt(parkingCapacity, 10) : null,
         amenities: selectedAmenities.length > 0 ? selectedAmenities : null,
         poster_role: posterRole || null,
@@ -580,8 +597,29 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
               {isLand ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className={labelCls}>Land Size</label>
-                    <input type="text" value={landSize} onChange={(e) => setLandSize(e.target.value)} placeholder="e.g. 70x100 sqft or 2 acres" className={inputCls} />
+                    <label className={labelCls}>Land Size / Area</label>
+                    <div className="relative mt-1 rounded-sm shadow-sm">
+                      <input
+                        type="number"
+                        value={landSize}
+                        onChange={(e) => setLandSize(e.target.value)}
+                        placeholder={landUnit === 'Plots' ? 'e.g., 1' : landUnit === 'Acres' ? 'e.g., 2.5' : 'e.g., 500'}
+                        className={`${inputCls} pr-24`}
+                        min="0"
+                        step="any"
+                      />
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-1">
+                        <select
+                          value={landUnit}
+                          onChange={(e) => setLandUnit(e.target.value)}
+                          className="h-full rounded-md border-0 bg-transparent py-0 pl-2 pr-8 text-xs font-semibold text-slate-500 focus:outline-none focus:ring-0 cursor-pointer"
+                        >
+                          <option value="Plots">Plots</option>
+                          <option value="Acres">Acres</option>
+                          <option value="m²">m²</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
                   <div>
                     <label className={labelCls}>Land Use Classification</label>
@@ -597,8 +635,28 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
               ) : isCommercial ? (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className={labelCls}>Square Meters</label>
-                    <input type="number" value={squareMeters} onChange={(e) => setSquareMeters(e.target.value)} placeholder="e.g. 150" className={inputCls} />
+                    <label className={labelCls}>Property Size / Area</label>
+                    <div className="relative mt-1 rounded-sm shadow-sm">
+                      <input
+                        type="number"
+                        value={propertySize}
+                        onChange={(e) => setPropertySize(e.target.value)}
+                        placeholder={sizeUnit === 'm²' ? 'e.g., 120' : 'e.g., 2.5'}
+                        className={`${inputCls} pr-20`}
+                        min="0"
+                        step="any"
+                      />
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-1">
+                        <select
+                          value={sizeUnit}
+                          onChange={(e) => setSizeUnit(e.target.value)}
+                          className="h-full rounded-md border-0 bg-transparent py-0 pl-2 pr-8 text-xs font-semibold text-slate-500 focus:outline-none focus:ring-0 cursor-pointer"
+                        >
+                          <option value="m²">m²</option>
+                          <option value="Acres">Acres</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
                   <div>
                     <label className={labelCls}>Bathrooms / Washrooms</label>
@@ -614,7 +672,7 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div>
                     <label className={labelCls}>Bedrooms</label>
                     <select value={bedrooms} onChange={(e) => setBedrooms(e.target.value)} className={inputCls}>
@@ -630,6 +688,30 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
                       {[1,2,3,4,5,6,7,8,9,10].map(n => (<option key={n} value={n}>{n}</option>))}
                       <option value="10+">10+</option>
                     </select>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Property Size / Area</label>
+                    <div className="relative mt-1 rounded-sm shadow-sm">
+                      <input
+                        type="number"
+                        value={propertySize}
+                        onChange={(e) => setPropertySize(e.target.value)}
+                        placeholder={sizeUnit === 'm²' ? 'e.g., 120' : 'e.g., 2.5'}
+                        className={`${inputCls} pr-20`}
+                        min="0"
+                        step="any"
+                      />
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-1">
+                        <select
+                          value={sizeUnit}
+                          onChange={(e) => setSizeUnit(e.target.value)}
+                          className="h-full rounded-md border-0 bg-transparent py-0 pl-2 pr-8 text-xs font-semibold text-slate-500 focus:outline-none focus:ring-0 cursor-pointer"
+                        >
+                          <option value="m²">m²</option>
+                          <option value="Acres">Acres</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
                   <div>
                     <label className={labelCls}>Furnishing Status</label>

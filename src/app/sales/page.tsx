@@ -102,7 +102,7 @@ async function fetchSalesListings(searchParams: { [key: string]: string | string
       .join(', ') || 'Ghana';
     const area = row.category === 'land' 
       ? (row.land_size || 'Plot of land') 
-      : (row.square_meters ? `${row.square_meters} sqm` : '—');
+      : (row.square_meters ? `${row.square_meters} m²` : '—');
     
     return {
       id: row.id,
@@ -115,7 +115,7 @@ async function fetchSalesListings(searchParams: { [key: string]: string | string
       rawPrice: Number(row.outright_price || 0),
       currency: row.currency || 'GHS',
       price_suffix: '',
-      dimensions: row.land_size || (row.square_meters ? `${row.square_meters} sqm` : '—'),
+      dimensions: row.land_size || (row.square_meters ? `${row.square_meters} m²` : '—'),
       badge: row.safemove_active ? 'safemove' : undefined,
       category: row.category,
       isVerified: row.is_verified || false,

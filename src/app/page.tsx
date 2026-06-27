@@ -14,7 +14,7 @@ const featuredListings = [
     location: "East Legon, Accra",
     beds: 3,
     baths: 2,
-    area: "1,200 sqft",
+    area: "120 m²",
     badge: "verified" as const,
   },
   {
@@ -26,7 +26,7 @@ const featuredListings = [
     location: "Cantonments, Accra",
     beds: 2,
     baths: 2,
-    area: "950 sqft",
+    area: "90 m²",
     badge: "safemove" as const,
   },
   {
@@ -38,7 +38,7 @@ const featuredListings = [
     location: "Trasacco, East Legon",
     beds: 5,
     baths: 4,
-    area: "3,400 sqft",
+    area: "315 m²",
     badge: "verified" as const,
   },
 ];

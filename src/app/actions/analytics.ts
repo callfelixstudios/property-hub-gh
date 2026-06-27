@@ -18,7 +18,7 @@ function getDateThreshold(period: TimeframePeriod): string | null {
 }
 
 export async function fetchTimeframeAnalytics(posterId: string, period: TimeframePeriod) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const dateThreshold = getDateThreshold(period);
 
   const { data: listings } = await supabase
