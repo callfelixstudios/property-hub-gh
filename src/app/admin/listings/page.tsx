@@ -1,0 +1,114 @@
+import { createClient } from '@/utils/supabase/server';
+import { CheckCircle2, Clock, XCircle, AlertTriangle } from 'lucide-react';
+import ListingModerationQueue from '@/components/admin/ListingModerationQueue';
+import { redirect } from 'next/navigation';
+
+export default async function AdminListingsPage({
+  searchParams,
+}: {
+  searchParams: { tab?: string };
+}) {
+  const supabase = await createClient();
+
+  // Validate admin identity (guard is handled in layout, but extra sanity check doesn't hurt)
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/login');
+
+  const currentTab = searchParams.tab || 'pending';
+
+  // 1. Fetch KPI Counts
+  const { count: pendingCount } = await supabase
+    .from('listings')
+    .select('*', { count: 'exact', head: true })
+    .eq('moderation_status', 'pending');
+
+  const { count: approvedCount } = await supabase
+    .from('listings')
+    .select('*', { count: 'exact', head: true })
+    .eq('moderation_status', 'approved');
+
+  const { count: rejectedCount } = await supabase
+    .from('listings')
+    .select('*', { count: 'exact', head: true })
+    .eq('moderation_status', 'rejected');
+
+  const { count: flaggedCount } = await supabase
+    .from('listings')
+    .select('*', { count: 'exact', head: true })
+    .eq('moderation_status', 'flagged');
+
+  // 2. Build Query based on tab
+  let query = supabase
+    .from('listings')
+    .select(`
+      *,
+      poster:profiles!poster_id(full_name, phone_number)
+    `)
+    .order('created_at', { ascending: false });
+
+  if (currentTab !== 'all') {
+    query = query.eq('moderation_status', currentTab);
+  }
+
+  const { data: listings } = await query;
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          Listing Moderation Queue
+          {pendingCount && pendingCount > 0 ? (
+            <span className="relative flex h-3 w-3 ml-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+            </span>
+          ) : null}
+        </h1>
+        <p className="text-gray-500 mt-1">Review, approve, or reject new properties before they go live.</p>
+      </div>
+
+      {/* KPI Strip */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
+            <Clock className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Pending</p>
+            <p className="text-xl font-bold text-gray-900">{pendingCount || 0}</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+            <CheckCircle2 className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Approved</p>
+            <p className="text-xl font-bold text-gray-900">{approvedCount || 0}</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+            <XCircle className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Rejected</p>
+            <p className="text-xl font-bold text-gray-900">{rejectedCount || 0}</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
+            <AlertTriangle className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Flagged</p>
+            <p className="text-xl font-bold text-gray-900">{flaggedCount || 0}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Queue Component */}
+      <ListingModerationQueue initialListings={listings || []} currentTab={currentTab} />
+    </div>
+  );
+}

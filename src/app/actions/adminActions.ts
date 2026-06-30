@@ -71,3 +71,70 @@ export async function setMembershipTier(
   revalidatePath('/admin/users');
   return { success: true, tier };
 }
+
+// ─── Approve Listing ───────────────────────────────────────────────────────
+export async function approveListing(listingId: string) {
+  const { supabase, user } = await assertAdmin();
+
+  const { error } = await supabase
+    .from('listings')
+    .update({
+      moderation_status: 'approved',
+      status: 'active', // Make public
+      moderated_at: new Date().toISOString(),
+      moderated_by: user.email,
+    })
+    .eq('id', listingId);
+
+  if (error) throw new Error(`Failed to approve listing: ${error.message}`);
+
+  revalidatePath('/admin/listings');
+  revalidatePath('/admin');
+  return { success: true };
+}
+
+// ─── Reject Listing ────────────────────────────────────────────────────────
+export async function rejectListing(listingId: string, reason: string, note?: string) {
+  const { supabase, user } = await assertAdmin();
+
+  const { error } = await supabase
+    .from('listings')
+    .update({
+      moderation_status: 'rejected',
+      status: 'pending', // Keep hidden
+      rejection_reason: reason,
+      moderation_note: note || null,
+      moderated_at: new Date().toISOString(),
+      moderated_by: user.email,
+    })
+    .eq('id', listingId);
+
+  if (error) throw new Error(`Failed to reject listing: ${error.message}`);
+
+  revalidatePath('/admin/listings');
+  revalidatePath('/admin');
+  return { success: true };
+}
+
+// ─── Flag Listing ──────────────────────────────────────────────────────────
+export async function flagListing(listingId: string, note?: string) {
+  const { supabase, user } = await assertAdmin();
+
+  const { error } = await supabase
+    .from('listings')
+    .update({
+      moderation_status: 'flagged',
+      status: 'pending', // Keep hidden
+      moderation_note: note || null,
+      moderated_at: new Date().toISOString(),
+      moderated_by: user.email,
+    })
+    .eq('id', listingId);
+
+  if (error) throw new Error(`Failed to flag listing: ${error.message}`);
+
+  revalidatePath('/admin/listings');
+  revalidatePath('/admin');
+  return { success: true };
+}
+
