@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
 import UserManagementTable from '@/components/admin/UserManagementTable';
-import { Users, UserCheck, UserX, Crown } from 'lucide-react';
+import { Users, UserCheck, UserX, Crown, Loader2 } from 'lucide-react';
+import { Suspense } from 'react';
 
 export const metadata = {
   title: 'User Management | Admin — Property Hub GH',
@@ -90,7 +91,15 @@ export default async function AdminUsersPage() {
       )}
 
       {/* ── User table ────────────────────────────────────────────────── */}
-      {!error && <UserManagementTable users={users} proUsersCount={proUsers} />}
+      {!error && (
+        <Suspense fallback={
+          <div className="bg-white rounded-xl border border-slate-200 p-10 flex justify-center items-center">
+            <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
+          </div>
+        }>
+          <UserManagementTable users={users} proUsersCount={proUsers} />
+        </Suspense>
+      )}
     </div>
   );
 }

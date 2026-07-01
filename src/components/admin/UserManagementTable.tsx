@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   BadgeCheck,
   ShieldOff,
@@ -38,8 +39,10 @@ const TIER_STYLES: Record<string, string> = {
 };
 
 export default function UserManagementTable({ users: initialUsers }: Props) {
+  const searchParams = useSearchParams();
+  const initialSearch = searchParams?.get('search') || '';
   const [users, setUsers] = useState<AdminUser[]>(initialUsers);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [tierFilter, setTierFilter] = useState<TierFilter>('all');
   const [pendingId, setPendingId] = useState<string | null>(null);

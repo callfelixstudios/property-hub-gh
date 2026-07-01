@@ -3,6 +3,7 @@
 import React, { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 import { CheckCircle2, XCircle, AlertTriangle, Loader2, MapPin, User, ChevronDown, Check, Info } from 'lucide-react';
 import { approveListing, rejectListing, flagListing } from '@/app/actions/adminActions';
 
@@ -212,10 +213,13 @@ export default function ListingModerationQueue({
                     </div>
                     <div className="flex items-center text-sm text-gray-500 gap-1.5 pt-2 border-t border-gray-100">
                       <User className="w-4 h-4 flex-shrink-0" />
-                      <span className="truncate">
+                      <Link 
+                        href={`/admin/users?search=${encodeURIComponent(listing.poster?.full_name || '')}`}
+                        className="truncate hover:underline text-emerald-600 font-medium"
+                      >
                         {listing.poster?.full_name || 'Unknown User'} 
                         {listing.poster?.phone_number && ` (${listing.poster.phone_number})`}
-                      </span>
+                      </Link>
                     </div>
                     <div className="text-xs text-gray-400 pl-5.5">
                       Submitted {new Date(listing.created_at).toLocaleDateString()}
