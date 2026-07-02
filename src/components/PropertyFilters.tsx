@@ -28,14 +28,14 @@ function PropertyFiltersContent() {
     async function loadConfig() {
       try {
         const config = await getConfigData();
-        if (config.regions.length > 0) {
-          setDynamicRegions(config.regions.map(r => r.name));
+        if (config.neighborhoods.length > 0) {
+          setDynamicRegions([...GHANA_REGIONS]);
           
           const locs: Record<string, string[]> = {};
-          config.regions.forEach(r => {
-            locs[r.name] = config.neighborhoods
-              .filter(n => n.region_id === r.id)
-              .map(n => n.name);
+          GHANA_REGIONS.forEach(r => {
+            locs[r] = config.neighborhoods
+              .filter((n: any) => n.region === r)
+              .map((n: any) => n.name);
           });
           setDynamicLocations(locs);
         }

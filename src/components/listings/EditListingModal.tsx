@@ -6,7 +6,11 @@ import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import imageCompression from 'browser-image-compression';
 import { ghanaLocations, regionToLocationKey } from "@/data/ghanaLocations";
-import { RESIDENTIAL_CATEGORIES, COMMERCIAL_CATEGORIES } from "@/data/propertyCategories";
+import { 
+  RESIDENTIAL_CATEGORIES,
+  COMMERCIAL_CATEGORIES
+} from "@/data/propertyCategories";
+import { GHANA_REGIONS } from "@/constants/locations";
 import { normalizeRegionForDb } from '@/utils/regionMapper';
 import { Combobox } from "@/components/ui/Combobox";
 import { getConfigData } from '@/app/actions/configActions';
@@ -90,17 +94,15 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
   React.useEffect(() => {
     async function loadConfig() {
       const data = await getConfigData();
-      if (data) {
-        setDynamicRegions(data.regions || []);
+        setDynamicRegions(GHANA_REGIONS as unknown as any);
         const locs: Record<string, string[]> = {};
-        (data.regions || []).forEach(r => {
-          locs[r.slug] = (data.neighborhoods || [])
-            .filter(n => n.region_id === r.id)
-            .map(n => n.name);
+        GHANA_REGIONS.forEach(r => {
+          locs[r] = (data.neighborhoods || [])
+            .filter((n: any) => n.region === r)
+            .map((n: any) => n.name);
         });
-        setDynamicLocations(locs);
-        setDynamicAmenities(data.amenities || []);
-      }
+      setDynamicLocations(locs);
+      setDynamicAmenities(data.amenities || []);
     }
     loadConfig();
   }, []);

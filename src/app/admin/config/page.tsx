@@ -8,17 +8,7 @@ export const metadata = {
 export default async function AdminConfigPage() {
   const supabase = await createClient();
 
-  const { data: regions } = await supabase
-    .from('config_regions')
-    .select('*')
-    .order('sort_order', { ascending: true })
-    .order('name', { ascending: true });
 
-  const { data: neighborhoods } = await supabase
-    .from('config_neighborhoods')
-    .select('*')
-    .order('sort_order', { ascending: true })
-    .order('name', { ascending: true });
 
   const { data: amenities } = await supabase
     .from('config_amenities')
@@ -34,8 +24,6 @@ export default async function AdminConfigPage() {
       </div>
 
       <ConfigManager
-        initialRegions={regions || []}
-        initialNeighborhoods={neighborhoods || []}
         initialAmenities={amenities || []}
       />
     </div>
