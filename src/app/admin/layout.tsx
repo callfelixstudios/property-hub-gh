@@ -10,6 +10,7 @@ import {
   LogOut,
   Settings,
   ChevronRight,
+  Activity,
 } from 'lucide-react';
 
 async function signOut() {
@@ -35,19 +36,21 @@ const NAV_ITEMS = [
     href: '/admin/listings',
     label: 'Listings Queue',
     icon: ListChecks,
-    badge: 'Soon',
   },
   {
-    href: '/admin/verifications',
+    href: '/admin/verification',
     label: 'Verifications',
     icon: BadgeCheck,
-    badge: 'Soon',
   },
   {
-    href: '/admin/settings',
+    href: '/admin/listing-health',
+    label: 'Listing Health',
+    icon: Activity,
+  },
+  {
+    href: '/admin/config',
     label: 'System Config',
     icon: Settings,
-    badge: 'Soon',
   },
 ];
 
