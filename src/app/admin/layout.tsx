@@ -47,6 +47,11 @@ const NAV_ITEMS = [
     iconName: 'BarChart3',
   },
   {
+    href: '/admin/locations',
+    label: 'Locations',
+    iconName: 'MapPin',
+  },
+  {
     href: '/admin/config',
     label: 'System Config',
     iconName: 'Settings',

@@ -11,6 +11,7 @@ import {
   Settings,
   Activity,
   BarChart3,
+  MapPin,
   LucideIcon
 } from 'lucide-react';
 
@@ -22,6 +23,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Settings,
   Activity,
   BarChart3,
+  MapPin,
 };
 
 type NavItem = {
