@@ -8,7 +8,7 @@ import { CheckCircle2, XCircle, FileText, ExternalLink, Loader2, AlertCircle } f
 export interface VerificationProfile {
   id: string;
   full_name: string | null;
-  phone: string | null;
+  contact_phone: string | null;
   email: string | null;
   company_name?: string | null;
   membership_tier: string | null;
@@ -102,7 +102,7 @@ export function VerificationInspectionDrawer({ profile }: { profile: Verificatio
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div>
             <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-0.5">Phone</p>
-            <p className="text-slate-700 font-medium">{profile.phone || '—'}</p>
+            <p className="text-slate-700 font-medium">{profile.contact_phone || '—'}</p>
           </div>
           <div>
             <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-0.5">Email</p>
