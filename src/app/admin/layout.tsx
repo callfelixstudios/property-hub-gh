@@ -1,7 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
-import Link from 'next/link';
 import { isAuthorizedAdmin } from '@/utils/adminAuth';
+import { AdminNavLink } from '@/components/admin/AdminNavLink';
 import {
   LayoutDashboard,
   Users,
@@ -88,13 +88,17 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-3 py-4 overflow-y-auto">
           <p className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-widest mb-2">
             Control
           </p>
-          {NAV_ITEMS.map((item) => (
-            <AdminNavLink key={item.href} item={item} />
-          ))}
+          <div className="space-y-0.5">
+            {NAV_ITEMS.map((item) => (
+              <div key={item.href} className="relative">
+                <AdminNavLink item={item} />
+              </div>
+            ))}
+          </div>
         </nav>
 
         {/* Sign out */}
@@ -134,26 +138,3 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   );
 }
 
-// Server component nav link — active state handled via URL matching
-// Since this is a server component we use a wrapper approach
-function AdminNavLink({
-  item,
-}: {
-  item: { href: string; label: string; icon: React.ElementType; badge?: string; exact?: boolean };
-}) {
-  const Icon = item.icon;
-  return (
-    <Link
-      href={item.href}
-      className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 text-sm font-medium transition-all group"
-    >
-      <Icon className="w-4 h-4 flex-shrink-0" />
-      <span className="flex-1">{item.label}</span>
-      {item.badge && (
-        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-slate-400">
-          {item.badge}
-        </span>
-      )}
-    </Link>
-  );
-}
