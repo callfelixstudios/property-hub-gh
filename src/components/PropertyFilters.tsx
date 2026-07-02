@@ -385,9 +385,13 @@ function PropertyFiltersContent() {
       <div className="mb-6">
         <h3 className="text-sm font-semibold text-navy-base mb-3">Essential Amenities</h3>
         <div className="grid grid-cols-1 gap-3">
-          {dynamicAmenities
-            .filter((a) => currentUse === 'All' || a.category === currentUse.toLowerCase())
-            .map((amenity) => {
+          {Array.from(
+            new Map(
+              dynamicAmenities
+                .filter((a) => currentUse === 'All' || a.category === currentUse.toLowerCase())
+                .map((a) => [a.name.trim().toLowerCase(), a])
+            ).values()
+          ).map((amenity) => {
               const isChecked = searchParams.get(amenity.slug) === 'true';
               return (
                 <label key={amenity.slug} className="flex items-center gap-2 cursor-pointer group">
