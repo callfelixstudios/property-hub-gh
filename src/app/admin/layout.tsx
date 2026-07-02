@@ -3,15 +3,8 @@ import { redirect } from 'next/navigation';
 import { isAuthorizedAdmin } from '@/utils/adminAuth';
 import { AdminNavLink } from '@/components/admin/AdminNavLink';
 import {
-  LayoutDashboard,
-  Users,
-  ListChecks,
-  BadgeCheck,
   LogOut,
-  Settings,
   ChevronRight,
-  Activity,
-  BarChart3,
 } from 'lucide-react';
 
 async function signOut() {
@@ -25,38 +18,38 @@ const NAV_ITEMS = [
   {
     href: '/admin',
     label: 'Overview',
-    icon: LayoutDashboard,
+    iconName: 'LayoutDashboard',
     exact: true,
   },
   {
     href: '/admin/users',
     label: 'User Management',
-    icon: Users,
+    iconName: 'Users',
   },
   {
     href: '/admin/listings',
     label: 'Listings Queue',
-    icon: ListChecks,
+    iconName: 'ListChecks',
   },
   {
     href: '/admin/verification',
     label: 'Verifications',
-    icon: BadgeCheck,
+    iconName: 'BadgeCheck',
   },
   {
     href: '/admin/listing-health',
     label: 'Listing Health',
-    icon: Activity,
+    iconName: 'Activity',
   },
   {
     href: '/admin/analytics',
     label: 'Analytics & Alerts',
-    icon: BarChart3,
+    iconName: 'BarChart3',
   },
   {
     href: '/admin/config',
     label: 'System Config',
-    icon: Settings,
+    iconName: 'Settings',
   },
 ];
 

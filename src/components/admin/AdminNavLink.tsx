@@ -3,17 +3,38 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+import {
+  LayoutDashboard,
+  Users,
+  ListChecks,
+  BadgeCheck,
+  Settings,
+  Activity,
+  BarChart3,
+  LucideIcon
+} from 'lucide-react';
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  LayoutDashboard,
+  Users,
+  ListChecks,
+  BadgeCheck,
+  Settings,
+  Activity,
+  BarChart3,
+};
+
 type NavItem = {
   href: string;
   label: string;
-  icon: React.ElementType;
+  iconName: string;
   badge?: string;
   exact?: boolean;
 };
 
 export function AdminNavLink({ item }: { item: NavItem }) {
   const pathname = usePathname();
-  const Icon = item.icon;
+  const Icon = ICON_MAP[item.iconName] || LayoutDashboard;
 
   const isActive = item.exact
     ? pathname === item.href
