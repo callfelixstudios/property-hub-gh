@@ -83,15 +83,15 @@ export default function AlertCards({ alerts }: AlertCardsProps) {
   const getAlertStyles = (severity: SystemAlert['severity']) => {
     switch (severity) {
       case 'critical':
-        return 'border-red-500/50 bg-red-500/5 shadow-[0_0_15px_rgba(239,68,68,0.1)]';
+        return 'border-red-200 bg-red-50 shadow-[0_0_15px_rgba(239,68,68,0.1)]';
       case 'high':
-        return 'border-orange-500/50 bg-orange-500/5';
+        return 'border-orange-200 bg-orange-50';
       case 'medium':
-        return 'border-yellow-500/50 bg-yellow-500/5';
+        return 'border-yellow-200 bg-yellow-50';
       case 'low':
-        return 'border-blue-500/50 bg-blue-500/5';
+        return 'border-blue-200 bg-blue-50';
       default:
-        return 'border-slate-700 bg-slate-800/50';
+        return 'border-gray-200 bg-white shadow-sm';
     }
   };
 
@@ -140,7 +140,7 @@ export default function AlertCards({ alerts }: AlertCardsProps) {
         <button
           onClick={() => handleResolve(alert.id, 'Froze developer account & quarantined listings')}
           disabled={isResolving}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 rounded-md transition-colors"
+          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-orange-100 text-orange-700 hover:bg-orange-200 rounded-md transition-colors"
         >
           {isResolving ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserX className="w-4 h-4" />}
           Freeze Account
@@ -165,7 +165,7 @@ export default function AlertCards({ alerts }: AlertCardsProps) {
       <button
         onClick={() => handleResolve(alert.id, 'Acknowledged and addressed manually')}
         disabled={isResolving}
-        className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 rounded-md transition-colors"
+        className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-md transition-colors"
       >
         {isResolving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
         Acknowledge
@@ -176,16 +176,16 @@ export default function AlertCards({ alerts }: AlertCardsProps) {
   return (
     <div className="space-y-6">
       {/* Alert Simulation Controls */}
-      <div className="bg-slate-800/50 border border-slate-700 p-4 rounded-xl">
-        <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-          <Activity className="w-4 h-4 text-slate-400" />
+      <div className="bg-white border border-gray-200 shadow-sm p-5 rounded-xl">
+        <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+          <Activity className="w-4 h-4 text-gray-500" />
           Test Automated Protocols
         </h3>
         <div className="flex flex-wrap gap-3">
           <button
             onClick={() => handleSimulate('payment_gateway')}
             disabled={!!simulating}
-            className="text-xs px-3 py-1.5 rounded bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors flex items-center gap-2"
+            className="text-xs px-3 py-1.5 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition-colors flex items-center gap-2"
           >
             {simulating === 'payment_gateway' && <Loader2 className="w-3 h-3 animate-spin" />}
             Simulate Gateway Failure
@@ -193,7 +193,7 @@ export default function AlertCards({ alerts }: AlertCardsProps) {
           <button
             onClick={() => handleSimulate('fraud_anomaly')}
             disabled={!!simulating}
-            className="text-xs px-3 py-1.5 rounded bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors flex items-center gap-2"
+            className="text-xs px-3 py-1.5 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition-colors flex items-center gap-2"
           >
             {simulating === 'fraud_anomaly' && <Loader2 className="w-3 h-3 animate-spin" />}
             Simulate Fraud Spike
@@ -201,7 +201,7 @@ export default function AlertCards({ alerts }: AlertCardsProps) {
           <button
             onClick={() => handleSimulate('audit_log_drift')}
             disabled={!!simulating}
-            className="text-xs px-3 py-1.5 rounded bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors flex items-center gap-2"
+            className="text-xs px-3 py-1.5 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition-colors flex items-center gap-2"
           >
             {simulating === 'audit_log_drift' && <Loader2 className="w-3 h-3 animate-spin" />}
             Simulate Audit Drift
@@ -211,20 +211,20 @@ export default function AlertCards({ alerts }: AlertCardsProps) {
 
       {/* Active Alerts List */}
       <div>
-        <h3 className="text-lg font-bold text-white mb-4 flex items-center justify-between">
+        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center justify-between">
           <span>Active Actionable Alerts</span>
-          <span className="bg-slate-800 text-slate-400 text-xs px-2.5 py-1 rounded-full font-medium border border-slate-700">
+          <span className="bg-gray-100 text-gray-500 text-xs px-2.5 py-1 rounded-full font-medium border border-gray-200">
             {alerts.length} Pending
           </span>
         </h3>
 
         {alerts.length === 0 ? (
-          <div className="border border-dashed border-slate-700 rounded-xl p-8 flex flex-col items-center justify-center text-center">
-            <div className="w-12 h-12 bg-green-500/10 rounded-full flex items-center justify-center mb-3">
+          <div className="border border-dashed border-gray-300 rounded-xl p-8 flex flex-col items-center justify-center text-center bg-white">
+            <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center mb-3">
               <CheckCircle2 className="w-6 h-6 text-green-500" />
             </div>
-            <p className="text-slate-300 font-medium">All Systems Nominal</p>
-            <p className="text-slate-500 text-sm mt-1">No active alerts require mitigation.</p>
+            <p className="text-gray-900 font-medium">All Systems Nominal</p>
+            <p className="text-gray-500 text-sm mt-1">No active alerts require mitigation.</p>
           </div>
         ) : (
           <div className="grid gap-4">
@@ -246,23 +246,23 @@ export default function AlertCards({ alerts }: AlertCardsProps) {
                   <div className="mt-1">{getAlertIcon(alert.category, alert.severity)}</div>
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <h4 className="text-white font-bold text-base">{alert.title}</h4>
+                      <h4 className="text-gray-900 font-bold text-base">{alert.title}</h4>
                       <span
                         className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
                           alert.severity === 'critical'
-                            ? 'bg-red-500/20 text-red-500'
+                            ? 'bg-red-100 text-red-700'
                             : alert.severity === 'high'
-                            ? 'bg-orange-500/20 text-orange-500'
+                            ? 'bg-orange-100 text-orange-700'
                             : alert.severity === 'medium'
-                            ? 'bg-yellow-500/20 text-yellow-500'
-                            : 'bg-blue-500/20 text-blue-500'
+                            ? 'bg-yellow-100 text-yellow-700'
+                            : 'bg-blue-100 text-blue-700'
                         }`}
                       >
                         {alert.severity}
                       </span>
                     </div>
-                    <p className="text-slate-400 text-sm leading-relaxed">{alert.message}</p>
-                    <p className="text-slate-500 text-xs mt-2 font-mono">
+                    <p className="text-gray-600 text-sm leading-relaxed">{alert.message}</p>
+                    <p className="text-gray-400 text-xs mt-2 font-mono">
                       {new Date(alert.created_at).toLocaleString()}
                     </p>
                   </div>
