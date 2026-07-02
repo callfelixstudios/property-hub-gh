@@ -1,5 +1,5 @@
--- Fix: admin_get_all_users_with_email referenced p.phone and p.is_verified
--- which don't exist. Correct columns are p.contact_phone and p.is_verified_agent.
+-- Fix: Explicitly cast return types to match RETURNS TABLE definition to prevent
+-- "structure of query does not match function result type"
 
 CREATE OR REPLACE FUNCTION public.admin_get_all_users_with_email()
  RETURNS TABLE(id uuid, full_name text, phone text, email text, account_status text, is_verified boolean, membership_tier text, created_at timestamp with time zone, listing_count bigint)

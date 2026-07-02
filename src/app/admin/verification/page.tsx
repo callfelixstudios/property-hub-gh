@@ -36,7 +36,7 @@ export default async function AdminVerificationPage() {
 
   const { data: requests, error } = await supabase
     .from('profiles')
-    .select('id, full_name, phone, email, membership_tier, verification_status, document_type, document_url, license_number, verification_submitted_at, rejection_reason, created_at')
+    .select('id, full_name, contact_phone, email, membership_tier, verification_status, document_type, document_url, license_number, verification_submitted_at, rejection_reason, created_at')
     .in('verification_status', ['pending_review', 'rejected', 'verified'])
     .order('verification_submitted_at', { ascending: false });
 
@@ -136,7 +136,7 @@ export default async function AdminVerificationPage() {
                     <TableCell>
                       <div>
                         <p className="font-semibold text-[#0d1b2a] text-sm">{profile.full_name ?? '—'}</p>
-                        <p className="text-xs text-slate-400 mt-0.5">{profile.phone ?? profile.email ?? '—'}</p>
+                        <p className="text-xs text-slate-400 mt-0.5">{profile.contact_phone ?? profile.email ?? '—'}</p>
                       </div>
                     </TableCell>
                     <TableCell>
