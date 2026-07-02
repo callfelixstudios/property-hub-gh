@@ -34,11 +34,7 @@ export default async function AdminVerificationPage() {
     redirect('/unauthorized');
   }
 
-  const { data: requests, error } = await supabase
-    .from('profiles')
-    .select('id, full_name, contact_phone, email, membership_tier, verification_status, document_type, document_url, license_number, verification_submitted_at, rejection_reason, created_at')
-    .in('verification_status', ['pending_review', 'rejected', 'verified'])
-    .order('verification_submitted_at', { ascending: false });
+  const { data: requests, error } = await supabase.rpc('admin_get_verification_queue');
 
   const profiles = (requests ?? []) as VerificationProfile[];
 
