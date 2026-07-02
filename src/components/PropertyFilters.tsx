@@ -1,10 +1,11 @@
 'use client';
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useState, Suspense, useMemo } from 'react';
+import { useCallback, useState, useEffect, Suspense, useMemo } from 'react';
 import { useCurrency } from '@/context/CurrencyContext';
 import { RESIDENTIAL_CATEGORIES, COMMERCIAL_CATEGORIES, GHANA_REGIONS } from '@/data/propertyCategories';
 import { ghanaLocations } from '@/data/ghanaLocations';
+import { getConfigData } from '@/app/actions/configActions';
 
 const PROPERTY_TYPES_BY_USE: Record<string, string[]> = {
   Residential: [...RESIDENTIAL_CATEGORIES],
@@ -17,6 +18,36 @@ function PropertyFiltersContent() {
   const searchParams = useSearchParams();
   const { displayCurrency } = useCurrency();
   const [showAdvanced, setShowAdvanced] = useState(false);
+  
+  // Dynamic Config State
+  const [dynamicRegions, setDynamicRegions] = useState<string[]>([...GHANA_REGIONS]);
+  const [dynamicLocations, setDynamicLocations] = useState<Record<string, string[]>>({...ghanaLocations});
+  const [dynamicAmenities, setDynamicAmenities] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function loadConfig() {
+      try {
+        const config = await getConfigData();
+        if (config.regions.length > 0) {
+          setDynamicRegions(config.regions.map(r => r.name));
+          
+          const locs: Record<string, string[]> = {};
+          config.regions.forEach(r => {
+            locs[r.name] = config.neighborhoods
+              .filter(n => n.region_id === r.id)
+              .map(n => n.name);
+          });
+          setDynamicLocations(locs);
+        }
+        if (config.amenities.length > 0) {
+          setDynamicAmenities(config.amenities);
+        }
+      } catch (err) {
+        console.error("Failed to load config", err);
+      }
+    }
+    loadConfig();
+  }, []);
 
   const isRentalContext = pathname.includes('rentals');
 
@@ -54,14 +85,6 @@ function PropertyFiltersContent() {
   const neighborhood = searchParams.get('neighborhood') || '';
   const condition = searchParams.get('condition') || 'any';
   const parkingSpace = searchParams.get('parking_space') || 'any';
-  const ac = searchParams.get('ac') === 'true';
-  const generator = searchParams.get('generator') === 'true';
-  const solar = searchParams.get('solar') === 'true';
-  const water = searchParams.get('water') === 'true';
-  const security = searchParams.get('security') === 'true';
-  const kitchen = searchParams.get('kitchen') === 'true';
-  const meter = searchParams.get('meter') === 'true';
-  const gated = searchParams.get('gated') === 'true';
 
   const updateFilters = useCallback((updates: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -87,16 +110,16 @@ function PropertyFiltersContent() {
   const getAvailableNeighborhoods = useCallback((regionKey: string): string[] => {
     if (regionKey === 'All') return [];
 
-    if (regionKey in ghanaLocations) {
-      return (ghanaLocations as Record<string, string[]>)[regionKey] || [];
+    if (regionKey in dynamicLocations) {
+      return dynamicLocations[regionKey] || [];
     }
 
-    const matchedKey = Object.keys(ghanaLocations).find(
+    const matchedKey = Object.keys(dynamicLocations).find(
       (key) => key.toLowerCase().trim().replace(/_/g, ' ') === regionKey.toLowerCase().trim().replace(/_/g, ' ')
     );
 
-    return matchedKey ? (ghanaLocations as Record<string, string[]>)[matchedKey] : [];
-  }, []);
+    return matchedKey ? dynamicLocations[matchedKey] : [];
+  }, [dynamicLocations]);
 
   const availableNeighborhoods = useMemo(
     () => getAvailableNeighborhoods(currentRegion),
@@ -188,7 +211,7 @@ function PropertyFiltersContent() {
           className="w-full bg-white border border-gray-200 text-sm rounded-sm px-3 py-2 text-navy-base outline-none cursor-pointer hover:border-navy-light transition-colors"
         >
           <option value="All">All of Ghana</option>
-          {GHANA_REGIONS.map((region) => (
+          {dynamicRegions.map((region) => (
             <option key={region} value={region}>{region}</option>
           ))}
         </select>
@@ -362,26 +385,22 @@ function PropertyFiltersContent() {
       <div className="mb-6">
         <h3 className="text-sm font-semibold text-navy-base mb-3">Essential Amenities</h3>
         <div className="grid grid-cols-1 gap-3">
-          {[
-            { id: 'ac', label: 'Air Conditioning', checked: ac },
-            { id: 'generator', label: 'Standby Generator / Plant', checked: generator },
-            { id: 'solar', label: 'Solar Power System', checked: solar },
-            { id: 'water', label: 'Water Reservoir (Polytank)', checked: water },
-            { id: 'security', label: '24/7 Security', checked: security },
-            { id: 'kitchen', label: 'Fitted Kitchen Cabinets', checked: kitchen },
-            { id: 'meter', label: 'Prepaid Meter', checked: meter },
-            { id: 'gated', label: 'Walled & Gated', checked: gated },
-          ].map(({ id, label, checked }) => (
-            <label key={id} className="flex items-center gap-2 cursor-pointer group">
-              <input
-                type="checkbox"
-                checked={checked}
-                onChange={(e) => updateFilters({ [id]: e.target.checked ? 'true' : null })}
-                className="w-4 h-4 rounded border-gray-300 text-navy-base focus:ring-navy-light cursor-pointer"
-              />
-              <span className="text-xs font-medium text-navy-base group-hover:text-navy-light">{label}</span>
-            </label>
-          ))}
+          {dynamicAmenities
+            .filter((a) => currentUse === 'All' || a.category === currentUse.toLowerCase())
+            .map((amenity) => {
+              const isChecked = searchParams.get(amenity.slug) === 'true';
+              return (
+                <label key={amenity.slug} className="flex items-center gap-2 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={(e) => updateFilters({ [amenity.slug]: e.target.checked ? 'true' : null })}
+                    className="w-4 h-4 rounded border-gray-300 text-navy-base focus:ring-navy-light cursor-pointer"
+                  />
+                  <span className="text-xs font-medium text-navy-base group-hover:text-navy-light">{amenity.name}</span>
+                </label>
+              );
+            })}
         </div>
       </div>
 

@@ -28,6 +28,7 @@ export function SidebarProfile({
         title="Click to update avatar"
       >
         {avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={avatarUrl}
             alt={displayName}

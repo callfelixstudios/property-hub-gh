@@ -46,6 +46,7 @@ export function Combobox({
 
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHighlightedIndex(0);
       setQuery("");
     }

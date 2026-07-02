@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import VideoEmbedPlayer from "@/components/VideoEmbedPlayer";
 
@@ -14,6 +14,14 @@ export default function ListingGallery({ allImages, displayTitle, videoUrl }: Li
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [activeImgIndex, setActiveImgIndex] = useState(0);
   const [activeMediaTab, setActiveMediaTab] = useState<'photos' | 'video'>('photos');
+
+  const handleNext = useCallback(() => {
+    setActiveImgIndex((prev) => (prev + 1) % allImages.length);
+  }, [allImages.length]);
+
+  const handlePrev = useCallback(() => {
+    setActiveImgIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
+  }, [allImages.length]);
 
   // Keyboard navigation support for accessibility & premium experience
   useEffect(() => {
@@ -31,19 +39,11 @@ export default function ListingGallery({ allImages, displayTitle, videoUrl }: Li
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isLightboxOpen, activeImgIndex]);
+  }, [isLightboxOpen, handleNext, handlePrev]);
 
   const handleOpenLightbox = (index: number) => {
     setActiveImgIndex(index);
     setIsLightboxOpen(true);
-  };
-
-  const handleNext = () => {
-    setActiveImgIndex((prev) => (prev + 1) % allImages.length);
-  };
-
-  const handlePrev = () => {
-    setActiveImgIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
   };
 
   const hasPhotos = allImages && allImages.length > 0;

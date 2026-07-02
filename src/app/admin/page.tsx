@@ -102,22 +102,40 @@ export default async function AdminDashboardPage() {
       {/* Quick Access */}
       <div>
         <h2 className="text-lg font-bold text-gray-900 mb-4">Quick Access</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Link href="/admin/listings" className="group bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:border-emerald-500 transition-colors flex items-center justify-between">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Link href="/admin/listings" className="group bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:border-emerald-500 transition-colors flex flex-col justify-between h-full">
             <div>
               <h3 className="font-semibold text-gray-900 group-hover:text-emerald-600 transition-colors">Moderation Queue</h3>
-              <p className="text-sm text-gray-500 mt-1">Review new listings before they go public</p>
+              <p className="text-sm text-gray-500 mt-1 mb-4">Review new listings before they go public</p>
             </div>
-            <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-emerald-50 text-gray-400 group-hover:text-emerald-600 transition-colors">
+            <div className="self-end w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-emerald-50 text-gray-400 group-hover:text-emerald-600 transition-colors">
               &rarr;
             </div>
           </Link>
-          <Link href="/admin/users" className="group bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:border-blue-500 transition-colors flex items-center justify-between">
+          <Link href="/admin/users" className="group bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:border-blue-500 transition-colors flex flex-col justify-between h-full">
             <div>
               <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">User Management</h3>
-              <p className="text-sm text-gray-500 mt-1">Manage accounts, tiers, and verification</p>
+              <p className="text-sm text-gray-500 mt-1 mb-4">Manage accounts, tiers, and verification</p>
             </div>
-            <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-blue-50 text-gray-400 group-hover:text-blue-600 transition-colors">
+            <div className="self-end w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-blue-50 text-gray-400 group-hover:text-blue-600 transition-colors">
+              &rarr;
+            </div>
+          </Link>
+          <Link href="/admin/listing-health" className="group bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:border-amber-500 transition-colors flex flex-col justify-between h-full">
+            <div>
+              <h3 className="font-semibold text-gray-900 group-hover:text-amber-600 transition-colors">Listing Health</h3>
+              <p className="text-sm text-gray-500 mt-1 mb-4">Detect ghost listings and enforce expiry</p>
+            </div>
+            <div className="self-end w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-amber-50 text-gray-400 group-hover:text-amber-600 transition-colors">
+              &rarr;
+            </div>
+          </Link>
+          <Link href="/admin/config" className="group bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:border-purple-500 transition-colors flex flex-col justify-between h-full">
+            <div>
+              <h3 className="font-semibold text-gray-900 group-hover:text-purple-600 transition-colors">Platform Config</h3>
+              <p className="text-sm text-gray-500 mt-1 mb-4">Manage locations and dynamic filters</p>
+            </div>
+            <div className="self-end w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-purple-50 text-gray-400 group-hover:text-purple-600 transition-colors">
               &rarr;
             </div>
           </Link>

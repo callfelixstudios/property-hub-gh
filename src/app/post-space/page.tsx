@@ -11,6 +11,7 @@ import { ghanaLocations, regionToLocationKey } from "@/data/ghanaLocations";
 import { RESIDENTIAL_CATEGORIES, COMMERCIAL_CATEGORIES } from "@/data/propertyCategories";
 import { normalizeRegionForDb } from '@/utils/regionMapper';
 import { Combobox } from "@/components/ui/Combobox";
+import { getConfigData } from '@/app/actions/configActions';
 
 const REGION_LABELS: Record<string, string> = {
   greater_accra:  "Greater Accra Region",
@@ -42,8 +43,29 @@ export default function PostSpaceWizard() {
     });
   }, []);
 
+  const [dynamicRegions, setDynamicRegions] = useState<any[]>([]);
+  const [dynamicLocations, setDynamicLocations] = useState<Record<string, string[]>>({});
+  const [dynamicAmenities, setDynamicAmenities] = useState<any[]>([]);
 
-
+  useEffect(() => {
+    async function loadConfig() {
+      const data = await getConfigData();
+      if (data) {
+        setDynamicRegions(data.regions || []);
+        
+        const locs: Record<string, string[]> = {};
+        (data.regions || []).forEach(r => {
+          locs[r.slug] = (data.neighborhoods || [])
+            .filter(n => n.region_id === r.id)
+            .map(n => n.name);
+        });
+        
+        setDynamicLocations(locs);
+        setDynamicAmenities(data.amenities || []);
+      }
+    }
+    loadConfig();
+  }, []);
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -77,11 +99,15 @@ export default function PostSpaceWizard() {
 
 
 
-  const AMENITIES_LIST = isResidential 
-    ? ["Air Conditioning", "Standby Generator / Plant", "Solar Power System", "Water Reservoir (Polytank)", "24/7 Security", "Fitted Kitchen Cabinets", "Prepaid Meter", "Walled & Gated"]
-    : isCommercial 
-      ? ["Air Conditioning", "Standby Generator / Plant", "Solar Power System", "Water Reservoir (Polytank)", "24/7 Security", "Fitted Kitchen Cabinets", "Prepaid Meter", "Walled & Gated"]
-      : ["Fenced / Walled Compound", "Tarred / Graded Road Access", "Electricity Grid Connected", "Water Pipe Connected", "Registered Indenture / Title Docs", "Non-Waterlogged Area"];
+  const AMENITIES_LIST = dynamicAmenities.length > 0 
+    ? dynamicAmenities
+        .filter(a => a.category === (isLand ? 'land' : isCommercial ? 'commercial' : 'residential'))
+        .map(a => a.name)
+    : (isResidential 
+        ? ["Air Conditioning", "Standby Generator / Plant", "Solar Power System", "Water Reservoir (Polytank)", "24/7 Security", "Fitted Kitchen Cabinets", "Prepaid Meter", "Walled & Gated"]
+        : isCommercial 
+          ? ["Air Conditioning", "Standby Generator / Plant", "Solar Power System", "Water Reservoir (Polytank)", "24/7 Security", "Fitted Kitchen Cabinets", "Prepaid Meter", "Walled & Gated"]
+          : ["Fenced / Walled Compound", "Tarred / Graded Road Access", "Electricity Grid Connected", "Water Pipe Connected", "Registered Indenture / Title Docs", "Non-Waterlogged Area"]);
 
   const handleCategoryChange = (val: string) => {
     setCategory(val);
@@ -455,22 +481,12 @@ export default function PostSpaceWizard() {
                       className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
                     >
                       <option value="">Select Region...</option>
-                      <option value="greater_accra">Greater Accra</option>
-                      <option value="ashanti">Ashanti</option>
-                      <option value="central">Central</option>
-                      <option value="ahafo">Ahafo</option>
-                      <option value="bono">Bono</option>
-                      <option value="bono_east">Bono East</option>
-                      <option value="eastern">Eastern</option>
-                      <option value="north_east">North East</option>
-                      <option value="northern">Northern</option>
-                      <option value="oti">Oti</option>
-                      <option value="savannah">Savannah</option>
-                      <option value="upper_east">Upper East</option>
-                      <option value="upper_west">Upper West</option>
-                      <option value="volta">Volta</option>
-                      <option value="western">Western</option>
-                      <option value="western_north">Western North</option>
+                      {dynamicRegions.length > 0 
+                        ? dynamicRegions.map((r) => <option key={r.slug} value={r.slug}>{r.name}</option>)
+                        : Object.entries(REGION_LABELS).map(([key, label]) => (
+                            <option key={key} value={key}>{label.replace(' Region', '')}</option>
+                          ))
+                      }
                     </select>
                   </div>
                 </div>
@@ -479,7 +495,7 @@ export default function PostSpaceWizard() {
                   <div>
                     <label className="block text-sm font-bold text-navy-base mb-2">Neighborhood</label>
                     <Combobox
-                      options={region ? (ghanaLocations[regionToLocationKey[region]] || []) : []}
+                      options={region ? (dynamicLocations[region] || ghanaLocations[regionToLocationKey[region]] || []) : []}
                       value={neighborhood}
                       onChange={setNeighborhood}
                       disabled={!region}

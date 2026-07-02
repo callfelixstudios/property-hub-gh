@@ -9,6 +9,7 @@ import { ghanaLocations, regionToLocationKey } from "@/data/ghanaLocations";
 import { RESIDENTIAL_CATEGORIES, COMMERCIAL_CATEGORIES } from "@/data/propertyCategories";
 import { normalizeRegionForDb } from '@/utils/regionMapper';
 import { Combobox } from "@/components/ui/Combobox";
+import { getConfigData } from '@/app/actions/configActions';
 
 const REGION_LABELS: Record<string, string> = {
   greater_accra:  "Greater Accra Region",
@@ -64,7 +65,7 @@ interface Listing {
   condition?: string;
   parking_space?: string;
   is_verified?: boolean;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface EditListingModalProps {
@@ -80,6 +81,29 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Phase 3: Dynamic Config
+  const [dynamicRegions, setDynamicRegions] = useState<Record<string, unknown>[]>([]);
+  const [dynamicLocations, setDynamicLocations] = useState<Record<string, string[]>>({});
+  const [dynamicAmenities, setDynamicAmenities] = useState<Record<string, unknown>[]>([]);
+
+  React.useEffect(() => {
+    async function loadConfig() {
+      const data = await getConfigData();
+      if (data) {
+        setDynamicRegions(data.regions || []);
+        const locs: Record<string, string[]> = {};
+        (data.regions || []).forEach(r => {
+          locs[r.slug] = (data.neighborhoods || [])
+            .filter(n => n.region_id === r.id)
+            .map(n => n.name);
+        });
+        setDynamicLocations(locs);
+        setDynamicAmenities(data.amenities || []);
+      }
+    }
+    loadConfig();
+  }, []);
 
   // ── Step 1 State: Essentials ──
   const [listingType, setListingType] = useState<"rent" | "sale">(listing.transaction_type || "rent");
@@ -123,11 +147,15 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
   const isCommercial = listingCategoryType === 'commercial' || ['Commercial Property / Office'].includes(category);
   const isResidential = !isLand && !isCommercial;
 
-  const AMENITIES_LIST = isResidential
-    ? ["Air Conditioning", "Standby Generator / Plant", "Solar Power System", "Water Reservoir (Polytank)", "24/7 Security", "Fitted Kitchen Cabinets", "Prepaid Meter", "Walled & Gated"]
-    : isCommercial
-      ? ["Air Conditioning", "Standby Generator / Plant", "Solar Power System", "Water Reservoir (Polytank)", "24/7 Security", "Fitted Kitchen Cabinets", "Prepaid Meter", "Walled & Gated"]
-      : ["Fenced / Walled Compound", "Tarred / Graded Road Access", "Electricity Grid Connected", "Water Pipe Connected", "Registered Indenture / Title Docs", "Non-Waterlogged Area"];
+  const AMENITIES_LIST = dynamicAmenities.length > 0 
+    ? dynamicAmenities
+        .filter(a => a.category === (isLand ? 'land' : isCommercial ? 'commercial' : 'residential'))
+        .map(a => String(a.name))
+    : (isResidential 
+        ? ["Air Conditioning", "Standby Generator / Plant", "Solar Power System", "Water Reservoir (Polytank)", "24/7 Security", "Fitted Kitchen Cabinets", "Prepaid Meter", "Walled & Gated"]
+        : isCommercial 
+          ? ["Air Conditioning", "Standby Generator / Plant", "Solar Power System", "Water Reservoir (Polytank)", "24/7 Security", "Fitted Kitchen Cabinets", "Prepaid Meter", "Walled & Gated"]
+          : ["Fenced / Walled Compound", "Tarred / Graded Road Access", "Electricity Grid Connected", "Water Pipe Connected", "Registered Indenture / Title Docs", "Non-Waterlogged Area"]);
 
   const handleCategoryChange = (val: string) => {
     setCategory(val);
@@ -294,7 +322,7 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
         rentAdvanceMonths = 24;
       }
 
-      const updatePayload: Record<string, any> = {
+      const updatePayload: Record<string, unknown> = {
         transaction_type: listingType,
         title: title || null,
         description: description || null,
@@ -358,9 +386,9 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
             .catch(() => {});
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Update error:", error);
-      alert(error?.message || "Failed to save changes.");
+      alert((error as Error)?.message || "Failed to save changes.");
     } finally {
       setIsSaving(false);
     }
@@ -463,22 +491,12 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
                     setNeighborhood("");
                   }} className={inputCls}>
                     <option value="">Select Region...</option>
-                    <option value="greater_accra">Greater Accra</option>
-                    <option value="ashanti">Ashanti</option>
-                    <option value="central">Central</option>
-                    <option value="ahafo">Ahafo</option>
-                    <option value="bono">Bono</option>
-                    <option value="bono_east">Bono East</option>
-                    <option value="eastern">Eastern</option>
-                    <option value="north_east">North East</option>
-                    <option value="northern">Northern</option>
-                    <option value="oti">Oti</option>
-                    <option value="savannah">Savannah</option>
-                    <option value="upper_east">Upper East</option>
-                    <option value="upper_west">Upper West</option>
-                    <option value="volta">Volta</option>
-                    <option value="western">Western</option>
-                    <option value="western_north">Western North</option>
+                    {dynamicRegions.length > 0 
+                      ? dynamicRegions.map((r) => <option key={r.slug} value={r.slug}>{r.name}</option>)
+                      : Object.entries(REGION_LABELS).map(([key, label]) => (
+                          <option key={key} value={key}>{label.replace(' Region', '')}</option>
+                        ))
+                    }
                   </select>
                 </div>
               </div>
@@ -487,7 +505,7 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
                 <div>
                   <label className={labelCls}>Neighborhood</label>
                   <Combobox
-                    options={region ? (ghanaLocations[regionToLocationKey[region]] || []) : []}
+                    options={region ? (dynamicLocations[region] || ghanaLocations[regionToLocationKey[region]] || []) : []}
                     value={neighborhood}
                     onChange={setNeighborhood}
                     disabled={!region}
@@ -857,7 +875,8 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
                   <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mt-3">
                     {newImagePreviews.map((src, i) => (
                       <div key={`new-${i}`} className="relative group aspect-square rounded-lg overflow-hidden border-2 border-emerald-200">
-                        <img src={src} alt={`New ${i + 1}`} className="w-full h-full object-cover" />
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={src} alt="Listing preview" className="w-full h-full object-cover" />
                         <button type="button" onClick={(e) => { e.stopPropagation(); removeNewImage(i); }}
                           className="absolute top-1 right-1 w-6 h-6 bg-black/60 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>

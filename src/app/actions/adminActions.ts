@@ -4,46 +4,7 @@ import { createClient } from '@/utils/supabase/server';
 import { isAuthorizedAdmin } from '@/utils/adminAuth';
 import { revalidatePath } from 'next/cache';
 
-/**
- * Guards every server action — re-validates admin identity server-side.
- * This ensures no client-side bypass can call these actions.
- */
-async function assertAdmin() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user || !isAuthorizedAdmin(user.email)) {
-    throw new Error('Unauthorized: admin access required');
-  }
-
-  return { supabase, user };
-}
-
-// Helper to log admin actions immutably
-async function logAdminAction(
-  supabase: any,
-  adminId: string,
-  actionType: string,
-  targetId: string,
-  previousValues: Record<string, any> | null,
-  newValues: Record<string, any> | null
-) {
-  const { error } = await supabase
-    .from('admin_audit_logs')
-    .insert({
-      admin_id: adminId,
-      action_type: actionType,
-      target_id: targetId,
-      previous_values: previousValues,
-      new_values: newValues,
-    });
-
-  if (error) {
-    console.error('Failed to write admin audit log:', error);
-  }
-}
+import { assertAdmin, logAdminAction } from '@/utils/adminHelpers';
 
 // ─── Toggle user verification badge ────────────────────────────────────────
 export async function toggleUserVerification(userId: string, currentStatus: boolean) {
