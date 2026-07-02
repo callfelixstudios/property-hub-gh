@@ -11,6 +11,7 @@ import {
   Settings,
   ChevronRight,
   Activity,
+  BarChart3,
 } from 'lucide-react';
 
 async function signOut() {
@@ -46,6 +47,11 @@ const NAV_ITEMS = [
     href: '/admin/listing-health',
     label: 'Listing Health',
     icon: Activity,
+  },
+  {
+    href: '/admin/analytics',
+    label: 'Analytics & Alerts',
+    icon: BarChart3,
   },
   {
     href: '/admin/config',
