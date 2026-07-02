@@ -4,11 +4,22 @@ import { useState, useTransition } from 'react';
 import { Archive, CheckCircle, Search, AlertTriangle, MessageCircle, Loader2 } from 'lucide-react';
 import { markListingVerified, archiveListing, bulkSendVerificationPing } from '@/app/actions/listingHealthActions';
 
+export interface ListingHealthData {
+  id: string;
+  title: string;
+  category?: string;
+  location?: string;
+  created_at: string;
+  listing_health: 'fresh' | 'stale' | 'expired';
+  verification_ping_sent_at?: string | null;
+  poster: any;
+}
+
 export default function ListingHealthDashboard({
   staleListings,
   stats
 }: {
-  staleListings: Record<string, unknown>[];
+  staleListings: ListingHealthData[];
   stats: { fresh: number; stale: number; expired: number; pendingPings: number };
 }) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());

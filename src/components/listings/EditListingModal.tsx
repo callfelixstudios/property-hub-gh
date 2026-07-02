@@ -83,9 +83,9 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
   const [isSaving, setIsSaving] = useState(false);
 
   // Phase 3: Dynamic Config
-  const [dynamicRegions, setDynamicRegions] = useState<Record<string, unknown>[]>([]);
+  const [dynamicRegions, setDynamicRegions] = useState<{ id: string; name: string; slug: string }[]>([]);
   const [dynamicLocations, setDynamicLocations] = useState<Record<string, string[]>>({});
-  const [dynamicAmenities, setDynamicAmenities] = useState<Record<string, unknown>[]>([]);
+  const [dynamicAmenities, setDynamicAmenities] = useState<{ id: string; name: string; category: string }[]>([]);
 
   React.useEffect(() => {
     async function loadConfig() {

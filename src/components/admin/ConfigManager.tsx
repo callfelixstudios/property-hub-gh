@@ -4,14 +4,37 @@ import { useState, useTransition } from 'react';
 import { Plus, Edit2, Check, X, Loader2 } from 'lucide-react';
 import { addRegion, updateRegion, addNeighborhood, updateNeighborhood, addAmenity, updateAmenity } from '@/app/actions/configActions';
 
+export interface RegionConfig {
+  id: string;
+  name: string;
+  slug: string;
+  is_active: boolean;
+}
+
+export interface NeighborhoodConfig {
+  id: string;
+  region_id: string;
+  name: string;
+  slug: string;
+  is_active: boolean;
+}
+
+export interface AmenityConfig {
+  id: string;
+  name: string;
+  category: string;
+  slug: string;
+  is_active: boolean;
+}
+
 export default function ConfigManager({
   initialRegions,
   initialNeighborhoods,
   initialAmenities,
 }: {
-  initialRegions: Record<string, unknown>[];
-  initialNeighborhoods: Record<string, unknown>[];
-  initialAmenities: Record<string, unknown>[];
+  initialRegions: RegionConfig[];
+  initialNeighborhoods: NeighborhoodConfig[];
+  initialAmenities: AmenityConfig[];
 }) {
   const [activeTab, setActiveTab] = useState<'locations' | 'amenities'>('locations');
   const [isPending, startTransition] = useTransition();
