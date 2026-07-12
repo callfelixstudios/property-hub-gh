@@ -54,6 +54,10 @@ interface ListingRow {
   longitude?: number;
   viewing_fee?: number | null;
   agency_commission_percentage?: number | null;
+  has_flood_resilience?: boolean;
+  has_solar_backup?: boolean;
+  has_borehole_system?: boolean;
+  floor_plan_url?: string | null;
 }
 
 interface PosterProfile {
@@ -284,7 +288,7 @@ export default async function ListingDetailPage({
           <div className="lg:col-span-2 space-y-6 md:space-y-8">
 
             {/* Gallery inside main content column */}
-            <ListingGallery allImages={allImages} displayTitle={displayTitle} videoUrl={row.video_url} />
+            <ListingGallery allImages={allImages} displayTitle={displayTitle} videoUrl={row.video_url} floorPlanUrl={row.floor_plan_url} />
 
             {/* Title & Location Ribbon */}
             <div>
@@ -472,6 +476,51 @@ export default async function ListingDetailPage({
                     </div>
                   </div>
 
+                  {/* Flood Resilience */}
+                  <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${row.has_flood_resilience ? 'bg-blue-100' : 'bg-gray-100'}`}>
+                      <svg className={`w-4.5 h-4.5 ${row.has_flood_resilience ? 'text-blue-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wide">Flood Resilience</p>
+                      <p className={`text-sm font-bold ${row.has_flood_resilience ? 'text-blue-600' : 'text-gray-400'}`}>
+                        {row.has_flood_resilience ? 'Elevated / Protected' : 'Not Specified'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Solar Backup */}
+                  <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${row.has_solar_backup ? 'bg-amber-100' : 'bg-gray-100'}`}>
+                      <svg className={`w-4.5 h-4.5 ${row.has_solar_backup ? 'text-amber-500' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wide">Solar Power</p>
+                      <p className={`text-sm font-bold ${row.has_solar_backup ? 'text-amber-500' : 'text-gray-400'}`}>
+                        {row.has_solar_backup ? 'Grid / Inverter Backup' : 'Not Specified'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Borehole System */}
+                  <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${row.has_borehole_system ? 'bg-cyan-100' : 'bg-gray-100'}`}>
+                      <svg className={`w-4.5 h-4.5 ${row.has_borehole_system ? 'text-cyan-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wide">Borehole Water</p>
+                      <p className={`text-sm font-bold ${row.has_borehole_system ? 'text-cyan-600' : 'text-gray-400'}`}>
+                        {row.has_borehole_system ? 'Treated Supply' : 'Not Specified'}
+                      </p>
+                    </div>
+                  </div>
+
                   {/* Region and Landmark removed to top hero */}
                 </div>
               </div>
@@ -554,6 +603,7 @@ export default async function ListingDetailPage({
                       rentAdvanceMonths={row.rent_advance_months || 1}
                       isRental={isRent}
                       serviceCharge={row.service_charge || 0}
+                      floorPlanUrl={row.floor_plan_url}
                     />
                   ) : (
                     <div className="w-full py-3 bg-slate-100 text-slate-400 font-semibold rounded-xl text-center text-sm">

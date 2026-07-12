@@ -8,12 +8,19 @@ interface ListingGalleryProps {
   allImages: string[];
   displayTitle: string;
   videoUrl?: string | null;
+  floorPlanUrl?: string | null;
 }
 
-export default function ListingGallery({ allImages, displayTitle, videoUrl }: ListingGalleryProps) {
+export default function ListingGallery({ allImages, displayTitle, videoUrl, floorPlanUrl }: ListingGalleryProps) {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [activeImgIndex, setActiveImgIndex] = useState(0);
-  const [activeMediaTab, setActiveMediaTab] = useState<'photos' | 'video'>('photos');
+  const [activeMediaTab, setActiveMediaTab] = useState<'photos' | 'video' | 'floorplan'>('photos');
+
+  useEffect(() => {
+    if (activeMediaTab === 'floorplan' && !floorPlanUrl) {
+      setActiveMediaTab('photos');
+    }
+  }, [floorPlanUrl, activeMediaTab]);
 
   const handleNext = useCallback(() => {
     setActiveImgIndex((prev) => (prev + 1) % allImages.length);
@@ -23,7 +30,6 @@ export default function ListingGallery({ allImages, displayTitle, videoUrl }: Li
     setActiveImgIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
   }, [allImages.length]);
 
-  // Keyboard navigation support for accessibility & premium experience
   useEffect(() => {
     if (!isLightboxOpen) return;
 
@@ -55,6 +61,27 @@ export default function ListingGallery({ allImages, displayTitle, videoUrl }: Li
       {/* Main Content Area */}
       {activeMediaTab === 'video' && videoUrl ? (
         <VideoEmbedPlayer url={videoUrl} />
+      ) : activeMediaTab === 'floorplan' && floorPlanUrl ? (
+        <div className="w-full bg-slate-50 border border-slate-200 rounded-xl p-8 flex flex-col items-center justify-center text-center min-h-[300px]">
+          <div className="w-16 h-16 bg-navy-base/10 rounded-full flex items-center justify-center mb-4">
+            <svg className="w-8 h-8 text-navy-base" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-bold text-navy-base mb-2">Floor Plan Available</h3>
+          <p className="text-sm text-slate-500 mb-6">View the detailed structural layout of this property.</p>
+          <a
+            href={floorPlanUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-navy-base hover:bg-navy-light text-white font-bold py-3 px-8 rounded-lg transition-colors inline-flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+            Open Floor Plan
+          </a>
+        </div>
       ) : !hasPhotos ? (
         <div className="w-full relative h-[450px] bg-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col items-center justify-center text-slate-400">
           <svg className="w-16 h-16 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -64,7 +91,7 @@ export default function ListingGallery({ allImages, displayTitle, videoUrl }: Li
         </div>
       ) : (
         <div className="flex flex-col gap-2 w-full">
-          {/* Main Image - Now spans full width with responsive mobile height */}
+          {/* Main Image */}
           <div 
             onClick={() => handleOpenLightbox(0)}
             className="relative h-[280px] sm:h-[380px] md:h-[480px] w-full bg-slate-200 rounded-xl overflow-hidden shadow-sm cursor-pointer hover:opacity-95 transition-opacity group"
@@ -83,7 +110,7 @@ export default function ListingGallery({ allImages, displayTitle, videoUrl }: Li
             </div>
           </div>
 
-          {/* Thumbnails Row Underneath (Jiji Style) - Visible on both Mobile and Desktop */}
+          {/* Thumbnails Row */}
           <div className="grid grid-cols-3 gap-2 w-full">
             {[0, 1, 2].map((i) => {
               const hasImage = !!sideImages[i];
@@ -124,22 +151,22 @@ export default function ListingGallery({ allImages, displayTitle, videoUrl }: Li
         </div>
       )}
 
-      {/* Media Switcher — repositioned below gallery/no-photos area */}
-      {videoUrl && (
-        <div className="flex items-center gap-6 border-b border-slate-100 mt-2 pb-1">
-          <button
-            onClick={() => setActiveMediaTab('photos')}
-            className={`relative text-sm font-bold transition-colors pb-2 ${
-              activeMediaTab === 'photos'
-                ? 'text-navy-base'
-                : 'text-slate-400 hover:text-slate-600'
-            }`}
-          >
-            📸 Photos
-            {activeMediaTab === 'photos' && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-navy-base rounded-full" />
-            )}
-          </button>
+      {/* Media Switcher */}
+      <div className="flex items-center gap-6 border-b border-slate-100 mt-2 pb-1">
+        <button
+          onClick={() => setActiveMediaTab('photos')}
+          className={`relative text-sm font-bold transition-colors pb-2 ${
+            activeMediaTab === 'photos'
+              ? 'text-navy-base'
+              : 'text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          📸 Photos
+          {activeMediaTab === 'photos' && (
+            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-navy-base rounded-full" />
+          )}
+        </button>
+        {videoUrl && (
           <button
             onClick={() => setActiveMediaTab('video')}
             className={`relative text-sm font-bold transition-colors pb-2 ${
@@ -153,13 +180,27 @@ export default function ListingGallery({ allImages, displayTitle, videoUrl }: Li
               <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-navy-base rounded-full" />
             )}
           </button>
-        </div>
-      )}
+        )}
+        {floorPlanUrl && (
+          <button
+            onClick={() => setActiveMediaTab('floorplan')}
+            className={`relative text-sm font-bold transition-colors pb-2 ${
+              activeMediaTab === 'floorplan'
+                ? 'text-navy-base'
+                : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            📐 View Floor Plan
+            {activeMediaTab === 'floorplan' && (
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-navy-base rounded-full" />
+            )}
+          </button>
+        )}
+      </div>
 
       {/* Lightbox Modal */}
       {isLightboxOpen && hasPhotos && (
         <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center select-none animate-in fade-in duration-200">
-          {/* Close Button */}
           <button 
             onClick={() => setIsLightboxOpen(false)}
             className="absolute top-6 right-6 text-white hover:text-gray-300 transition-colors p-2 bg-white/10 rounded-full hover:bg-white/20 z-50"
@@ -170,7 +211,6 @@ export default function ListingGallery({ allImages, displayTitle, videoUrl }: Li
             </svg>
           </button>
 
-          {/* Left Arrow */}
           {allImages.length > 1 && (
             <button 
               onClick={(e) => { e.stopPropagation(); handlePrev(); }}
@@ -183,7 +223,6 @@ export default function ListingGallery({ allImages, displayTitle, videoUrl }: Li
             </button>
           )}
 
-          {/* Active Image Container */}
           <div className="relative w-[90vw] h-[80vh] flex items-center justify-center" onClick={() => setIsLightboxOpen(false)}>
             <div className="relative max-w-full max-h-full aspect-[4/3] w-full h-full" onClick={(e) => e.stopPropagation()}>
               <Image 
@@ -195,7 +234,6 @@ export default function ListingGallery({ allImages, displayTitle, videoUrl }: Li
             </div>
           </div>
 
-          {/* Right Arrow */}
           {allImages.length > 1 && (
             <button 
               onClick={(e) => { e.stopPropagation(); handleNext(); }}
@@ -208,7 +246,6 @@ export default function ListingGallery({ allImages, displayTitle, videoUrl }: Li
             </button>
           )}
 
-          {/* Counter/Index Indicator */}
           <div className="absolute bottom-6 text-white/80 text-sm font-semibold tracking-wide">
             {activeImgIndex + 1} / {allImages.length}
           </div>

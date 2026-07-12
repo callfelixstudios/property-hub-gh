@@ -13,6 +13,7 @@ interface WhatsAppButtonProps {
   rentAdvanceMonths?: number;
   isRental?: boolean;
   serviceCharge?: number;
+  floorPlanUrl?: string | null;
 }
 
 export default function WhatsAppButton({ 
@@ -23,7 +24,8 @@ export default function WhatsAppButton({
   currency = 'GHS',
   rentAdvanceMonths = 1,
   isRental = false,
-  serviceCharge = 0
+  serviceCharge = 0,
+  floorPlanUrl
 }: WhatsAppButtonProps) {
   const [isPending, startTransition] = useTransition();
   const { formatPrice } = useCurrency();
@@ -48,7 +50,7 @@ export default function WhatsAppButton({
     : `I see it is listed for ${formattedPrice}.`;
 
   // Build message
-  const waMessage = `Hello! I am browsing Property Hub GH and I am highly interested in your listing: ${displayTitle}. ${pricingText} Is this property open for viewings? Here is the link: ${currentUrl}`;
+  const waMessage = `Hello! I am browsing Property Hub GH and I am highly interested in your listing: ${displayTitle}. Is this property open for viewings? Here is the link: ${currentUrl}`;
   const whatsappUrl = `${profileWhatsAppLink}?text=${encodeURIComponent(waMessage)}`;
 
   return (

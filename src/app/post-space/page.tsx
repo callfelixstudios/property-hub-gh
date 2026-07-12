@@ -93,6 +93,9 @@ export default function PostSpaceWizard() {
   const [posterRole, setPosterRole] = useState<"owner" | "agent" | "">("")
   const [conditionValue, setConditionValue] = useState("");
   const [parkingSpace, setParkingSpace] = useState("");
+  const [hasFloodResilience, setHasFloodResilience] = useState(false);
+  const [hasSolarBackup, setHasSolarBackup] = useState(false);
+  const [hasBoreholeSystem, setHasBoreholeSystem] = useState(false);
 
   const isLand = category === 'Plot of Land';
   const isCommercial = listingCategoryType === 'commercial' || ['Commercial Property / Office'].includes(category);
@@ -156,6 +159,7 @@ export default function PostSpaceWizard() {
   const [isCompressing, setIsCompressing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [videoUrl, setVideoUrl] = useState("");
+  const [floorPlanUrl, setFloorPlanUrl] = useState("");
 
   const compressionOptions = {
     maxSizeMB: 0.6,
@@ -301,6 +305,7 @@ export default function PostSpaceWizard() {
         safemove_active: safeMoveActive,
         media_urls: uploadedUrls.length > 0 ? uploadedUrls : null,
         video_url: videoUrl || null,
+        floor_plan_url: floorPlanUrl || null,
         status: 'active',
         bedrooms: bedrooms ? parseInt(bedrooms, 10) : null,
         bathrooms: bathrooms ? parseInt(bathrooms, 10) : null,
@@ -313,6 +318,9 @@ export default function PostSpaceWizard() {
         parking_capacity: parkingCapacity ? parseInt(parkingCapacity, 10) : null,
         amenities: selectedAmenities.length > 0 ? selectedAmenities : null,
         poster_role: posterRole || null,
+        has_flood_resilience: hasFloodResilience,
+        has_solar_backup: hasSolarBackup,
+        has_borehole_system: hasBoreholeSystem,
         viewing_fee: viewingFee !== "" ? parseInt(viewingFee, 10) : null,
         agency_commission_percentage: agencyCommission !== "" ? parseFloat(agencyCommission) : null,
       }).select('id');
@@ -884,6 +892,32 @@ export default function PostSpaceWizard() {
                   </div>
                 )}
 
+                {/* ── Structural & Climate Resiliency ── */}
+                <div className="mt-6 mb-8">
+                  <label className="block text-sm font-bold text-navy-base mb-3">Structural &amp; Climate Resiliency</label>
+                  <p className="text-xs text-gray-400 mb-3">Highlight upgrades that address Ghana-specific environmental concerns — flooding, power instability, and water access.</p>
+                  <div className="flex flex-wrap gap-3">
+                    {[
+                      { id: 'flood_resilience', label: 'Elevated Foundation / Flood-Resilient Drainage', icon: 'flood', field: hasFloodResilience, setter: setHasFloodResilience },
+                      { id: 'solar_backup', label: 'Solar-Grid / Inverter Backup Power', icon: 'solar', field: hasSolarBackup, setter: setHasSolarBackup },
+                      { id: 'borehole_system', label: 'Borehole + Integrated Water Treatment System', icon: 'borehole', field: hasBoreholeSystem, setter: setHasBoreholeSystem },
+                    ].map(item => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => item.setter(!item.field)}
+                        className={`px-4 py-2 border rounded-full text-sm font-medium transition-all ${
+                          item.field
+                            ? 'bg-navy-base text-white border-transparent shadow-sm'
+                            : 'bg-white text-gray-600 border-gray-200 hover:border-navy-light hover:text-navy-base'
+                        }`}
+                      >
+                        {item.field ? '✓ ' : ''}{item.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="mt-6 mb-8">
                   <label className="block text-sm font-bold text-navy-base mb-3">Condition</label>
                   <div className="flex flex-wrap gap-3">
@@ -1045,6 +1079,21 @@ export default function PostSpaceWizard() {
                     className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
                   />
                   <p className="text-xs text-gray-400 mt-1">Optional. Paste a YouTube or Vimeo link to show a video tour on your listing page.</p>
+                </div>
+
+                {/* Floor Plan / Layout URL */}
+                <div>
+                  <h3 className="text-sm font-bold text-navy-base mb-2">📐 Floor Plan / Layout URL (Optional)</h3>
+                  <input
+                    type="url"
+                    value={floorPlanUrl}
+                    onChange={(e) => setFloorPlanUrl(e.target.value)}
+                    placeholder="e.g., https://example.com/floor-plan.pdf"
+                    className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Link to a PDF or image showing the property layout. Displayed as a &quot;View Floor Plan&quot; button on the listing.
+                  </p>
                 </div>
 
                 {/* SafeMove Callout Container */}
