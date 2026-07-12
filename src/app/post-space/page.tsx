@@ -134,6 +134,8 @@ export default function PostSpaceWizard() {
   const [legalStatus, setLegalStatus] = useState("");
   const [advancePeriod, setAdvancePeriod] = useState("");
   const [customMonths, setCustomMonths] = useState<number>(0);
+  const [viewingFee, setViewingFee] = useState("");
+  const [agencyCommission, setAgencyCommission] = useState("");
 
   // Utility: convert raw month count into a human-readable advance label
   const getAdvanceLabel = (months: number): string => {
@@ -311,6 +313,8 @@ export default function PostSpaceWizard() {
         parking_capacity: parkingCapacity ? parseInt(parkingCapacity, 10) : null,
         amenities: selectedAmenities.length > 0 ? selectedAmenities : null,
         poster_role: posterRole || null,
+        viewing_fee: viewingFee !== "" ? parseInt(viewingFee, 10) : null,
+        agency_commission_percentage: agencyCommission !== "" ? parseFloat(agencyCommission) : null,
       }).select('id');
 
       if (error) throw error;
@@ -659,6 +663,51 @@ export default function PostSpaceWizard() {
                       <p className="text-xs text-gray-400 mt-1">Only &apos;Titled &amp; Registered&apos; properties receive the Verified Title Badge.</p>
                     </div>
                   </>
+                )}
+
+                {/* ── Viewing Fee (Common) ── */}
+                <div className="pt-4 border-t border-gray-100">
+                  <label className="block text-sm font-bold text-navy-base mb-2">
+                    Viewing Fee (GHS)
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">₵</span>
+                    <input
+                      type="number"
+                      value={viewingFee}
+                      onChange={(e) => setViewingFee(e.target.value)}
+                      placeholder="Leave blank = Undisclosed • Enter 0 = Free Viewing"
+                      className="w-full bg-surface-primary border border-gray-200 rounded-sm pl-10 pr-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Set to 0 to display a &quot;Zero Viewing Fee&quot; trust badge on the listing.
+                  </p>
+                </div>
+
+                {/* ── Agency Commission (Agent Only) ── */}
+                {posterRole === 'agent' && (
+                  <div className="pt-4 border-t border-gray-100">
+                    <label className="block text-sm font-bold text-navy-base mb-2">
+                      Agency Commission (%)
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        step={0.5}
+                        value={agencyCommission}
+                        onChange={(e) => setAgencyCommission(e.target.value)}
+                        placeholder="e.g. 5 for 5%"
+                        className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-semibold">%</span>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Leave blank to keep undisclosed.
+                    </p>
+                  </div>
                 )}
               </div>
             </div>

@@ -52,6 +52,8 @@ interface ListingRow {
   is_verified?: boolean;
   latitude?: number;
   longitude?: number;
+  viewing_fee?: number | null;
+  agency_commission_percentage?: number | null;
 }
 
 interface PosterProfile {
@@ -610,6 +612,35 @@ export default async function ListingDetailPage({
                       </span>
                     </div>
                   )}
+
+                  {/* 5. Viewing Fee */}
+                  <div className="flex justify-between items-center py-2 border-b border-slate-50">
+                    <span className="text-sm font-medium text-slate-500">Viewing Fee</span>
+                    {row.viewing_fee === 0 ? (
+                      <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Free Viewing
+                      </span>
+                    ) : row.viewing_fee != null && row.viewing_fee > 0 ? (
+                      <span className="text-sm font-extrabold text-navy-base">
+                        GH₵{row.viewing_fee.toLocaleString()}
+                      </span>
+                    ) : (
+                      <span className="text-sm text-slate-400">Contact Agent</span>
+                    )}
+                  </div>
+
+                  {/* 6. Agency Commission (agent only, > 0) */}
+                  {row.poster_role === 'agent' && (row.agency_commission_percentage ?? 0) > 0 && (
+                    <div className="flex justify-between items-center py-2 border-b border-slate-50">
+                      <span className="text-sm font-medium text-slate-500">Agency Commission</span>
+                      <span className="text-sm font-extrabold text-navy-base">
+                        {row.agency_commission_percentage}%
+                      </span>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="px-6 pb-6 pt-4 text-xs text-slate-400 text-center border-t border-slate-100">
@@ -618,6 +649,25 @@ export default async function ListingDetailPage({
                     : 'recently'}
                 </div>
               </div>
+
+              {/* ── Zero Viewing Fee Trust Banner ──────────────────────── */}
+              {row.viewing_fee === 0 && (
+                <div className="bg-emerald-50 border border-emerald-200 p-5 rounded-xl">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-emerald-800 mb-1 text-sm">Zero Viewing Fee</h3>
+                      <p className="text-sm text-emerald-700/90 leading-relaxed">
+                        This listing charges <strong className="font-semibold">no viewing fee</strong>. You can schedule a tour without any upfront payment — total price transparency guaranteed.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* ── Verified Trust Banner ────────────────────────────────── */}
               {row.is_verified && (

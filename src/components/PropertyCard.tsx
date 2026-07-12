@@ -24,6 +24,8 @@ interface PropertyCardProps {
   advance_period?: string;
   rent_advance_months?: number;
   is_rental?: boolean;
+  viewing_fee?: number | null;
+  agency_commission_percentage?: number | null;
 }
 
 function formatAdvanceDuration(duration?: string | number | null): string {
@@ -62,6 +64,8 @@ export default function PropertyCard({
   advance_period,
   rent_advance_months,
   is_rental,
+  viewing_fee,
+  agency_commission_percentage,
 }: PropertyCardProps) {
   const isRent = is_rental ?? true;
   const currencySymbol = currency === 'USD' ? '$' : 'GH₵';
@@ -83,6 +87,14 @@ export default function PropertyCard({
               <path fillRule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944zM14.5 8.5a.75.75 0 00-1.06-1.06l-3.94 3.94-1.44-1.44a.75.75 0 00-1.06 1.06l2 2a.75.75 0 001.06 0l4.44-4.44z" clipRule="evenodd" />
             </svg>
             SafeMove
+          </div>
+        )}
+        {viewing_fee === 0 && (
+          <div className="absolute top-3 right-3 flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 text-[11px] font-bold rounded-full shadow-sm z-10">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+            </svg>
+            Zero Viewing Fee
           </div>
         )}
       </div>
