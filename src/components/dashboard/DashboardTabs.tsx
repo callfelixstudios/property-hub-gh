@@ -9,6 +9,7 @@ import { Heart, Camera, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
 import TimeframeSelector, { TimeframePeriod } from './TimeframeSelector';
 import { fetchTimeframeAnalytics } from '@/app/actions/analytics';
 import { SidebarProfile } from './SidebarProfile';
+import MatchingRequestsTab from './MatchingRequestsTab';
 
 interface Listing {
   id: string;
@@ -83,14 +84,14 @@ export default function DashboardTabs({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const tabParam = searchParams.get('tab') as 'overview' | 'listings' | 'archived' | 'safemove' | 'profile' | 'space-requests' | null;
+  const tabParam = searchParams.get('tab') as 'overview' | 'listings' | 'archived' | 'safemove' | 'profile' | 'space-requests' | 'matching-requests' | null;
 
   const timeframeParam = searchParams.get('timeframe') as TimeframePeriod | null;
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'listings' | 'archived' | 'safemove' | 'profile' | 'space-requests'>(tabParam || 'overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'listings' | 'archived' | 'safemove' | 'profile' | 'space-requests' | 'matching-requests'>(tabParam || 'overview');
 
   useEffect(() => {
-    if (tabParam && ['overview', 'listings', 'archived', 'safemove', 'profile', 'space-requests'].includes(tabParam)) {
+    if (tabParam && ['overview', 'listings', 'archived', 'safemove', 'profile', 'space-requests', 'matching-requests'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [tabParam]);
@@ -604,6 +605,7 @@ export default function DashboardTabs({
   const tabs = [
     { id: 'overview', label: 'Overview', path: '/dashboard?tab=overview' },
     { id: 'listings', label: 'My Listings', path: '/dashboard?tab=listings' },
+    { id: 'matching-requests', label: '🤝 Matching Requests', path: '/dashboard?tab=matching-requests' },
     { id: 'archived', label: 'Archived Listings', path: '/dashboard?tab=archived' },
     { id: 'safemove', label: 'SafeMove Tracker', path: '/dashboard?tab=safemove' },
     { id: 'space-requests', label: 'My Space Requests', path: '/dashboard?tab=space-requests' },
@@ -1132,6 +1134,11 @@ export default function DashboardTabs({
               </div>
             )}
           </div>
+        )}
+
+        {/* MATCHING REQUESTS TAB */}
+        {activeTab === 'matching-requests' && (
+          <MatchingRequestsTab userId={userId} />
         )}
 
         {/* PROFILE SETTINGS TAB */}
