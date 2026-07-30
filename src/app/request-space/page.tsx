@@ -90,9 +90,10 @@ export default function RequestSpacePage() {
           }).catch(err => console.error("Webhook notification failed:", err));
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Unexpected error:", err);
-      setErrorMsg(err.message || "An unexpected error occurred.");
+      const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred.";
+      setErrorMsg(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

@@ -20,7 +20,8 @@ interface Listing {
   outright_price?: number;
   safemove_enabled?: boolean;
   views_count?: number;
-  [key: string]: any;
+  whatsapp_leads_count?: number;
+  [key: string]: unknown;
 }
 
 interface Profile {
@@ -29,7 +30,7 @@ interface Profile {
   contact_phone?: string;
   whatsapp_link?: string;
   avatar_url?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface SpaceRequest {
@@ -56,7 +57,7 @@ interface SafemoveTransaction {
     neighborhood?: string;
     city?: string;
   };
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 const extractPhoneFromWaLink = (link?: string) => {
@@ -85,39 +86,11 @@ export default function DashboardTabs({
   const router = useRouter();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab') as 'overview' | 'listings' | 'archived' | 'safemove' | 'profile' | 'space-requests' | 'matching-requests' | null;
-
   const timeframeParam = searchParams.get('timeframe') as TimeframePeriod | null;
 
+  const supabase = createClient();
+
   const [activeTab, setActiveTab] = useState<'overview' | 'listings' | 'archived' | 'safemove' | 'profile' | 'space-requests' | 'matching-requests'>(tabParam || 'overview');
-
-  useEffect(() => {
-    if (tabParam && ['overview', 'listings', 'archived', 'safemove', 'profile', 'space-requests', 'matching-requests'].includes(tabParam)) {
-      setActiveTab(tabParam);
-    }
-  }, [tabParam]);
-
-  useEffect(() => {
-    if (timeframeParam) {
-      setPeriod(timeframeParam);
-      if (timeframeParam !== 'all') {
-        startAnalyticsTransition(async () => {
-          try {
-            const updated = await fetchTimeframeAnalytics(userId, timeframeParam);
-            setAnalyticsData(updated);
-          } catch (err) {
-            console.error('Failed to fetch timeframe analytics:', err);
-          }
-        });
-      }
-    }
-  }, [timeframeParam]);
-
-  const [listings, setListings] = useState<Listing[]>(initialListings || []);
-  const [profile, setProfile] = useState<Profile>(initialProfile || {});
-  const [whatsappInput, setWhatsappInput] = useState(() => extractPhoneFromWaLink(initialProfile?.whatsapp_link));
-  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
-  const [profileMessage, setProfileMessage] = useState('');
-  const [restoreError, setRestoreError] = useState<string | null>(null);
 
   const [period, setPeriod] = useState<TimeframePeriod>(timeframeParam || 'all');
   const [isAnalyticsPending, startAnalyticsTransition] = useTransition();
@@ -138,6 +111,26 @@ export default function DashboardTabs({
       })) || []
     };
   });
+
+  useEffect(() => {
+    if (timeframeParam && timeframeParam !== 'all') {
+      startAnalyticsTransition(async () => {
+        try {
+          const updated = await fetchTimeframeAnalytics(userId, timeframeParam);
+          setAnalyticsData(updated);
+        } catch (err) {
+          console.error('Failed to fetch timeframe analytics:', err);
+        }
+      });
+    }
+  }, [timeframeParam]);
+
+  const [listings, setListings] = useState<Listing[]>(initialListings || []);
+  const [profile, setProfile] = useState<Profile>(initialProfile || {});
+  const [whatsappInput, setWhatsappInput] = useState(() => extractPhoneFromWaLink(initialProfile?.whatsapp_link));
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [profileMessage, setProfileMessage] = useState('');
+  const [restoreError, setRestoreError] = useState<string | null>(null);
 
   const handleTimeframeChange = (newPeriod: TimeframePeriod) => {
     setPeriod(newPeriod);
@@ -168,31 +161,31 @@ export default function DashboardTabs({
   const [editingSr, setEditingSr] = useState<SpaceRequest | null>(null);
   const [srMsg, setSrMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const fetchSpaceRequests = async () => {
-    setSrLoading(true);
-    try {
-      let query = supabase
-        .from('space_requests')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-      if (srFilter === 'active') query = query.eq('status', 'active');
-      else if (srFilter === 'archived') query = query.eq('status', 'archived');
-
-      const { data, error } = await query;
-      if (error) throw error;
-      setSpaceRequests(data || []);
-    } catch (err: any) {
-      console.error('Failed to fetch space requests:', err);
-    } finally {
-      setSrLoading(false);
-    }
-  };
-
   useEffect(() => {
-    if (activeTab === 'space-requests') fetchSpaceRequests();
-  }, [activeTab, srFilter]);
+    if (activeTab !== 'space-requests') return;
+    const loadData = async () => {
+      setSrLoading(true);
+      try {
+        let query = supabase
+          .from('space_requests')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
+
+        if (srFilter === 'active') query = query.eq('status', 'active');
+        else if (srFilter === 'archived') query = query.eq('status', 'archived');
+
+        const { data, error } = await query;
+        if (error) throw error;
+        setSpaceRequests(data || []);
+      } catch (err: unknown) {
+        console.error('Failed to fetch space requests:', err);
+      } finally {
+        setSrLoading(false);
+      }
+    };
+    loadData();
+  }, [activeTab, supabase, userId, srFilter]);
 
   const handleEditSr = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -228,9 +221,9 @@ export default function DashboardTabs({
       setSrMsg({ type: 'success', text: 'Request updated!' });
       setEditingSr(null);
       setSpaceRequests(prev => prev.map(r => r.id === data[0].id ? data[0] : r));
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Edit space request — unexpected error:', err);
-      setSrMsg({ type: 'error', text: err.message || 'Update failed.' });
+      setSrMsg({ type: 'error', text: err instanceof Error ? err.message : 'Update failed.' });
     }
   };
 
@@ -257,9 +250,9 @@ export default function DashboardTabs({
 
       setSpaceRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'archived' } : r));
       setSrMsg({ type: 'success', text: 'Request archived.' });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Archive space request — unexpected error:', err);
-      setSrMsg({ type: 'error', text: err.message || 'Archive failed.' });
+      setSrMsg({ type: 'error', text: err instanceof Error ? err.message : 'Archive failed.' });
     }
   };
 
@@ -287,9 +280,9 @@ export default function DashboardTabs({
 
       setSpaceRequests(prev => prev.filter(r => r.id !== id));
       setSrMsg({ type: 'success', text: 'Request permanently deleted.' });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Delete space request — unexpected error:', err);
-      setSrMsg({ type: 'error', text: err.message || 'Delete failed.' });
+      setSrMsg({ type: 'error', text: err instanceof Error ? err.message : 'Delete failed.' });
     }
   };
 
@@ -316,13 +309,11 @@ export default function DashboardTabs({
 
       setSpaceRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'active' } : r));
       setSrMsg({ type: 'success', text: 'Request restored to active successfully!' });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Restore space request — unexpected error:', err);
-      setSrMsg({ type: 'error', text: err.message || 'Restore failed.' });
+      setSrMsg({ type: 'error', text: err instanceof Error ? err.message : 'Restore failed.' });
     }
   };
-
-  const supabase = createClient();
 
   const handleArchiveListing = async (listingId: string) => {
     const { error } = await supabase
@@ -474,9 +465,9 @@ export default function DashboardTabs({
 
       setProfile(prev => ({ ...prev, avatar_url: avatarUrl }));
       setAvatarMsg({ type: 'success', text: 'Profile photo updated!' });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Avatar upload error:', err);
-      setAvatarMsg({ type: 'error', text: err.message || 'Failed to upload photo.' });
+      setAvatarMsg({ type: 'error', text: err instanceof Error ? err.message : 'Failed to upload photo.' });
     } finally {
       setIsUploadingAvatar(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -507,9 +498,9 @@ export default function DashboardTabs({
 
       setProfile(prev => ({ ...prev, avatar_url: undefined }));
       setAvatarMsg({ type: 'success', text: 'Profile photo removed.' });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Avatar remove error:', err);
-      setAvatarMsg({ type: 'error', text: err.message || 'Failed to remove photo.' });
+      setAvatarMsg({ type: 'error', text: err instanceof Error ? err.message : 'Failed to remove photo.' });
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -529,9 +520,9 @@ export default function DashboardTabs({
       if (error) throw error;
       setEmailMsg({ type: 'success', text: 'Verification link sent! Please check your new email to confirm the change.' });
       setNewEmail('');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Email update error:', err);
-      setEmailMsg({ type: 'error', text: err.message || 'Failed to update email.' });
+      setEmailMsg({ type: 'error', text: err instanceof Error ? err.message : 'Failed to update email.' });
     } finally {
       setIsUpdatingEmail(false);
     }
@@ -563,9 +554,9 @@ export default function DashboardTabs({
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Password update error:', err);
-      setPasswordMsg({ type: 'error', text: err.message || 'Failed to update password.' });
+      setPasswordMsg({ type: 'error', text: err instanceof Error ? err.message : 'Failed to update password.' });
     } finally {
       setIsUpdatingPassword(false);
     }
@@ -634,7 +625,7 @@ export default function DashboardTabs({
                   if (tab.path) {
                     router.push(tab.path, { scroll: false });
                   } else {
-                    setActiveTab(tab.id as any);
+                    setActiveTab(tab.id as 'overview' | 'listings' | 'archived' | 'safemove' | 'profile' | 'space-requests' | 'matching-requests');
                     router.push(`/dashboard?tab=${tab.id}`, { scroll: false });
                   }
                 }}
@@ -746,7 +737,7 @@ export default function DashboardTabs({
           <div>
             <h2 className="text-2xl font-bold text-navy-base mb-6">My Listings</h2>
             {listings.filter(l => l.status !== 'archived').length === 0 ? (
-              <p className="text-gray-500">You don't have any active listings yet.</p>
+              <p className="text-gray-500">You don&apos;t have any active listings yet.</p>
             ) : (
               <div className="space-y-4">
                 {listings.filter(l => l.status !== 'archived').map((listing) => (
@@ -821,7 +812,7 @@ export default function DashboardTabs({
               </div>
             )}
             {listings.filter(l => l.status === 'archived').length === 0 ? (
-              <p className="text-gray-500">You don't have any archived listings.</p>
+              <p className="text-gray-500">You don&apos;t have any archived listings.</p>
             ) : (
               <div className="space-y-4">
                 {listings.filter(l => l.status === 'archived').map((listing) => (
@@ -875,7 +866,7 @@ export default function DashboardTabs({
             
             {initialSafemoveTransactions.length === 0 ? (
               <div className="bg-slate-50 rounded-xl border border-gray-200 p-8 text-center">
-                <p className="text-gray-500">You don't have any active SafeMove escrow transactions right now.</p>
+                <p className="text-gray-500">You don&apos;t have any active SafeMove escrow transactions right now.</p>
               </div>
             ) : (
               <div className="space-y-6">
@@ -951,10 +942,10 @@ export default function DashboardTabs({
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-navy-base">My Space Requests</h2>
               <div className="flex gap-2">
-                {['active', 'archived', 'all'].map((f) => (
+                {(['active', 'archived', 'all'] as const).map((f) => (
                   <button
                     key={f}
-                    onClick={() => setSrFilter(f as any)}
+                    onClick={() => setSrFilter(f)}
                     className={`px-3 py-1.5 rounded-md text-sm font-bold transition-colors ${
                       srFilter === f
                         ? 'bg-navy-base text-white'

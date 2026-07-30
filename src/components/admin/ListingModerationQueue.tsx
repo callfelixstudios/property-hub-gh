@@ -74,7 +74,7 @@ export default function ListingModerationQueue({
     });
   };
 
-  const optimisticUpdate = (id: string, newStatus: string, actionFn: () => Promise<any>) => {
+  const optimisticUpdate = (id: string, newStatus: string, actionFn: () => Promise<{ success: boolean }>) => {
     setActiveActionId(id);
     setShowRejectDropdown(null);
     setCustomReason("");

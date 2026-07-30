@@ -33,6 +33,31 @@ const REGION_LABELS: Record<string, string> = {
   western_north:  "Western North Region",
 };
 
+interface Region {
+  id: string;
+  name: string;
+  slug: string;
+  [key: string]: unknown;
+}
+
+interface Amenity {
+  id: string;
+  name: string;
+  [key: string]: unknown;
+}
+
+interface Neighborhood {
+  name: string;
+  region: string;
+  [key: string]: unknown;
+}
+
+interface ConfigData {
+  neighborhoods?: Neighborhood[];
+  amenities?: Amenity[];
+  [key: string]: unknown;
+}
+
 export default function PostSpaceWizard() {
   const supabase = createClient();
   const router = useRouter();
@@ -44,21 +69,21 @@ export default function PostSpaceWizard() {
     });
   }, []);
 
-  const [dynamicRegions, setDynamicRegions] = useState<any[]>([]);
+  const [dynamicRegions, setDynamicRegions] = useState<Region[]>([]);
   const [dynamicLocations, setDynamicLocations] = useState<Record<string, string[]>>({});
-  const [dynamicAmenities, setDynamicAmenities] = useState<any[]>([]);
+  const [dynamicAmenities, setDynamicAmenities] = useState<Amenity[]>([]);
 
   useEffect(() => {
     async function loadConfig() {
-      const data = await getConfigData();
+      const data = await getConfigData() as ConfigData | null;
       if (data) {
-        setDynamicRegions([...GHANA_REGIONS]);
+        setDynamicRegions(GHANA_REGIONS.map(r => ({ id: r, name: r, slug: r })));
         
         const locs: Record<string, string[]> = {};
         GHANA_REGIONS.forEach(r => {
           locs[r] = (data.neighborhoods || [])
-            .filter((n: any) => n.region === r)
-            .map((n: any) => n.name);
+            .filter((n: Neighborhood) => n.region === r)
+            .map((n: Neighborhood) => n.name);
         });
         
         setDynamicLocations(locs);
@@ -352,9 +377,9 @@ export default function PostSpaceWizard() {
       } else {
         router.push("/sales");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Submission error:", error);
-      const errorMessage = error?.message || error?.error_description || "Failed to submit space. Check console for details.";
+      const errorMessage = error instanceof Error ? error.message : "Failed to submit space. Check console for details.";
       alert(errorMessage);
     } finally {
       setIsSubmitting(false);

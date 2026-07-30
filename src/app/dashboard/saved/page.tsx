@@ -5,6 +5,38 @@ import { Heart } from "lucide-react";
 import DashboardTabs from "@/components/dashboard/DashboardTabs";
 import { generateListingSlug } from "@/utils/slugify";
 
+interface SavedListingRecord {
+  id: string;
+  listing_id: string;
+  created_at: string;
+}
+
+interface Listing {
+  id: string;
+  title: string | null;
+  category: string;
+  neighborhood: string | null;
+  region: string;
+  transaction_type: 'rent' | 'sale';
+  base_rent: number | null;
+  outright_price: number | null;
+  bedrooms?: number | null;
+  bathrooms?: number | null;
+  service_charge?: number | null;
+  advance_period?: string | null;
+  rent_advance_months?: number | null;
+  safemove_active?: boolean | null;
+  currency?: string | null;
+  media_urls: string[] | null;
+  image_url: string | null;
+  [key: string]: unknown;
+}
+
+interface SavedListingWithListing {
+  id: string;
+  listing: Listing;
+}
+
 export default async function SavedListingsPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -35,7 +67,7 @@ export default async function SavedListingsPage() {
     console.error("Error fetching saved listings:", savedError);
   }
 
-  let finalListings: any[] = [];
+  let finalListings: SavedListingWithListing[] = [];
   if (savedRecords && savedRecords.length > 0) {
     const listingIds = savedRecords.map(r => r.listing_id);
     
@@ -55,9 +87,9 @@ export default async function SavedListingsPage() {
         const listing = listingsData.find(l => l.id === record.listing_id);
         return {
           id: record.id,
-          listing
+          listing: listing as Listing
         };
-      }).filter(r => r.listing != null);
+      }).filter(r => r.listing != null) as SavedListingWithListing[];
     }
   }
 
@@ -101,7 +133,7 @@ export default async function SavedListingsPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {finalListings.map((record: any) => {
+              {finalListings.map((record: SavedListingWithListing) => {
                 const listing = record.listing;
                 
                 const isRent = listing.transaction_type === 'rent';
@@ -119,18 +151,18 @@ export default async function SavedListingsPage() {
                       imageSrc={listing.media_urls?.[0] || listing.image_url || "/property-placeholder.jpg"}
                       title={listing.title || `${formatCategory(listing.category)} in ${listing.neighborhood || 'Ghana'}`}
                       rawPrice={price || 0}
-                      currency={listing.currency || "GHS"}
+                      currency={listing.currency ?? "GHS"}
                       priceSuffix={suffix}
                       location={location || "Ghana"}
-                      beds={listing.bedrooms}
-                      baths={listing.bathrooms}
+                      beds={listing.bedrooms ?? undefined}
+                      baths={listing.bathrooms ?? undefined}
                       category={listing.category}
                       badge={listing.safemove_active ? "safemove" : undefined}
-                      base_rent={listing.base_rent}
-                      outright_price={listing.outright_price}
-                      service_charge={listing.service_charge}
-                      advance_period={listing.advance_period}
-                      rent_advance_months={listing.rent_advance_months}
+                      base_rent={listing.base_rent ?? undefined}
+                      outright_price={listing.outright_price ?? undefined}
+                      service_charge={listing.service_charge ?? undefined}
+                      advance_period={listing.advance_period ?? undefined}
+                      rent_advance_months={listing.rent_advance_months ?? undefined}
                       is_rental={listing.transaction_type === 'rent'}
                     />
                   </Link>

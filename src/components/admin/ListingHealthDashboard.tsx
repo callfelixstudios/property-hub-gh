@@ -4,6 +4,11 @@ import { useState, useTransition } from 'react';
 import { Archive, CheckCircle, Search, AlertTriangle, MessageCircle, Loader2 } from 'lucide-react';
 import { markListingVerified, archiveListing, bulkSendVerificationPing } from '@/app/actions/listingHealthActions';
 
+interface PosterInfo {
+  full_name?: string;
+  phone?: string;
+}
+
 export interface ListingHealthData {
   id: string;
   title: string;
@@ -12,7 +17,7 @@ export interface ListingHealthData {
   created_at: string;
   listing_health: 'fresh' | 'stale' | 'expired';
   verification_ping_sent_at?: string | null;
-  poster: any;
+  poster?: PosterInfo | null;
 }
 
 export default function ListingHealthDashboard({

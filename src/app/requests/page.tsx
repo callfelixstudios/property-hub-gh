@@ -23,11 +23,24 @@ export default async function RequestsPage() {
     console.error("Error fetching requests:", error);
   }
 
+  interface SpaceRequest {
+    id: string;
+    seeker_name: string;
+    whatsapp_number: string;
+    property_type: string;
+    purpose: string;
+    location: string;
+    budget: number;
+    additional_details?: string;
+    status: string;
+    created_at: string;
+  }
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-GH', { style: 'currency', currency: 'GHS' }).format(amount);
   };
 
-  const generateWhatsAppLink = (request: any) => {
+  const generateWhatsAppLink = (request: SpaceRequest) => {
     const message = `Hi ${request.seeker_name}, I saw your request for a ${formatPropertyType(request.property_type)} in ${request.location} with a budget of ${formatCurrency(request.budget)} on Property Hub. I have a property that might fit your needs!`;
     const cleanPhone = request.whatsapp_number.replace(/[^\d+]/g, '');
     return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
@@ -96,7 +109,7 @@ export default async function RequestsPage() {
                   {req.additional_details && (
                     <div className="mt-4 pt-4 border-t border-gray-50">
                       <p className="text-sm text-gray-600 line-clamp-3">
-                        "{req.additional_details}"
+                        &quot;{req.additional_details}&quot;
                       </p>
                     </div>
                   )}

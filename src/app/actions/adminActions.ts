@@ -1,7 +1,5 @@
 'use server';
 
-import { createClient } from '@/utils/supabase/server';
-import { isAuthorizedAdmin } from '@/utils/adminAuth';
 import { revalidatePath } from 'next/cache';
 
 import { assertAdmin, logAdminAction } from '@/utils/adminHelpers';

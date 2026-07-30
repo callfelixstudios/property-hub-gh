@@ -1,9 +1,20 @@
 import { createClient } from '@/utils/supabase/server';
-import ListingHealthDashboard from '@/components/admin/ListingHealthDashboard';
+import ListingHealthDashboard, { ListingHealthData } from '@/components/admin/ListingHealthDashboard';
 
 export const metadata = {
   title: 'Listing Health | Admin — Property Hub GH',
 };
+
+interface StaleListingsRow {
+  id: string;
+  title: string;
+  category: string;
+  location: string;
+  created_at: string;
+  listing_health: string;
+  verification_ping_sent_at: string | null;
+  poster: { id: string; full_name: string; phone: string }[];
+}
 
 export default async function AdminListingHealthPage() {
   const supabase = await createClient();
@@ -46,6 +57,18 @@ export default async function AdminListingHealthPage() {
     pendingPings: pingedCount || 0,
   };
 
+  const rawListings = (staleListings || []) as unknown as StaleListingsRow[];
+  const mappedStale: ListingHealthData[] = rawListings.map(item => ({
+    id: item.id,
+    title: item.title,
+    category: item.category,
+    location: item.location,
+    created_at: item.created_at,
+    listing_health: item.listing_health as 'fresh' | 'stale' | 'expired',
+    verification_ping_sent_at: item.verification_ping_sent_at,
+    poster: item.poster?.[0] ? { full_name: item.poster[0].full_name, phone: item.poster[0].phone } : null,
+  }));
+
   return (
     <div className="space-y-8">
       <div>
@@ -54,7 +77,7 @@ export default async function AdminListingHealthPage() {
       </div>
 
       <ListingHealthDashboard
-        staleListings={staleListings || []}
+        staleListings={mappedStale}
         stats={stats}
       />
     </div>

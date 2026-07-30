@@ -34,20 +34,13 @@ export interface SystemAlert {
 export async function fetchMacroKPIs(): Promise<MacroKPIs> {
   const { supabase } = await assertAdmin();
 
-  // 1. Financial Operations (Real data from payment_transactions)
+// 1. Financial Operations (Real data from payment_transactions)
   // Get all transactions
   const { data: txs } = await supabase.from('payment_transactions').select('amount_ghs, status');
-  
-  let gtv = 0;
-  let txFailures = 0;
-  let totalTxs = txs?.length || 0;
 
-  if (txs) {
-    txs.forEach((tx) => {
-      if (tx.status === 'completed') gtv += Number(tx.amount_ghs || 0);
-      if (tx.status === 'failed') txFailures++;
-    });
-  }
+  const gtv = txs?.filter((tx) => tx.status === 'completed').reduce((sum, tx) => sum + Number(tx.amount_ghs || 0), 0) || 0;
+  const txFailures = txs?.filter((tx) => tx.status === 'failed').length || 0;
+  const totalTxs = txs?.length || 0;
 
   const transactionFailureRate = totalTxs > 0 ? (txFailures / totalTxs) * 100 : 0;
 

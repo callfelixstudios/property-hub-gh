@@ -94,12 +94,12 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
   React.useEffect(() => {
     async function loadConfig() {
       const data = await getConfigData();
-        setDynamicRegions(GHANA_REGIONS as unknown as any);
+        setDynamicRegions(GHANA_REGIONS.map(r => ({ id: r, name: r, slug: r })));
         const locs: Record<string, string[]> = {};
         GHANA_REGIONS.forEach(r => {
           locs[r] = (data.neighborhoods || [])
-            .filter((n: any) => n.region === r)
-            .map((n: any) => n.name);
+            .filter((n: { name: string; region: string }) => n.region === r)
+            .map((n: { name: string; region: string }) => n.name);
         });
       setDynamicLocations(locs);
       setDynamicAmenities(data.amenities || []);

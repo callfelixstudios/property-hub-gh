@@ -27,13 +27,9 @@ export default function WhatsAppButton({
   serviceCharge = 0,
   floorPlanUrl
 }: WhatsAppButtonProps) {
-  const [isPending, startTransition] = useTransition();
   const { formatPrice } = useCurrency();
-  const [currentUrl, setCurrentUrl] = useState('');
-
-  useEffect(() => {
-    setCurrentUrl(window.location.href);
-  }, []);
+  // Initialize currentUrl lazily to avoid useEffect
+  const [currentUrl] = useState(() => typeof window !== 'undefined' ? window.location.href : '');
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     startTransition(() => {

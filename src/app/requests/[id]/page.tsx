@@ -23,7 +23,20 @@ function formatDate(dateString: string) {
   });
 }
 
-function generateWhatsAppLink(request: any) {
+interface SpaceRequest {
+  id: string;
+  seeker_name: string;
+  whatsapp_number: string;
+  property_type: string;
+  purpose: string;
+  location: string;
+  budget: number;
+  additional_details?: string;
+  status: string;
+  created_at: string;
+}
+
+function generateWhatsAppLink(request: SpaceRequest) {
   const message = `Hi ${request.seeker_name}, I saw your request for a ${formatPropertyType(request.property_type)} in ${request.location} with a budget of ${formatCurrency(request.budget)} on Property Hub. I have a property that might fit your needs!`;
   const cleanPhone = request.whatsapp_number.replace(/[^\d+]/g, '');
   return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;

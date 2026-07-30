@@ -33,7 +33,7 @@ export default function SafeMovePage() {
                 <span className="text-accent-gold font-bold text-xl">2</span>
               </div>
               <h3 className="font-bold text-gray-900 mb-3">Property Verification</h3>
-              <p className="text-sm text-gray-600">Property Hub verifies property integrity and confirms the landlord's title.</p>
+              <p className="text-sm text-gray-600">Property Hub verifies property integrity and confirms the landlord&apos;s title.</p>
             </div>
             <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center text-center">
               <div className="w-12 h-12 bg-accent-emerald/10 rounded-full flex items-center justify-center mb-6">

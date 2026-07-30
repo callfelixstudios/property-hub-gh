@@ -16,11 +16,10 @@ export default function ListingGallery({ allImages, displayTitle, videoUrl, floo
   const [activeImgIndex, setActiveImgIndex] = useState(0);
   const [activeMediaTab, setActiveMediaTab] = useState<'photos' | 'video' | 'floorplan'>('photos');
 
-  useEffect(() => {
-    if (activeMediaTab === 'floorplan' && !floorPlanUrl) {
-      setActiveMediaTab('photos');
-    }
-  }, [floorPlanUrl, activeMediaTab]);
+  const handleTabChange = (tab: 'photos' | 'video' | 'floorplan') => {
+    if (tab === 'floorplan' && !floorPlanUrl) return;
+    setActiveMediaTab(tab);
+  };
 
   const handleNext = useCallback(() => {
     setActiveImgIndex((prev) => (prev + 1) % allImages.length);
@@ -154,7 +153,7 @@ export default function ListingGallery({ allImages, displayTitle, videoUrl, floo
       {/* Media Switcher */}
       <div className="flex items-center gap-6 border-b border-slate-100 mt-2 pb-1">
         <button
-          onClick={() => setActiveMediaTab('photos')}
+            onClick={() => handleTabChange('photos')}
           className={`relative text-sm font-bold transition-colors pb-2 ${
             activeMediaTab === 'photos'
               ? 'text-navy-base'
@@ -168,7 +167,7 @@ export default function ListingGallery({ allImages, displayTitle, videoUrl, floo
         </button>
         {videoUrl && (
           <button
-            onClick={() => setActiveMediaTab('video')}
+            onClick={() => handleTabChange('video')}
             className={`relative text-sm font-bold transition-colors pb-2 ${
               activeMediaTab === 'video'
                 ? 'text-navy-base'
@@ -183,7 +182,7 @@ export default function ListingGallery({ allImages, displayTitle, videoUrl, floo
         )}
         {floorPlanUrl && (
           <button
-            onClick={() => setActiveMediaTab('floorplan')}
+            onClick={() => handleTabChange('floorplan')}
             className={`relative text-sm font-bold transition-colors pb-2 ${
               activeMediaTab === 'floorplan'
                 ? 'text-navy-base'

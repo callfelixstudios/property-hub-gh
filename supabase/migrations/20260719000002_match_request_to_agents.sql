@@ -1,7 +1,8 @@
 -- 20260719000002_match_request_to_agents.sql
--- Phase 4: Smart weighted matching engine with de-duplication
+-- Phase 4: Smart weighted matching engine (set-based, no loop)
 -- Score categories: Region (max 40) + Category (max 30) + Budget (max 20) + Intent (max 10) = 100
--- Threshold: >= 30 points to qualify as a match
+-- Threshold: >= 30 points to insert notification
+-- Rewrote from loop → set-based CTE for scalability (O(1) queries, not O(n) rows)
 
 CREATE OR REPLACE FUNCTION public.match_request_to_agents(p_request_id UUID)
 RETURNS TABLE(
@@ -13,135 +14,76 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = ''
 AS $$
-DECLARE
-  v_request RECORD;
-  v_listing RECORD;
-  v_score NUMERIC;
-  v_region_score NUMERIC;
-  v_category_score NUMERIC;
-  v_budget_score NUMERIC;
-  v_intent_score NUMERIC;
-  v_threshold CONSTANT NUMERIC := 30;
 BEGIN
-  -- Fetch the space request
-  SELECT * INTO v_request
-  FROM public.space_requests
-  WHERE id = p_request_id;
-
-  IF NOT FOUND THEN
-    RETURN;
-  END IF;
-
-  -- Temp table: one row per agent, tracks best score + all matching listing IDs
-  CREATE TEMP TABLE temp_matches (
-    agent_id UUID PRIMARY KEY,
-    best_score NUMERIC DEFAULT 0,
-    listing_ids UUID[] DEFAULT '{}'
-  ) ON COMMIT DROP;
-
-  -- Scan all active agent-posted listings
-  FOR v_listing IN
-    SELECT l.*
-    FROM public.listings l
-    WHERE l.status = 'active'
-      AND l.poster_role = 'agent'
-  LOOP
-    v_score := 0;
-
-    -- ════════════════════════════════════════════════════════════════
-    -- 1. Region / Location match  (weight: 0.40 — max 40 pts)
-    -- ════════════════════════════════════════════════════════════════
-    v_region_score := 0;
-    IF v_listing.region IS NOT NULL AND v_request.location IS NOT NULL THEN
-      IF LOWER(v_listing.region) = LOWER(v_request.location) THEN
-        v_region_score := 40;
-      ELSIF v_listing.neighborhood IS NOT NULL
-        AND LOWER(v_listing.neighborhood) = LOWER(v_request.location) THEN
-        v_region_score := 20;
-      END IF;
-    END IF;
-    v_score := v_score + v_region_score;
-
-    -- ════════════════════════════════════════════════════════════════
-    -- 2. Property type / Category match  (weight: 0.30 — max 30 pts)
-    -- ════════════════════════════════════════════════════════════════
-    v_category_score := 0;
-    IF v_listing.category IS NOT NULL AND v_request.property_type IS NOT NULL THEN
-      IF LOWER(v_listing.category) = LOWER(v_request.property_type) THEN
-        v_category_score := 30;
-      END IF;
-    END IF;
-    v_score := v_score + v_category_score;
-
-    -- ════════════════════════════════════════════════════════════════
-    -- 3. Budget overlap  (weight: 0.20 — max 20 pts)
-    -- ════════════════════════════════════════════════════════════════
-    v_budget_score := 0;
-    IF v_request.budget IS NOT NULL AND v_request.budget > 0 THEN
-      IF v_listing.transaction_type = 'rent' AND (v_listing.base_rent IS NOT NULL AND v_listing.base_rent > 0) THEN
-        IF v_listing.base_rent <= v_request.budget THEN
-          v_budget_score := 20;
-        ELSIF v_listing.base_rent <= v_request.budget * 1.2 THEN
-          v_budget_score := 10;
-        END IF;
-      ELSIF v_listing.transaction_type = 'sale' AND (v_listing.outright_price IS NOT NULL AND v_listing.outright_price > 0) THEN
-        IF v_listing.outright_price <= v_request.budget THEN
-          v_budget_score := 20;
-        ELSIF v_listing.outright_price <= v_request.budget * 1.2 THEN
-          v_budget_score := 10;
-        END IF;
-      END IF;
-    END IF;
-    v_score := v_score + v_budget_score;
-
-    -- ════════════════════════════════════════════════════════════════
-    -- 4. Intent alignment bonus  (weight: 0.10 — max 10 pts)
-    --    Strict check: listing transaction_type must match request purpose
-    -- ════════════════════════════════════════════════════════════════
-    v_intent_score := 0;
-    IF v_request.purpose IS NOT NULL AND v_listing.transaction_type IS NOT NULL THEN
-      IF LOWER(v_listing.transaction_type) = LOWER(v_request.purpose) THEN
-        v_intent_score := 10;
-      END IF;
-    END IF;
-    v_score := v_score + v_intent_score;
-
-    -- ── Threshold gate ─────────────────────────────────────────────
-    IF v_score >= v_threshold THEN
-      INSERT INTO temp_matches (agent_id, best_score, listing_ids)
-      VALUES (v_listing.poster_id, v_score, ARRAY[v_listing.id])
-      ON CONFLICT (agent_id) DO UPDATE SET
-        best_score = CASE
-          WHEN v_score > temp_matches.best_score THEN v_score
-          ELSE temp_matches.best_score
-        END,
-        listing_ids = temp_matches.listing_ids || v_listing.id;
-    END IF;
-  END LOOP;
-
-  -- Insert one notification per matched agent
+  -- Single set-based insert: CROSS JOIN request with all active agent listings,
+  -- compute weighted score per (listing x request) pair, group by agent
   INSERT INTO public.notifications (user_id, type, title, body, metadata)
   SELECT
-    m.agent_id,
+    scored.poster_id,
     'new_match',
     'New Matching Request',
     CASE
-      WHEN m.best_score >= 70
+      WHEN MAX(scored.score) >= 70
         THEN 'Strong match found for a seeker request on the Notice Board. Review the details and reach out.'
-      WHEN m.best_score >= 50
+      WHEN MAX(scored.score) >= 50
         THEN 'A seeker request partially matches your listings. Check the details to see if it is a fit.'
       ELSE 'A new seeker request may be relevant to your listings. Review and decide.'
     END,
     jsonb_build_object(
       'request_id', p_request_id,
-      'score', m.best_score,
-      'matching_listing_ids', m.listing_ids
+      'score', MAX(scored.score),
+      'matching_listing_ids', ARRAY_AGG(scored.listing_id ORDER BY scored.listing_id)
     )
-  FROM temp_matches m;
+  FROM (
+    SELECT
+      l.poster_id,
+      l.id AS listing_id,
+      -- Region (0-40)
+      COALESCE(
+        CASE
+          WHEN LOWER(l.region) = LOWER(sr.location) THEN 40
+          WHEN LOWER(l.neighborhood) = LOWER(sr.location) THEN 20
+          ELSE 0
+        END, 0
+      ) +
+      -- Category (0-30)
+      COALESCE(
+        CASE WHEN LOWER(l.category) = LOWER(sr.property_type) THEN 30 ELSE 0 END, 0
+      ) +
+      -- Budget (0-20)
+      COALESCE(
+        CASE
+          WHEN sr.budget > 0 AND l.transaction_type = 'rent'
+            AND l.base_rent > 0 AND l.base_rent <= sr.budget THEN 20
+          WHEN sr.budget > 0 AND l.transaction_type = 'rent'
+            AND l.base_rent > 0 AND l.base_rent <= sr.budget * 1.2 THEN 10
+          WHEN sr.budget > 0 AND l.transaction_type = 'sale'
+            AND l.outright_price > 0 AND l.outright_price <= sr.budget THEN 20
+          WHEN sr.budget > 0 AND l.transaction_type = 'sale'
+            AND l.outright_price > 0 AND l.outright_price <= sr.budget * 1.2 THEN 10
+          ELSE 0
+        END, 0
+      ) +
+      -- Intent (0-10)
+      COALESCE(
+        CASE WHEN LOWER(l.transaction_type) = LOWER(sr.purpose) THEN 10 ELSE 0 END, 0
+      ) AS score
+    FROM public.listings l
+    CROSS JOIN public.space_requests sr
+    WHERE sr.id = p_request_id
+      AND l.status = 'active'
+      AND l.poster_role = 'agent'
+  ) scored
+  WHERE scored.score >= 30
+  GROUP BY scored.poster_id;
 
   RETURN QUERY
-  SELECT m.agent_id, m.best_score, m.listing_ids
-  FROM temp_matches m
-  ORDER BY m.best_score DESC;
+  SELECT
+    n.user_id,
+    (n.metadata ->> 'score')::NUMERIC,
+    ARRAY(SELECT jsonb_array_elements_text(n.metadata -> 'matching_listing_ids'))::UUID[]
+  FROM public.notifications n
+  WHERE n.metadata ->> 'request_id' = p_request_id::TEXT
+  ORDER BY (n.metadata ->> 'score')::NUMERIC DESC;
 END;
 $$;

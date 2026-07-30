@@ -35,20 +35,7 @@ CREATE POLICY "Users update own notifications"
 
 -- NO INSERT policy — the SECURITY DEFINER trigger bypasses RLS internally
 
--- ── 4. Trigger function: call matching engine on new space request ─────────
-CREATE OR REPLACE FUNCTION public.handle_new_space_request()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-BEGIN
-  PERFORM public.match_request_to_agents(NEW.id);
-  RETURN NEW;
-END;
-$$;
-
-CREATE TRIGGER on_space_request_created
-  AFTER INSERT ON public.space_requests
-  FOR EACH ROW
-  EXECUTE FUNCTION public.handle_new_space_request();
+-- NOTE: Trigger function and trigger moved to 20260719000003_attach_matching_trigger.sql
+-- to avoid circular dependency (handle_new_space_request calls match_request_to_agents).
+-- Execute this file first, then 20260719000002_match_request_to_agents.sql,
+-- then 20260719000003_attach_matching_trigger.sql.

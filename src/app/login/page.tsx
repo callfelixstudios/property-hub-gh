@@ -104,7 +104,7 @@ function LoginForm() {
               </button>
           </div>
           <p className="mt-4 text-center text-sm text-navy-base">
-            Don't have an account? <Link href="/register" className="font-medium text-slate-900 hover:underline">Register</Link>
+            Don&apos;t have an account? <Link href="/register" className="font-medium text-slate-900 hover:underline">Register</Link>
           </p>
         </form>
       </div>

@@ -19,10 +19,13 @@ function PropertyFiltersContent() {
   const { displayCurrency } = useCurrency();
   const [showAdvanced, setShowAdvanced] = useState(false);
   
+  interface NeighborhoodItem { name: string; region: string; }
+  interface AmenityItem { id?: string; name: string; slug: string; category: string; is_active?: boolean; sort_order?: number | null; }
+
   // Dynamic Config State
   const [dynamicRegions, setDynamicRegions] = useState<string[]>([...GHANA_REGIONS]);
   const [dynamicLocations, setDynamicLocations] = useState<Record<string, string[]>>({...ghanaLocations});
-  const [dynamicAmenities, setDynamicAmenities] = useState<any[]>([]);
+  const [dynamicAmenities, setDynamicAmenities] = useState<AmenityItem[]>([]);
 
   useEffect(() => {
     async function loadConfig() {
@@ -34,8 +37,8 @@ function PropertyFiltersContent() {
           const locs: Record<string, string[]> = {};
           GHANA_REGIONS.forEach(r => {
             locs[r] = config.neighborhoods
-              .filter((n: any) => n.region === r)
-              .map((n: any) => n.name);
+              .filter((n: NeighborhoodItem) => n.region === r)
+              .map((n: NeighborhoodItem) => n.name);
           });
           setDynamicLocations(locs);
         }

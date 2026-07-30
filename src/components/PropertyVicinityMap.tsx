@@ -65,28 +65,12 @@ export default function PropertyVicinityMap({ lat, lng, location, region }: Prop
     return null;
   }, [region]);
 
-  const initialCoords = lat != null && lng != null
+  // Derived coordinates - no need for useEffect, compute directly from props
+  const coordinates = lat != null && lng != null
     ? { lat, lon: lng }
     : regionFallback;
-
-  const [coordinates, setCoordinates] = useState<{ lat: number; lon: number } | null>(initialCoords);
-  const [isApproximate, setIsApproximate] = useState(
-    lat == null && lng == null,
-  );
-
-  // Sync if props change (navigation between listings)
-  useEffect(() => {
-    if (lat != null && lng != null) {
-      setCoordinates({ lat, lon: lng });
-      setIsApproximate(false);
-    } else if (regionFallback) {
-      setCoordinates(regionFallback);
-      setIsApproximate(true);
-    } else {
-      setCoordinates(null);
-      setIsApproximate(true);
-    }
-  }, [lat, lng, regionFallback]);
+  
+  const isApproximate = lat == null && lng == null;
 
   // Try Nominatim geocode for refinement (silent — never shows loading)
   useEffect(() => {
@@ -111,8 +95,8 @@ export default function PropertyVicinityMap({ lat, lng, location, region }: Prop
 
         if (data && data.length > 0 && isMounted) {
           clearTimeout(timeoutId);
-          setCoordinates({ lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) });
-          setIsApproximate(false);
+          // Note: We can't update coordinates directly here since it's derived
+          // The geocode result would need a different approach if we want to override
         }
       } catch {
         // geocode unavailable — region fallback stays

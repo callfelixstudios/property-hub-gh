@@ -61,16 +61,20 @@ export default function MatchingRequestsTab({ userId }: { userId: string }) {
   const [loading, setLoading] = useState(true);
   const [contactingIds, setContactingIds] = useState<Set<string>>(new Set());
 
-  const loadRequests = async () => {
+  useEffect(() => {
+    (async () => {
+      const data = await fetchMatchingRequests();
+      setNotifications(data as NotificationItem[]);
+      setLoading(false);
+    })();
+  }, []);
+
+  const reloadRequests = async () => {
     setLoading(true);
     const data = await fetchMatchingRequests();
     setNotifications(data as NotificationItem[]);
     setLoading(false);
   };
-
-  useEffect(() => {
-    loadRequests();
-  }, []);
 
   const handleMarkContacted = async (notificationId: string) => {
     // Optimistic update
@@ -81,7 +85,7 @@ export default function MatchingRequestsTab({ userId }: { userId: string }) {
       await markLeadContacted(notificationId);
     } catch {
       // Revert on failure — reload from server
-      loadRequests();
+      reloadRequests();
     } finally {
       setContactingIds((prev) => {
         const next = new Set(prev);
