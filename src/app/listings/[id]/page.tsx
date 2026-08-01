@@ -620,12 +620,12 @@ export default async function ListingDetailPage({
                     Financial Overview
                   </h3>
                   
-                  {/* 1. Base Rent Line */}
+                  {/* 1. Base Rent / Outright Price Line */}
                   <div className="flex justify-between items-center py-2 border-b border-slate-50">
-                    <span className="text-sm font-medium text-slate-500">Rent</span>
-                    <span className="text-sm font-extrabold text-navy-base">
-                      GH₵{(row.base_rent || 0).toLocaleString()}
-                      <span className="text-xs font-semibold text-slate-400 ml-0.5">/mo</span>
+                    <span className="text-sm font-medium text-slate-500">{isRent ? 'Rent' : 'Outright Price'}</span>
+                    <span className="text-sm font-extrabold text-navy-base flex items-center">
+                      <PriceDisplay rawPrice={primaryPrice || 0} currency={row.currency || 'GHS'} isInline />
+                      {isRent && <span className="text-xs font-semibold text-slate-400 ml-0.5">/mo</span>}
                     </span>
                   </div>
 
@@ -633,8 +633,8 @@ export default async function ListingDetailPage({
                   {isRent && (row.service_charge ?? 0) > 0 && (
                     <div className="flex justify-between items-center py-2 border-b border-slate-50">
                       <span className="text-sm font-medium text-slate-500">Service Charge</span>
-                      <span className="text-sm font-extrabold text-navy-base">
-                        GH₵{(row.service_charge || 0).toLocaleString()}
+                      <span className="text-sm font-extrabold text-navy-base flex items-center">
+                        <PriceDisplay rawPrice={row.service_charge || 0} currency={row.currency || 'GHS'} isInline />
                         <span className="text-xs font-semibold text-slate-400 ml-0.5">/mo</span>
                       </span>
                     </div>
@@ -645,7 +645,7 @@ export default async function ListingDetailPage({
                     <div className="flex justify-between items-center py-2 border-b border-slate-50">
                       <span className="text-sm font-medium text-slate-500">Required Advance</span>
                       <span className="text-sm font-extrabold text-navy-base flex items-center gap-1.5">
-                        GH₵{((row.base_rent || 0) * (row.rent_advance_months || 1)).toLocaleString()}
+                        <PriceDisplay rawPrice={(row.base_rent || 0) * (row.rent_advance_months || 1)} currency={row.currency || 'GHS'} isInline />
                         <span className="text-xs font-semibold text-indigo-600 bg-indigo-50/60 px-1.5 py-0.5 rounded-md">
                           {formatAdvanceDuration(row.advance_period)}
                         </span>
@@ -674,8 +674,8 @@ export default async function ListingDetailPage({
                         Free Viewing
                       </span>
                     ) : row.viewing_fee != null && row.viewing_fee > 0 ? (
-                      <span className="text-sm font-extrabold text-navy-base">
-                        GH₵{row.viewing_fee.toLocaleString()}
+                      <span className="text-sm font-extrabold text-navy-base flex items-center">
+                        <PriceDisplay rawPrice={row.viewing_fee} currency={row.currency || 'GHS'} isInline />
                       </span>
                     ) : (
                       <span className="text-sm text-slate-400">Contact Agent</span>

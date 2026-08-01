@@ -122,6 +122,21 @@ export default function PostSpaceWizard() {
   const [hasSolarBackup, setHasSolarBackup] = useState(false);
   const [hasBoreholeSystem, setHasBoreholeSystem] = useState(false);
 
+  // Step 1 Errors
+  const [step1Errors, setStep1Errors] = useState<Record<string, string>>({});
+
+  const validateStep1 = (): boolean => {
+    const errs: Record<string, string> = {};
+    if (!title.trim()) errs.title = "Listing title is required.";
+    if (!category) errs.category = "Please select a property type.";
+    if (!region) errs.region = "Please select a region.";
+    if (!neighborhood) errs.neighborhood = "Please select a neighborhood.";
+    if (!posterRole) errs.posterRole = "Please select whether you are the Property Owner or an Agent.";
+    
+    setStep1Errors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const isLand = category === 'Plot of Land';
   const isCommercial = listingCategoryType === 'commercial' || ['Commercial Property / Office'].includes(category);
   const isResidential = !isLand && !isCommercial;
@@ -165,6 +180,25 @@ export default function PostSpaceWizard() {
   const [viewingFee, setViewingFee] = useState("");
   const [agencyCommission, setAgencyCommission] = useState("");
 
+  // Step 2 Errors
+  const [step2Errors, setStep2Errors] = useState<Record<string, string>>({});
+
+  const validateStep2 = (): boolean => {
+    const errs: Record<string, string> = {};
+    if (listingType === "rent") {
+      if (!baseRent.trim() || parseFloat(baseRent) <= 0) errs.baseRent = "Please enter a valid base rent amount.";
+      if (serviceCharge === "") errs.serviceCharge = "Enter 0 if service charge is inclusive or none.";
+      if (!advancePeriod) errs.advancePeriod = "Please select an advance period.";
+      if (advancePeriod === "Custom..." && (!customMonths || customMonths <= 0)) errs.advancePeriod = "Please enter the number of months for the custom advance.";
+    } else {
+      if (!outrightPrice.trim() || parseFloat(outrightPrice) <= 0) errs.outrightPrice = "Please enter a valid total sale price.";
+      if (!legalStatus) errs.legalStatus = "Please select the property's legal status.";
+    }
+    if (posterRole === 'agent' && !agencyCommission.trim()) errs.agencyCommission = "Agency commission is required when listing as an Agent.";
+    setStep2Errors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   // Utility: convert raw month count into a human-readable advance label
   const getAdvanceLabel = (months: number): string => {
     if (months <= 0) return "None";
@@ -185,6 +219,21 @@ export default function PostSpaceWizard() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [videoUrl, setVideoUrl] = useState("");
   const [floorPlanUrl, setFloorPlanUrl] = useState("");
+
+  // Step 3 Errors
+  const [step3Errors, setStep3Errors] = useState<Record<string, string>>({});
+
+  const validateStep3 = (): boolean => {
+    const errs: Record<string, string> = {};
+    if (!isLand && !isCommercial) {
+      if (!bedrooms) errs.bedrooms = "Please select the number of bedrooms.";
+      if (!bathrooms) errs.bathrooms = "Please select the number of bathrooms.";
+      if (!furnishingStatus) errs.furnishingStatus = "Please select the furnishing status.";
+    }
+    if (imageFiles.length === 0) errs.images = "Please upload at least one property image.";
+    setStep3Errors(errs);
+    return Object.keys(errs).length === 0;
+  };
 
   const compressionOptions = {
     maxSizeMB: 0.6,
@@ -475,11 +524,17 @@ export default function PostSpaceWizard() {
                     <input 
                       type="text"
                       value={title}
-                      onChange={(e) => setTitle(e.target.value)}
+                      onChange={(e) => {
+                        setTitle(e.target.value);
+                        if (step1Errors.title) setStep1Errors(prev => ({ ...prev, title: '' }));
+                      }}
                       placeholder="e.g. Modern 3 Bedroom House in Cantonments"
-                      className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
+                      className={`w-full bg-surface-primary border rounded-sm px-4 py-3 text-navy-base outline-none transition-colors ${
+                        step1Errors.title ? 'border-red-500 bg-red-50/20' : 'border-gray-200 focus:border-navy-light'
+                      }`}
                       required
                     />
+                    {step1Errors.title && <p className="text-xs text-red-500 font-semibold mt-1">{step1Errors.title}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-navy-base mb-2">Description</label>
@@ -495,11 +550,16 @@ export default function PostSpaceWizard() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-bold text-navy-base mb-2">Property Type</label>
+                    <label className="block text-sm font-bold text-navy-base mb-2">Property Type <span className="text-red-500">*</span></label>
                     <select 
                       value={category}
-                      onChange={(e) => handleCategoryChange(e.target.value)}
-                      className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
+                      onChange={(e) => {
+                        handleCategoryChange(e.target.value);
+                        if (step1Errors.category) setStep1Errors(prev => ({ ...prev, category: '' }));
+                      }}
+                      className={`w-full bg-surface-primary border rounded-sm px-4 py-3 text-navy-base outline-none transition-colors ${
+                        step1Errors.category ? 'border-red-500 bg-red-50/20' : 'border-gray-200 focus:border-navy-light'
+                      }`}
                     >
                       <option value="">Select Property Type...</option>
                       {listingCategoryType === 'residential' 
@@ -507,16 +567,20 @@ export default function PostSpaceWizard() {
                         : COMMERCIAL_CATEGORIES.map(type => <option key={type} value={type}>{type}</option>)
                       }
                     </select>
+                    {step1Errors.category && <p className="text-xs text-red-500 font-semibold mt-1">{step1Errors.category}</p>}
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-navy-base mb-2">Region</label>
+                    <label className="block text-sm font-bold text-navy-base mb-2">Region <span className="text-red-500">*</span></label>
                     <select 
                       value={region}
                       onChange={(e) => {
                         setRegion(e.target.value);
                         setNeighborhood("");
+                        if (step1Errors.region) setStep1Errors(prev => ({ ...prev, region: '' }));
                       }}
-                      className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
+                      className={`w-full bg-surface-primary border rounded-sm px-4 py-3 text-navy-base outline-none transition-colors ${
+                        step1Errors.region ? 'border-red-500 bg-red-50/20' : 'border-gray-200 focus:border-navy-light'
+                      }`}
                     >
                       <option value="">Select Region...</option>
                       {dynamicRegions.length > 0 
@@ -526,19 +590,26 @@ export default function PostSpaceWizard() {
                           ))
                       }
                     </select>
+                    {step1Errors.region && <p className="text-xs text-red-500 font-semibold mt-1">{step1Errors.region}</p>}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-bold text-navy-base mb-2">Neighborhood</label>
-                    <Combobox
-                      options={region ? (dynamicLocations[region] || ghanaLocations[regionToLocationKey[region]] || []) : []}
-                      value={neighborhood}
-                      onChange={setNeighborhood}
-                      disabled={!region}
-                      placeholder="e.g., East Legon, Cantonments"
-                    />
+                    <label className="block text-sm font-bold text-navy-base mb-2">Neighborhood <span className="text-red-500">*</span></label>
+                    <div className={step1Errors.neighborhood ? 'ring-1 ring-red-500 rounded-sm' : ''}>
+                      <Combobox
+                        options={region ? (dynamicLocations[region] || ghanaLocations[regionToLocationKey[region]] || []) : []}
+                        value={neighborhood}
+                        onChange={(val) => {
+                          setNeighborhood(val);
+                          if (step1Errors.neighborhood) setStep1Errors(prev => ({ ...prev, neighborhood: '' }));
+                        }}
+                        disabled={!region}
+                        placeholder="e.g., East Legon, Cantonments"
+                      />
+                    </div>
+                    {step1Errors.neighborhood && <p className="text-xs text-red-500 font-semibold mt-1">{step1Errors.neighborhood}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-navy-base mb-2">Nearest Landmark or Location Description</label>
@@ -554,12 +625,15 @@ export default function PostSpaceWizard() {
                 </div>
 
                 <div className="mt-2">
-                  <label className="block text-sm font-bold text-navy-base mb-3">Are you listing this property as the Owner or an Agent?</label>
+                  <label className="block text-sm font-bold text-navy-base mb-3">Are you listing this property as the Owner or an Agent? <span className="text-red-500">*</span></label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <button
                       type="button"
-                      onClick={() => setPosterRole('owner')}
-                      className={`relative flex items-center justify-center p-4 border-2 rounded-xl transition-all duration-200 text-left hover:border-teal-300 ${posterRole === 'owner' ? 'border-teal-600 bg-teal-50/50' : 'border-gray-200 bg-surface-primary hover:bg-slate-50'}`}
+                      onClick={() => {
+                        setPosterRole('owner');
+                        if (step1Errors.posterRole) setStep1Errors(prev => ({ ...prev, posterRole: '' }));
+                      }}
+                      className={`relative flex items-center justify-center p-4 border-2 rounded-xl transition-all duration-200 text-left hover:border-teal-300 ${posterRole === 'owner' ? 'border-teal-600 bg-teal-50/50' : step1Errors.posterRole ? 'border-red-400 bg-red-50/10' : 'border-gray-200 bg-surface-primary hover:bg-slate-50'}`}
                     >
                       {posterRole === 'owner' && (
                         <div className="absolute top-3 right-3 text-teal-600">
@@ -572,8 +646,11 @@ export default function PostSpaceWizard() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setPosterRole('agent')}
-                      className={`relative flex items-center justify-center p-4 border-2 rounded-xl transition-all duration-200 text-left hover:border-teal-300 ${posterRole === 'agent' ? 'border-teal-600 bg-teal-50/50' : 'border-gray-200 bg-surface-primary hover:bg-slate-50'}`}
+                      onClick={() => {
+                        setPosterRole('agent');
+                        if (step1Errors.posterRole) setStep1Errors(prev => ({ ...prev, posterRole: '' }));
+                      }}
+                      className={`relative flex items-center justify-center p-4 border-2 rounded-xl transition-all duration-200 text-left hover:border-teal-300 ${posterRole === 'agent' ? 'border-teal-600 bg-teal-50/50' : step1Errors.posterRole ? 'border-red-400 bg-red-50/10' : 'border-gray-200 bg-surface-primary hover:bg-slate-50'}`}
                     >
                       {posterRole === 'agent' && (
                         <div className="absolute top-3 right-3 text-teal-600">
@@ -585,6 +662,7 @@ export default function PostSpaceWizard() {
                       <span className={`font-bold text-lg ${posterRole === 'agent' ? 'text-teal-900' : 'text-navy-base'}`}>Real Estate Agent</span>
                     </button>
                   </div>
+                  {step1Errors.posterRole && <p className="text-xs text-red-500 font-semibold mt-2">{step1Errors.posterRole}</p>}
                 </div>
 
                 {/* Property conditional attributes and amenities moved to Step 3 */}
@@ -601,40 +679,65 @@ export default function PostSpaceWizard() {
               <div className="space-y-6">
                 {listingType === "rent" ? (
                   <>
+                    {/* Base Rent */}
                     <div>
-                      <label className="block text-sm font-bold text-navy-base mb-2">Base Rent (GHS) per month</label>
+                      <label className="block text-sm font-bold text-navy-base mb-2">Base Rent (GHS) per month <span className="text-red-500">*</span></label>
                       <div className="relative">
                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">₵</span>
                         <input 
                           type="number" 
                           value={baseRent}
-                          onChange={(e) => setBaseRent(e.target.value)}
+                          onChange={(e) => {
+                            setBaseRent(e.target.value);
+                            if (step2Errors.baseRent) setStep2Errors(prev => ({ ...prev, baseRent: '' }));
+                          }}
                           placeholder="0.00" 
-                          className="w-full bg-surface-primary border border-gray-200 rounded-sm pl-10 pr-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
+                          className={`w-full bg-surface-primary border rounded-sm pl-10 pr-4 py-3 text-navy-base outline-none transition-colors ${
+                            step2Errors.baseRent ? 'border-red-500 bg-red-50/20' : 'border-gray-200 focus:border-navy-light'
+                          }`}
                         />
                       </div>
+                      {step2Errors.baseRent && <p className="text-xs text-red-500 font-semibold mt-1">{step2Errors.baseRent}</p>}
                     </div>
+
+                    {/* Service Charge */}
                     <div>
-                      <label className="block text-sm font-bold text-navy-base mb-2">Recurring Service Charge (GHS) per month</label>
+                      <label className="block text-sm font-bold text-navy-base mb-2">Recurring Service Charge (GHS) per month <span className="text-red-500">*</span></label>
                       <div className="relative">
                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">₵</span>
                         <input 
                           type="number" 
                           value={serviceCharge}
-                          onChange={(e) => setServiceCharge(e.target.value)}
+                          onChange={(e) => {
+                            setServiceCharge(e.target.value);
+                            if (step2Errors.serviceCharge) setStep2Errors(prev => ({ ...prev, serviceCharge: '' }));
+                          }}
                           placeholder="0.00" 
-                          className="w-full bg-surface-primary border border-gray-200 rounded-sm pl-10 pr-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
+                          className={`w-full bg-surface-primary border rounded-sm pl-10 pr-4 py-3 text-navy-base outline-none transition-colors ${
+                            step2Errors.serviceCharge ? 'border-red-500 bg-red-50/20' : 'border-gray-200 focus:border-navy-light'
+                          }`}
                         />
                       </div>
-                      <p className="text-xs text-gray-400 mt-1">Enter 0 if inclusive or none.</p>
+                      {step2Errors.serviceCharge 
+                        ? <p className="text-xs text-red-500 font-semibold mt-1">{step2Errors.serviceCharge}</p>
+                        : <p className="text-xs text-gray-400 mt-1">Enter 0 if inclusive or none.</p>
+                      }
                     </div>
+
+                    {/* Advance Period */}
                     <div>
-                      <label className="block text-sm font-bold text-navy-base mb-2">Advance Period</label>
+                      <label className="block text-sm font-bold text-navy-base mb-2">Advance Period <span className="text-red-500">*</span></label>
                       <div className={`grid gap-4 ${advancePeriod === 'Custom...' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
                         <select 
                           value={advancePeriod}
-                          onChange={(e) => { setAdvancePeriod(e.target.value); if (e.target.value !== 'Custom...') setCustomMonths(0); }}
-                          className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
+                          onChange={(e) => {
+                            setAdvancePeriod(e.target.value);
+                            if (e.target.value !== 'Custom...') setCustomMonths(0);
+                            if (step2Errors.advancePeriod) setStep2Errors(prev => ({ ...prev, advancePeriod: '' }));
+                          }}
+                          className={`w-full bg-surface-primary border rounded-sm px-4 py-3 text-navy-base outline-none transition-colors ${
+                            step2Errors.advancePeriod ? 'border-red-500 bg-red-50/20' : 'border-gray-200 focus:border-navy-light'
+                          }`}
                         >
                           <option value="">Select Advance Period...</option>
                           <option value="None">None</option>
@@ -651,49 +754,74 @@ export default function PostSpaceWizard() {
                               min={1}
                               max={120}
                               value={customMonths || ''}
-                              onChange={(e) => setCustomMonths(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                              onChange={(e) => {
+                                setCustomMonths(Math.max(0, parseInt(e.target.value, 10) || 0));
+                                if (step2Errors.advancePeriod) setStep2Errors(prev => ({ ...prev, advancePeriod: '' }));
+                              }}
                               placeholder="e.g. 18"
-                              className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
+                              className={`w-full bg-surface-primary border rounded-sm px-4 py-3 text-navy-base outline-none transition-colors ${
+                                step2Errors.advancePeriod ? 'border-red-500 bg-red-50/20' : 'border-gray-200 focus:border-navy-light'
+                              }`}
                             />
                             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">months</span>
                           </div>
                         )}
                       </div>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {advancePeriod === 'Custom...' && customMonths > 0
-                          ? `Will be saved as: ${getAdvanceLabel(customMonths)}`
-                          : 'Select the standard rental advance duration required.'}
-                      </p>
+                      {step2Errors.advancePeriod 
+                        ? <p className="text-xs text-red-500 font-semibold mt-1">{step2Errors.advancePeriod}</p>
+                        : <p className="text-xs text-gray-400 mt-1">
+                            {advancePeriod === 'Custom...' && customMonths > 0
+                              ? `Will be saved as: ${getAdvanceLabel(customMonths)}`
+                              : 'Select the standard rental advance duration required.'}
+                          </p>
+                      }
                     </div>
                   </>
                 ) : (
                   <>
+                    {/* Outright Price */}
                     <div>
-                      <label className="block text-sm font-bold text-navy-base mb-2">Outright Total Price (GHS)</label>
+                      <label className="block text-sm font-bold text-navy-base mb-2">Outright Total Price (GHS) <span className="text-red-500">*</span></label>
                       <div className="relative">
                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">₵</span>
                         <input 
                           type="number" 
                           value={outrightPrice}
-                          onChange={(e) => setOutrightPrice(e.target.value)}
+                          onChange={(e) => {
+                            setOutrightPrice(e.target.value);
+                            if (step2Errors.outrightPrice) setStep2Errors(prev => ({ ...prev, outrightPrice: '' }));
+                          }}
                           placeholder="0.00" 
-                          className="w-full bg-surface-primary border border-gray-200 rounded-sm pl-10 pr-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
+                          className={`w-full bg-surface-primary border rounded-sm pl-10 pr-4 py-3 text-navy-base outline-none transition-colors ${
+                            step2Errors.outrightPrice ? 'border-red-500 bg-red-50/20' : 'border-gray-200 focus:border-navy-light'
+                          }`}
                         />
                       </div>
+                      {step2Errors.outrightPrice && <p className="text-xs text-red-500 font-semibold mt-1">{step2Errors.outrightPrice}</p>}
                     </div>
+
+                    {/* Legal Status */}
                     <div>
-                      <label className="block text-sm font-bold text-navy-base mb-2">Legal Status</label>
+                      <label className="block text-sm font-bold text-navy-base mb-2">Legal Status <span className="text-red-500">*</span></label>
                       <select 
                         value={legalStatus}
-                        onChange={(e) => setLegalStatus(e.target.value)}
-                        className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
+                        onChange={(e) => {
+                          setLegalStatus(e.target.value);
+                          if (step2Errors.legalStatus) setStep2Errors(prev => ({ ...prev, legalStatus: '' }));
+                        }}
+                        className={`w-full bg-surface-primary border rounded-sm px-4 py-3 text-navy-base outline-none transition-colors ${
+                          step2Errors.legalStatus ? 'border-red-500 bg-red-50/20' : 'border-gray-200 focus:border-navy-light'
+                        }`}
                       >
                         <option value="">Select Legal Status...</option>
-                        <option value="titled">Titled & Registered</option>
+                        <option value="titled">Titled &amp; Registered</option>
                         <option value="indenture">Indenture Only</option>
                         <option value="unregistered">Unregistered</option>
                       </select>
-                      <p className="text-xs text-gray-400 mt-1">Only &apos;Titled &amp; Registered&apos; properties receive the Verified Title Badge.</p>
+                      {step2Errors.legalStatus
+                        ? <p className="text-xs text-red-500 font-semibold mt-1">{step2Errors.legalStatus}</p>
+                        : <p className="text-xs text-gray-400 mt-1">Only &apos;Titled &amp; Registered&apos; properties receive the Verified Title Badge.</p>
+                      }
                     </div>
                   </>
                 )}
@@ -722,7 +850,7 @@ export default function PostSpaceWizard() {
                 {posterRole === 'agent' && (
                   <div className="pt-4 border-t border-gray-100">
                     <label className="block text-sm font-bold text-navy-base mb-2">
-                      Agency Commission (%)
+                      Agency Commission (%) <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                       <input
@@ -731,15 +859,21 @@ export default function PostSpaceWizard() {
                         max={100}
                         step={0.5}
                         value={agencyCommission}
-                        onChange={(e) => setAgencyCommission(e.target.value)}
+                        onChange={(e) => {
+                          setAgencyCommission(e.target.value);
+                          if (step2Errors.agencyCommission) setStep2Errors(prev => ({ ...prev, agencyCommission: '' }));
+                        }}
                         placeholder="e.g. 5 for 5%"
-                        className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
+                        className={`w-full bg-surface-primary border rounded-sm px-4 py-3 text-navy-base outline-none transition-colors ${
+                          step2Errors.agencyCommission ? 'border-red-500 bg-red-50/20' : 'border-gray-200 focus:border-navy-light'
+                        }`}
                       />
                       <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-semibold">%</span>
                     </div>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Leave blank to keep undisclosed.
-                    </p>
+                    {step2Errors.agencyCommission
+                      ? <p className="text-xs text-red-500 font-semibold mt-1">{step2Errors.agencyCommission}</p>
+                      : <p className="text-xs text-gray-400 mt-1">Required when listing as an Agent.</p>
+                    }
                   </div>
                 )}
               </div>
@@ -850,11 +984,16 @@ export default function PostSpaceWizard() {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
-                      <label className="block text-sm font-bold text-navy-base mb-2">Bedrooms</label>
+                      <label className="block text-sm font-bold text-navy-base mb-2">Bedrooms <span className="text-red-500">*</span></label>
                       <select 
                         value={bedrooms} 
-                        onChange={(e) => setBedrooms(e.target.value)} 
-                        className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
+                        onChange={(e) => {
+                          setBedrooms(e.target.value);
+                          if (step3Errors.bedrooms) setStep3Errors(prev => ({ ...prev, bedrooms: '' }));
+                        }}
+                        className={`w-full bg-surface-primary border rounded-sm px-4 py-3 text-navy-base outline-none transition-colors ${
+                          step3Errors.bedrooms ? 'border-red-500 bg-red-50/20' : 'border-gray-200 focus:border-navy-light'
+                        }`}
                       >
                         <option value="">Select...</option>
                         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
@@ -862,20 +1001,28 @@ export default function PostSpaceWizard() {
                         ))}
                         <option value="10+">10+</option>
                       </select>
+                      {step3Errors.bedrooms && <p className="text-xs text-red-500 font-semibold mt-1">{step3Errors.bedrooms}</p>}
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-navy-base mb-2">Bathrooms</label>
+                      <label className="block text-sm font-bold text-navy-base mb-2">Bathrooms <span className="text-red-500">*</span></label>
                       <select 
                         value={bathrooms} 
-                        onChange={(e) => setBathrooms(e.target.value)} 
-                        className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
+                        onChange={(e) => {
+                          setBathrooms(e.target.value);
+                          if (step3Errors.bathrooms) setStep3Errors(prev => ({ ...prev, bathrooms: '' }));
+                        }}
+                        className={`w-full bg-surface-primary border rounded-sm px-4 py-3 text-navy-base outline-none transition-colors ${
+                          step3Errors.bathrooms ? 'border-red-500 bg-red-50/20' : 'border-gray-200 focus:border-navy-light'
+                        }`}
                       >
                         <option value="">Select...</option>
                         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
                           <option key={n} value={n}>{n}</option>
                         ))}
                         <option value="10+">10+</option>
+                        <option value="Shared">Shared Bathroom</option>
                       </select>
+                      {step3Errors.bathrooms && <p className="text-xs text-red-500 font-semibold mt-1">{step3Errors.bathrooms}</p>}
                     </div>
                     <div>
                       <label className="block text-sm font-bold text-navy-base mb-2">Property Size / Area</label>
@@ -902,17 +1049,23 @@ export default function PostSpaceWizard() {
                       </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-navy-base mb-2">Furnishing Status</label>
+                      <label className="block text-sm font-bold text-navy-base mb-2">Furnishing Status <span className="text-red-500">*</span></label>
                       <select 
                         value={furnishingStatus} 
-                        onChange={(e) => setFurnishingStatus(e.target.value)}
-                        className="w-full bg-surface-primary border border-gray-200 rounded-sm px-4 py-3 text-navy-base outline-none focus:border-navy-light transition-colors"
+                        onChange={(e) => {
+                          setFurnishingStatus(e.target.value);
+                          if (step3Errors.furnishingStatus) setStep3Errors(prev => ({ ...prev, furnishingStatus: '' }));
+                        }}
+                        className={`w-full bg-surface-primary border rounded-sm px-4 py-3 text-navy-base outline-none transition-colors ${
+                          step3Errors.furnishingStatus ? 'border-red-500 bg-red-50/20' : 'border-gray-200 focus:border-navy-light'
+                        }`}
                       >
                         <option value="">Select...</option>
                         <option value="Unfurnished">Unfurnished</option>
                         <option value="Semi-Furnished">Semi-Furnished</option>
                         <option value="Fully Furnished">Fully Furnished</option>
                       </select>
+                      {step3Errors.furnishingStatus && <p className="text-xs text-red-500 font-semibold mt-1">{step3Errors.furnishingStatus}</p>}
                     </div>
                   </div>
                 )}
@@ -1014,16 +1167,19 @@ export default function PostSpaceWizard() {
 
                 {/* Property Images Dropzone */}
                 <div>
-                  <h3 className="text-sm font-bold text-navy-base mb-4">Property Images</h3>
+                  <h3 className="text-sm font-bold text-navy-base mb-4">Property Images <span className="text-red-500">*</span></h3>
+                  {step3Errors.images && <p className="text-xs text-red-500 font-semibold mb-2">{step3Errors.images}</p>}
                   <div
                     onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                     onDragLeave={() => setIsDragging(false)}
-                    onDrop={(e) => { e.preventDefault(); setIsDragging(false); handleFilesSelected(e.dataTransfer.files); }}
+                    onDrop={(e) => { e.preventDefault(); setIsDragging(false); handleFilesSelected(e.dataTransfer.files); if (step3Errors.images) setStep3Errors(prev => ({ ...prev, images: '' })); }}
                     onClick={() => fileInputRef.current?.click()}
                     className={`relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-200 ${
                       isDragging
                         ? 'border-navy-base bg-navy-base/5'
-                        : 'border-gray-300 bg-surface-primary hover:border-navy-light hover:bg-slate-50'
+                        : step3Errors.images
+                          ? 'border-red-400 bg-red-50/10 hover:border-red-400'
+                          : 'border-gray-300 bg-surface-primary hover:border-navy-light hover:bg-slate-50'
                     }`}
                   >
                     <input
@@ -1031,7 +1187,10 @@ export default function PostSpaceWizard() {
                       type="file"
                       accept="image/*"
                       multiple
-                      onChange={(e) => handleFilesSelected(e.target.files)}
+                      onChange={(e) => {
+                        handleFilesSelected(e.target.files);
+                        if (step3Errors.images) setStep3Errors(prev => ({ ...prev, images: '' }));
+                      }}
                       className="hidden"
                     />
                     <div className="flex flex-col items-center gap-3">
@@ -1167,10 +1326,12 @@ export default function PostSpaceWizard() {
           
           <button 
             onClick={() => {
-              if (step < 3) {
-                nextStep();
+              if (step === 1) {
+                if (validateStep1()) nextStep();
+              } else if (step === 2) {
+                if (validateStep2()) nextStep();
               } else {
-                handleSubmit();
+                if (validateStep3()) handleSubmit();
               }
             }}
             disabled={isSubmitting}

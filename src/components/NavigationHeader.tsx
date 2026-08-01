@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
 import { useCurrency } from '@/context/CurrencyContext';
-import { Heart } from "lucide-react";
+import { Heart, ChevronDown } from "lucide-react";
 
 export default function NavigationHeader() {
   const router = useRouter();
@@ -15,13 +15,32 @@ export default function NavigationHeader() {
 
   const supabase = useMemo(() => createClient(), []);
   const [session, setSession] = useState<Session | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      if (session?.user?.id) {
+        supabase
+          .from('profiles')
+          .select('avatar_url')
+          .eq('id', session.user.id)
+          .single()
+          .then(({ data }) => setAvatarUrl(data?.avatar_url || null));
+      }
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      if (session?.user?.id) {
+        supabase
+          .from('profiles')
+          .select('avatar_url')
+          .eq('id', session.user.id)
+          .single()
+          .then(({ data }) => setAvatarUrl(data?.avatar_url || null));
+      } else {
+        setAvatarUrl(null);
+      }
     });
     return () => {
       subscription?.unsubscribe?.();
@@ -29,6 +48,7 @@ export default function NavigationHeader() {
   }, [supabase]);
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobilePropertiesOpen, setIsMobilePropertiesOpen] = useState(false);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-slate-50/95 backdrop-blur-sm border-b border-slate-200 shadow-sm">
@@ -43,18 +63,42 @@ export default function NavigationHeader() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex space-x-8">
-            <Link
-              href="/rentals"
-              className={`font-medium text-gray-700 hover:text-navy-base transition-colors ${pathname === "/rentals" ? "border-b-2 border-accent-gold" : ""}`}
-            >
-              Rentals
-            </Link>
-            <Link
-              href="/sales"
-              className={`font-medium text-gray-700 hover:text-navy-base transition-colors ${pathname === "/sales" ? "border-b-2 border-accent-gold" : ""}`}
-            >
-              Sales
-            </Link>
+            {/* Properties Dropdown */}
+            <div className="relative group">
+              <button
+                type="button"
+                className={`flex items-center gap-1 font-medium text-gray-700 hover:text-navy-base transition-colors cursor-pointer ${
+                  pathname === "/rentals" || pathname === "/sales" ? "border-b-2 border-accent-gold" : ""
+                }`}
+              >
+                Properties
+                <ChevronDown className="w-4 h-4 transition-transform group-hover:rotate-180" />
+              </button>
+              <div className="absolute left-0 top-full pt-2 w-44 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top z-50">
+                <div className="bg-white border border-slate-200 rounded-lg shadow-lg py-1 overflow-hidden">
+                  <Link
+                    href="/rentals"
+                    className={`block px-4 py-2.5 text-sm font-medium transition-colors ${
+                      pathname === "/rentals"
+                        ? "bg-slate-100 text-navy-base"
+                        : "text-slate-700 hover:bg-slate-100 hover:text-navy-base"
+                    }`}
+                  >
+                    Rentals
+                  </Link>
+                  <Link
+                    href="/sales"
+                    className={`block px-4 py-2.5 text-sm font-medium transition-colors ${
+                      pathname === "/sales"
+                        ? "bg-slate-100 text-navy-base"
+                        : "text-slate-700 hover:bg-slate-100 hover:text-navy-base"
+                    }`}
+                  >
+                    Sales
+                  </Link>
+                </div>
+              </div>
+            </div>
             <Link
               href="/requests"
               className={`font-medium text-gray-700 hover:text-navy-base transition-colors ${pathname === "/requests" ? "border-b-2 border-accent-gold" : ""}`}
@@ -88,12 +132,16 @@ export default function NavigationHeader() {
                 <button
                   type="button"
                   onClick={() => router.push('/dashboard')}
-                  className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-slate-300 text-slate-700 hover:border-navy-base hover:text-navy-base bg-white transition-all duration-200"
+                  className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-slate-300 text-slate-700 hover:border-navy-base hover:text-navy-base bg-white transition-all duration-200 overflow-hidden"
                   aria-label="User Menu"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="User Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  )}
                 </button>
                 <div className="absolute right-0 top-full pt-2 w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right z-50">
                   <div className="bg-white border border-slate-200 rounded-lg shadow-lg py-1 overflow-hidden">
@@ -153,12 +201,35 @@ export default function NavigationHeader() {
       {isMobileMenuOpen && (
         <div className="md:hidden bg-slate-50 border-t border-slate-200 shadow-sm">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            <Link href="/rentals" className={`block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-navy-base hover:bg-gray-50 ${pathname === "/rentals" ? "bg-gray-100" : ""}`}>
-              Rentals
-            </Link>
-            <Link href="/sales" className={`block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-navy-base hover:bg-gray-50 ${pathname === "/sales" ? "bg-gray-100" : ""}`}>
-              Sales
-            </Link>
+            {/* Properties Accordion */}
+            <button
+              type="button"
+              onClick={() => setIsMobilePropertiesOpen(!isMobilePropertiesOpen)}
+              className={`flex items-center justify-between w-full px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-navy-base hover:bg-gray-50 ${
+                pathname === "/rentals" || pathname === "/sales" ? "bg-gray-100" : ""
+              }`}
+            >
+              Properties
+              <ChevronDown className={`w-4 h-4 transition-transform ${isMobilePropertiesOpen ? "rotate-180" : ""}`} />
+            </button>
+            {isMobilePropertiesOpen && (
+              <div className="pl-4 space-y-1">
+                <Link
+                  href="/rentals"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`block px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-navy-base hover:bg-gray-50 ${pathname === "/rentals" ? "bg-gray-100 text-navy-base" : ""}`}
+                >
+                  Rentals
+                </Link>
+                <Link
+                  href="/sales"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`block px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-navy-base hover:bg-gray-50 ${pathname === "/sales" ? "bg-gray-100 text-navy-base" : ""}`}
+                >
+                  Sales
+                </Link>
+              </div>
+            )}
             <Link href="/requests" className={`block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-navy-base hover:bg-gray-50 ${pathname === "/requests" ? "bg-gray-100" : ""}`}>
               Notice Board
             </Link>

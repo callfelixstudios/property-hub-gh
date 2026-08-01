@@ -92,6 +92,13 @@ export default function DashboardTabs({
 
   const [activeTab, setActiveTab] = useState<'overview' | 'listings' | 'archived' | 'safemove' | 'profile' | 'space-requests' | 'matching-requests'>(tabParam || 'overview');
 
+  // Keep activeTab in sync with URL search params (client-side navigation)
+  useEffect(() => {
+    if (tabParam && tabParam !== activeTab) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
+
   const [period, setPeriod] = useState<TimeframePeriod>(timeframeParam || 'all');
   const [isAnalyticsPending, startAnalyticsTransition] = useTransition();
   const [analyticsData, setAnalyticsData] = useState(() => {
