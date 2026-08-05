@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Image from "next/image";
 import Link from "next/link";
 import { createClient } from '@/utils/supabase/server';
@@ -8,6 +9,21 @@ import { generateListingSlug } from '@/utils/slugify';
 import { RESIDENTIAL_CATEGORIES, COMMERCIAL_CATEGORIES } from '@/data/propertyCategories';
 import { normalizeRegionForDb, formatRegionForUi } from '@/utils/regionMapper';
 import { convertFilterPriceToDb } from '@/utils/currency';
+import { JsonLd, getBreadcrumbSchema } from '@/components/seo/JsonLd';
+
+export const metadata: Metadata = {
+  title: 'Houses & Litigation-Free Land for Sale in Ghana | Property Hub GH',
+  description: 'Explore verified land plots, uncompleted structures, and luxury estate homes for sale in East Legon, Cantonments, Kumasi, and across Ghana.',
+  alternates: {
+    canonical: 'https://www.propertyhubgh.com/sales',
+  },
+  openGraph: {
+    title: 'Houses & Litigation-Free Land for Sale in Ghana | Property Hub GH',
+    description: 'Explore verified land plots, uncompleted structures, and luxury estate homes for sale in Ghana.',
+    url: 'https://www.propertyhubgh.com/sales',
+    images: ['https://www.propertyhubgh.com/opengraph-image'],
+  },
+};
 
 // Fetch live sales listings from Supabase
 function formatCategory(cat?: string) {
@@ -166,6 +182,7 @@ export default async function SalesPage(props: { searchParams: Promise<{ [key: s
   const salesListings = await fetchSalesListings(searchParams, displayCurrency);
   return (
     <div className="w-full min-h-screen bg-surface-primary pb-20">
+      <JsonLd data={getBreadcrumbSchema([{ name: 'Home', url: '/' }, { name: 'Sales', url: '/sales' }])} />
       {/* Search Header */}
       <div className="bg-navy-base pt-36 pb-20 md:pt-44 md:pb-28 px-6">
         <div className="max-w-7xl mx-auto">

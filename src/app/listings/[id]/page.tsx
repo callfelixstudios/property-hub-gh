@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from 'next';
 import { createClient } from '@/utils/supabase/server';
@@ -8,8 +7,9 @@ import ReportModal from "@/components/ReportModal";
 import PriceDisplay from "@/components/PriceDisplay";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import SaveListingButton from "@/components/SaveListingButton";
-import UpfrontAdvanceCard from "@/components/UpfrontAdvanceCard";
 import MapLoader from "@/components/MapLoader";
+import { JsonLd, getRealEstateListingSchema, getBreadcrumbSchema } from "@/components/seo/JsonLd";
+
 interface ListingRow {
   id: string;
   poster_id: string;
@@ -98,11 +98,6 @@ const REGION_LABELS: Record<string, string> = {
   western_north:  "Western North Region",
 };
 
-function formatCurrency(amount?: number) {
-  if (!amount && amount !== 0) return '—';
-  return `₵${Number(amount).toLocaleString()}`;
-}
-
 function formatAdvanceDuration(duration?: string | number | null): string {
   if (!duration) return '';
   const normalized = duration.toString().toLowerCase().trim();
@@ -120,14 +115,6 @@ function formatAdvanceDuration(duration?: string | number | null): string {
 }
 
 // ── SVG icon primitives ────────────────────────────────────────────────────────
-function IconClock() {
-  return (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  );
-}
 function IconPin() {
   return (
     <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -176,15 +163,31 @@ export async function generateMetadata({
 
   const title = `${formatCategory(listing.category || '')} in ${listing.neighborhood || formatRegion(listing.region) || 'Ghana'} | Property Hub GH`;
   const description = `${formatCategory(listing.category || '')} for ${listing.transaction_type === 'rent' ? 'Rent' : 'Sale'} - ₵${(listing.base_rent || listing.outright_price || 0).toLocaleString()}. ${listing.description?.substring(0, 150) || ''}...`;
-  const imageUrl = listing.image_url || (listing.media_urls && listing.media_urls[0]);
+  const imageUrl = listing.image_url || (listing.media_urls && listing.media_urls[0]) || 'https://www.propertyhubgh.com/opengraph-image';
+  const pageUrl = `https://www.propertyhubgh.com/listings/${slug}`;
 
   return {
     title,
     description,
+    alternates: {
+      canonical: pageUrl,
+    },
     openGraph: {
       title,
       description,
-      images: imageUrl ? [imageUrl] : [],
+      url: pageUrl,
+      images: [
+        {
+          url: imageUrl,
+          alt: title,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [imageUrl],
     },
   };
 }
@@ -258,12 +261,39 @@ export default async function ListingDetailPage({
   const isRent = row.transaction_type === 'rent';
   const primaryPrice = isRent ? row.base_rent : row.outright_price;
 
-  // Determine if this is a land/commercial type
-  const isLand = ['Plot of Land', 'Farm House'].some(t => row.category.toLowerCase().includes(t.toLowerCase()));
-  const isCommercial = row.category.toLowerCase().includes('commercial');
+  // Determine if this is a land type
+  const isLand = ['Plot of Land', 'Farm House'].some(t => (row.category || '').toLowerCase().includes(t.toLowerCase()));
+
+  const listingPageUrl = `https://www.propertyhubgh.com/listings/${slug}`;
+
+  const listingSchema = getRealEstateListingSchema({
+    id: row.id,
+    title: displayTitle,
+    description: row.description,
+    category: row.category,
+    transactionType: row.transaction_type,
+    price: primaryPrice || 0,
+    currency: row.currency || 'GHS',
+    neighborhood: row.neighborhood,
+    region: row.region ? (REGION_LABELS[row.region] || formatRegion(row.region)) : undefined,
+    images: allImages,
+    bedrooms: row.bedrooms,
+    bathrooms: row.bathrooms,
+    squareMeters: row.square_meters,
+    url: listingPageUrl,
+    datePosted: row.created_at,
+  });
+
+  const breadcrumbSchema = getBreadcrumbSchema([
+    { name: 'Home', url: '/' },
+    { name: isRent ? 'Rentals' : 'Sales', url: isRent ? '/rentals' : '/sales' },
+    { name: displayTitle, url: listingPageUrl },
+  ]);
 
   return (
     <div className="w-full min-h-screen bg-[#f8f9fb]">
+      <JsonLd data={listingSchema} />
+      <JsonLd data={breadcrumbSchema} />
 
       {/* ── Breadcrumb Hero ─────────────────────────────────────────────── */}
       <div className="bg-navy-base pt-28 pb-8 px-4 mb-8">

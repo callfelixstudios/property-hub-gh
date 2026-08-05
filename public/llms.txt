@@ -1,0 +1,22 @@
+# Property Hub GH (https://www.propertyhubgh.com)
+
+> Property Hub GH is Ghana's primary property directory and real estate marketplace for renting apartments, rooms, and student hostels, as well as buying litigation-free plots of land and residential houses.
+
+## Core Services & Capabilities
+
+- **Rentals Directory** (/rentals): Verified listing search for student hostels, single rooms, chamber & halls (self-contained), and multi-bedroom luxury apartments across Accra, Kumasi, Tema, and all 16 regions of Ghana.
+- **Sales & Land Directory** (/sales): Verified directory of litigation-free plots of land, uncompleted structures, and complete residential estate properties for sale in Ghana.
+- **SafeMove Verification & Escrow** (/safemove): Fraud protection service offering physical property inspection, title verification, and rent advance escrow hold.
+- **Property Requests** (/requests): Direct buyer & tenant request board enabling listers and agents to match specific property requests.
+
+## Popular Locations Covered
+
+- Greater Accra: Cantonments, East Legon, Labone, Spintex, Airport Residential, Osu, Airport Hills, Roman Ridge, Dzorwulu, Abelemkpe, Dansoman, Madina, Adenta.
+- Ashanti Region: Ahodwo, Kumasi Central, Ridge, Asokwa, Nhyiaeso.
+- Central & Western Regions: Cape Coast, Takoradi, Sekondi.
+
+## Key Contacts & Platform Specs
+
+- Domain: https://www.propertyhubgh.com
+- Target Market: Ghana (Renters, Buyers, Diaspora Investors, Agents, Developers)
+- Escrow Protection: SafeMove (https://www.propertyhubgh.com/safemove)

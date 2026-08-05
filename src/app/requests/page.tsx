@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import React from 'react';
 import { createClient } from '@/utils/supabase/server';
 import NavigationHeader from '@/components/NavigationHeader';
@@ -6,8 +7,23 @@ import { MapPin, Wallet, Calendar, Search } from 'lucide-react';
 import Link from 'next/link';
 import RequestsBudget from '@/components/RequestsBudget';
 import SeekerCardActions from '@/components/requests/SeekerCardActions';
+import { JsonLd, getBreadcrumbSchema } from '@/components/seo/JsonLd';
 
 export const revalidate = 0; // Disable caching to always show latest requests
+
+export const metadata: Metadata = {
+  title: 'Property Requests & Tenant Space Finder | Property Hub GH',
+  description: 'Browse active property requests from tenants and buyers seeking apartments, single rooms, hostels, or land across Accra and Ghana.',
+  alternates: {
+    canonical: 'https://www.propertyhubgh.com/requests',
+  },
+  openGraph: {
+    title: 'Property Requests & Tenant Space Finder | Property Hub GH',
+    description: 'Browse active tenant property requests across Ghana.',
+    url: 'https://www.propertyhubgh.com/requests',
+    images: ['https://www.propertyhubgh.com/opengraph-image'],
+  },
+};
 
 export default async function RequestsPage() {
   const supabase = await createClient();
@@ -63,6 +79,7 @@ export default async function RequestsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans pt-32">
+      <JsonLd data={getBreadcrumbSchema([{ name: 'Home', url: '/' }, { name: 'Property Requests', url: '/requests' }])} />
       <NavigationHeader />
 
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 py-8">

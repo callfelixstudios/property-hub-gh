@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Image from "next/image";
 import Link from "next/link";
 import { createClient } from '@/utils/supabase/server';
@@ -8,6 +9,21 @@ import { generateListingSlug } from '@/utils/slugify';
 import { RESIDENTIAL_CATEGORIES, COMMERCIAL_CATEGORIES } from '@/data/propertyCategories';
 import { normalizeRegionForDb, formatRegionForUi } from '@/utils/regionMapper';
 import { convertFilterPriceToDb } from '@/utils/currency';
+import { JsonLd, getBreadcrumbSchema } from '@/components/seo/JsonLd';
+
+export const metadata: Metadata = {
+  title: 'Apartments & Rooms for Rent in Ghana | Property Hub GH',
+  description: 'Browse verified apartments, student hostels, single rooms, and chamber & halls for rent across Accra, Kumasi, East Legon, Cantonments & all regions of Ghana.',
+  alternates: {
+    canonical: 'https://www.propertyhubgh.com/rentals',
+  },
+  openGraph: {
+    title: 'Apartments & Rooms for Rent in Ghana | Property Hub GH',
+    description: 'Browse verified apartments, student hostels, single rooms, and chamber & halls for rent in Ghana.',
+    url: 'https://www.propertyhubgh.com/rentals',
+    images: ['https://www.propertyhubgh.com/opengraph-image'],
+  },
+};
 
 // Fetch live rental listings from Supabase
 interface Listing {
@@ -190,6 +206,7 @@ export default async function RentalsPage(props: { searchParams: Promise<{ [key:
   const rentalListings = await fetchRentalListings(searchParams, displayCurrency);
   return (
     <div className="w-full min-h-screen bg-surface-primary pb-20">
+      <JsonLd data={getBreadcrumbSchema([{ name: 'Home', url: '/' }, { name: 'Rentals', url: '/rentals' }])} />
       {/* Search Header */}
       <div className="bg-navy-base pt-36 pb-20 md:pt-44 md:pb-28 px-6">
         <div className="max-w-7xl mx-auto">

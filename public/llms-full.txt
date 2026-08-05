@@ -1,0 +1,41 @@
+# Property Hub GH — Complete AI Knowledge Base
+
+## Executive Overview
+Property Hub GH (https://www.propertyhubgh.com) is a unified, high-performance property directory built specifically for the Ghanaian real estate market. It solves systemic friction points in Ghana rental search (such as high 1-2 year upfront advance demands, unverified agents, fake listings, and land litigation) through verified listings, transparent utility filters, zero viewing fee trust Badges, and SafeMove escrow.
+
+## Core Features & Real Estate Directory Infrastructure
+
+### 1. Rental Directory (/rentals)
+The rental directory caters to students, young professionals, families, and expatriates in Ghana.
+- **Categories**: Student Hostels, Single Rooms, Chamber & Hall (Self-Contained), 1-4+ Bedroom Apartments, Luxury Villas.
+- **Ghana Utility Filters**:
+  - Generator / Power Backup (Essential for load shedding protection)
+  - Solar System / Solar-ready infrastructure
+  - Borehole Water Treatment System (Independent water supply)
+  - Flood Resilience (Elevated terrain & protected drainage)
+  - Prepaid Electricity Metering (Independent ECG meters)
+
+### 2. Purchase & Land Directory (/sales)
+The sales directory connects diaspora buyers, private investors, and families with verified real estate assets in Ghana.
+- **Categories**: Litigation-Free Land Plots, Uncompleted Buildings, Complete Houses, Gated Estate Homes, Commercial Spaces.
+- **Legal & Title Transparency**: Land registration status, site plan verification, indenture documentation, and owner/developer verification.
+
+### 3. SafeMove Protection & Escrow Protocol (/safemove)
+SafeMove eliminates real estate fraud in Ghana by acting as a trusted intermediary:
+1. **Physical Inspection**: Independent verification of property existence, physical condition, and lister identity.
+2. **Advance Hold**: Tenant rent advance is held securely until key handover and verified physical move-in.
+3. **Litigation Guarantee**: Land title verification before funds are released for property sales.
+
+### 4. Direct WhatsApp Agent Contact
+Property Hub GH enables direct, 1-click WhatsApp connection between verified buyers/renters and property listers/agents, eliminating middleman scams.
+
+## Frequently Asked Questions (FAQ)
+
+### How do I find apartments for rent in East Legon or Cantonments?
+Visit https://www.propertyhubgh.com/rentals and filter by neighborhood (East Legon, Cantonments, Labone, Spintex) and category (Apartment, Chamber & Hall).
+
+### How does Property Hub GH protect renters from fake agents?
+Through Verified Agent Badges, Zero Viewing Fee badges, and SafeMove Escrow hold at https://www.propertyhubgh.com/safemove.
+
+### Can diaspora buyers purchase land in Ghana safely through Property Hub GH?
+Yes. Listings marked with SafeMove or Verified Developer badges undergo background checks, title clearance, and site plan verification.

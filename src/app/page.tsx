@@ -1,8 +1,23 @@
+import type { Metadata } from 'next';
 import SearchWidget from "@/components/SearchWidget";
 import PropertyCard from "@/components/PropertyCard";
 import Footer from "@/components/Footer";
 import Link from "next/link";
 import Image from "next/image";
+
+export const metadata: Metadata = {
+  title: 'Property Hub GH | Rent & Buy Properties in Ghana',
+  description: 'Find your next space in Ghana. Search verified rentals, student hostels, apartments, houses for sale, and litigation-free plots of land.',
+  alternates: {
+    canonical: 'https://www.propertyhubgh.com',
+  },
+  openGraph: {
+    title: 'Property Hub GH | Rent & Buy Properties in Ghana',
+    description: 'Find your next space in Ghana. Search verified rentals, student hostels, apartments, houses for sale, and litigation-free plots of land.',
+    url: 'https://www.propertyhubgh.com',
+    images: ['https://www.propertyhubgh.com/opengraph-image'],
+  },
+};
 
 const featuredListings = [
   {
