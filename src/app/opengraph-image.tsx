@@ -1,7 +1,5 @@
 import { ImageResponse } from 'next/og';
 
-export const runtime = 'edge';
-
 export const alt = 'Property Hub GH — Rent & Buy Properties in Ghana';
 export const size = {
   width: 1200,
