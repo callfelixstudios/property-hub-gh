@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation';
 export default async function AdminListingsPage({
   searchParams,
 }: {
-  searchParams: { tab?: string };
+  searchParams: Promise<{ tab?: string }>;
 }) {
   const supabase = await createClient();
 
@@ -14,7 +14,8 @@ export default async function AdminListingsPage({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const currentTab = searchParams.tab || 'pending';
+  const { tab } = await searchParams;
+  const currentTab = tab || 'pending';
 
   // 1. Fetch KPI Counts
   const { count: pendingCount } = await supabase

@@ -1,6 +1,6 @@
 'use client';
 
-import { useTransition, useEffect, useState } from 'react';
+import { startTransition, useState } from 'react';
 import { trackWhatsAppClick } from '@/app/actions/leads';
 import { useCurrency } from '@/context/CurrencyContext';
 

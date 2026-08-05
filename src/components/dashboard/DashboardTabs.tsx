@@ -90,14 +90,9 @@ export default function DashboardTabs({
 
   const supabase = createClient();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'listings' | 'archived' | 'safemove' | 'profile' | 'space-requests' | 'matching-requests'>(tabParam || 'overview');
-
-  // Keep activeTab in sync with URL search params (client-side navigation)
-  useEffect(() => {
-    if (tabParam && tabParam !== activeTab) {
-      setActiveTab(tabParam);
-    }
-  }, [tabParam]);
+  const [internalActiveTab, setInternalActiveTab] = useState<'overview' | 'listings' | 'archived' | 'safemove' | 'profile' | 'space-requests' | 'matching-requests'>('overview');
+  const activeTab = tabParam || internalActiveTab;
+  const setActiveTab = setInternalActiveTab;
 
   const [period, setPeriod] = useState<TimeframePeriod>(timeframeParam || 'all');
   const [isAnalyticsPending, startAnalyticsTransition] = useTransition();

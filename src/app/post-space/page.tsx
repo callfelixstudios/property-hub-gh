@@ -267,6 +267,11 @@ export default function PostSpaceWizard() {
       const combined = [...imageFiles, ...compressed].slice(0, 6);
       setImageFiles(combined);
       setImagePreviews(combined.map(f => URL.createObjectURL(f)));
+      if (imageFiles.length + compressed.length > 6) {
+        setStep3Errors(prev => ({ ...prev, images: 'Maximum of 6 photos allowed. Extra photos were not added.' }));
+      } else if (step3Errors.images) {
+        setStep3Errors(prev => ({ ...prev, images: '' }));
+      }
     } finally {
       setIsCompressing(false);
     }
