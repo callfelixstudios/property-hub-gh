@@ -7,6 +7,7 @@ import { useRouter, usePathname } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
 import { useCurrency } from '@/context/CurrencyContext';
 import { Heart, ChevronDown } from "lucide-react";
+import { AuthModal } from "@/components/auth/AuthModal";
 
 export default function NavigationHeader() {
   const router = useRouter();
@@ -50,8 +51,28 @@ export default function NavigationHeader() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobilePropertiesOpen, setIsMobilePropertiesOpen] = useState(false);
 
+  // Auth Modal States
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalDefaultStep, setAuthModalDefaultStep] = useState<'email_login' | 'email_register'>('email_login');
+  const [authModalRedirect, setAuthModalRedirect] = useState<string | undefined>(undefined);
+
+  const openLoginModal = (redirectUrl?: string) => {
+    setAuthModalDefaultStep('email_login');
+    setAuthModalRedirect(redirectUrl);
+    setIsAuthModalOpen(true);
+    setIsMobileMenuOpen(false);
+  };
+
+  const openRegisterModal = (redirectUrl?: string) => {
+    setAuthModalDefaultStep('email_register');
+    setAuthModalRedirect(redirectUrl);
+    setIsAuthModalOpen(true);
+    setIsMobileMenuOpen(false);
+  };
+
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-slate-50/95 backdrop-blur-sm border-b border-slate-200 shadow-sm">
+    <>
+      <header className="fixed top-0 left-0 right-0 z-50 bg-slate-50/95 backdrop-blur-sm border-b border-slate-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -62,7 +83,7 @@ export default function NavigationHeader() {
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex space-x-8">
+          <nav className="hidden xl:flex space-x-8">
             {/* Properties Dropdown */}
             <div className="relative group">
               <button
@@ -119,7 +140,7 @@ export default function NavigationHeader() {
           </nav>
 
           {/* Desktop Auth & CTA */}
-          <div className="hidden md:flex items-center space-x-3">
+          <div className="hidden xl:flex items-center space-x-3">
             <button
               onClick={toggleCurrency}
               className="mr-2 px-3 py-1.5 rounded-full text-xs font-bold border border-gray-200 text-navy-base hover:bg-gray-100 transition-colors"
@@ -157,27 +178,55 @@ export default function NavigationHeader() {
               </div>
             ) : (
               <>
-                <Link href="/login" className="text-sm font-semibold text-slate-700 hover:text-slate-900 transition-colors duration-200">Login</Link>
-                <Link href="/register" className="text-sm font-semibold text-slate-700 hover:text-slate-900 transition-colors duration-200">Register</Link>
+                <button
+                  onClick={() => openLoginModal()}
+                  className="text-sm font-semibold text-slate-700 hover:text-slate-900 transition-colors duration-200 cursor-pointer"
+                >
+                  Login
+                </button>
+                <button
+                  onClick={() => openRegisterModal()}
+                  className="text-sm font-semibold text-slate-700 hover:text-slate-900 transition-colors duration-200 cursor-pointer"
+                >
+                  Register
+                </button>
               </>
             )}
 
-            <Link
-              href={session ? '/request-space' : '/login?next=/request-space&message=Please%20log%20in%20to%20submit%20a%20property%20request.'}
-              className="ml-1 font-bold py-2 px-5 rounded-full transition-all duration-200 border-2 border-emerald-600 text-emerald-700 hover:bg-emerald-50 inline-flex items-center justify-center"
-            >
-              Request a Space
-            </Link>
+            {session ? (
+              <Link
+                href="/request-space"
+                className="ml-1 font-bold py-2 px-5 rounded-full transition-all duration-200 border-2 border-emerald-600 text-emerald-700 hover:bg-emerald-50 inline-flex items-center justify-center"
+              >
+                Request a Space
+              </Link>
+            ) : (
+              <button
+                onClick={() => openLoginModal('/request-space')}
+                className="ml-1 font-bold py-2 px-5 rounded-full transition-all duration-200 border-2 border-emerald-600 text-emerald-700 hover:bg-emerald-50 inline-flex items-center justify-center cursor-pointer"
+              >
+                Request a Space
+              </button>
+            )}
 
-            <Link
-              href={session ? '/post-space' : '/login?next=/post-space&message=Log%20in%20or%20create%20an%20account%20to%20list%20your%20property.'}
-              className="ml-2 bg-accent-gold text-navy-base font-bold py-2 px-5 rounded-full transition-all duration-200 hover:brightness-105 hover:shadow-md inline-flex items-center justify-center"
-            >
-              + Post a Space
-            </Link>
+            {session ? (
+              <Link
+                href="/post-space"
+                className="ml-2 bg-accent-gold text-navy-base font-bold py-2 px-5 rounded-full transition-all duration-200 hover:brightness-105 hover:shadow-md inline-flex items-center justify-center"
+              >
+                + Post a Space
+              </Link>
+            ) : (
+              <button
+                onClick={() => openLoginModal('/post-space')}
+                className="ml-2 bg-accent-gold text-navy-base font-bold py-2 px-5 rounded-full transition-all duration-200 hover:brightness-105 hover:shadow-md inline-flex items-center justify-center cursor-pointer"
+              >
+                + Post a Space
+              </button>
+            )}
           </div>
 
-          <div className="flex items-center md:hidden">
+          <div className="flex items-center xl:hidden">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="focus:outline-none cursor-pointer text-gray-700 transition-colors"
@@ -199,7 +248,7 @@ export default function NavigationHeader() {
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden bg-slate-50 border-t border-slate-200 shadow-sm">
+        <div className="xl:hidden bg-slate-50 border-t border-slate-200 shadow-sm">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
             {/* Properties Accordion */}
             <button
@@ -239,13 +288,22 @@ export default function NavigationHeader() {
             </Link>
 
             {/* Request a Space — auth-gated in mobile */}
-            <Link
-              href={session ? '/request-space' : '/login?next=/request-space&message=Please%20log%20in%20to%20submit%20a%20property%20request.'}
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="block w-full text-left px-3 py-2 rounded-md text-base font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 mt-2"
-            >
-              Request a Space
-            </Link>
+            {session ? (
+              <Link
+                href="/request-space"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block w-full text-left px-3 py-2 rounded-md text-base font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 mt-2"
+              >
+                Request a Space
+              </Link>
+            ) : (
+              <button
+                onClick={() => openLoginModal('/request-space')}
+                className="block w-full text-left px-3 py-2 rounded-md text-base font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 mt-2 cursor-pointer"
+              >
+                Request a Space
+              </button>
+            )}
 
             <div className="px-3 py-2">
               <button
@@ -286,24 +344,53 @@ export default function NavigationHeader() {
               </>
             ) : (
               <>
-                <Link href="/login" className={`block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-navy-base hover:bg-slate-100 ${pathname === "/login" ? "bg-slate-100 text-navy-base font-semibold" : ""}`}>Login</Link>
-                <Link href="/register" className={`block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-navy-base hover:bg-slate-100 ${pathname === "/register" ? "bg-slate-100 text-navy-base font-semibold" : ""}`}>Register</Link>
+                <button
+                  onClick={() => openLoginModal()}
+                  className={`block w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-navy-base hover:bg-slate-100 cursor-pointer`}
+                >
+                  Login
+                </button>
+                <button
+                  onClick={() => openRegisterModal()}
+                  className={`block w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-navy-base hover:bg-slate-100 cursor-pointer`}
+                >
+                  Register
+                </button>
               </>
             )}
 
             {/* Post a Space — auth-gated with ?next= in mobile */}
             <div className="px-3 py-2">
-              <Link
-                href={session ? '/post-space' : '/login?next=/post-space&message=Log%20in%20or%20create%20an%20account%20to%20list%20your%20property.'}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block w-full text-center bg-accent-gold text-navy-base font-bold py-2 px-4 rounded-sm transition-opacity hover:opacity-90"
-              >
-                + Post a Space
-              </Link>
+              {session ? (
+                <Link
+                  href="/post-space"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block w-full text-center bg-accent-gold text-navy-base font-bold py-2 px-4 rounded-sm transition-opacity hover:opacity-90"
+                >
+                  + Post a Space
+                </Link>
+              ) : (
+                <button
+                  onClick={() => openLoginModal('/post-space')}
+                  className="block w-full text-center bg-accent-gold text-navy-base font-bold py-2 px-4 rounded-sm transition-opacity hover:opacity-90 cursor-pointer"
+                >
+                  + Post a Space
+                </button>
+              )}
             </div>
           </div>
         </div>
       )}
+
     </header>
+
+    {/* Auth Modal */}
+    <AuthModal
+      isOpen={isAuthModalOpen}
+      onClose={() => setIsAuthModalOpen(false)}
+      defaultEmailStep={authModalDefaultStep}
+      redirectTo={authModalRedirect}
+    />
+    </>
   );
 }
