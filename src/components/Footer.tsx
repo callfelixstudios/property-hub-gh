@@ -85,9 +85,11 @@ export default function Footer() {
           <p className="text-xs text-gray-500">
             &copy; 2026 Property Hub Ghana. All rights reserved. Built in High-Trust Compliance.
           </p>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center gap-6">
             <Link href="/terms" className="text-xs text-gray-500 hover:text-white transition-colors">Terms of Service</Link>
             <Link href="/privacy" className="text-xs text-gray-500 hover:text-white transition-colors">Privacy Policy</Link>
+            <Link href="/cookie-policy" className="text-xs text-gray-500 hover:text-white transition-colors">Cookie Policy</Link>
+            <Link href="/copyright" className="text-xs text-gray-500 hover:text-white transition-colors">Copyright Policy</Link>
           </div>
         </div>
       </div>
