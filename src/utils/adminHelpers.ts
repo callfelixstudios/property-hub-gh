@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
-import { isAuthorizedAdmin } from '@/utils/adminAuth';
-import { SupabaseClient } from '@supabase/supabase-js';
+import { isPlatformAdmin } from '@/utils/adminAuth';
+import { SupabaseClient, User } from '@supabase/supabase-js';
 
 /**
  * Guards every server action — re-validates admin identity server-side.
@@ -12,8 +12,46 @@ export async function assertAdmin() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user || !isAuthorizedAdmin(user.email)) {
+  if (!isPlatformAdmin(user)) {
     throw new Error('Unauthorized: admin access required');
+  }
+
+  return { supabase, user };
+}
+
+/**
+ * Guards user-facing server actions — verifies an authenticated session and
+ * rejects suspended accounts server-side (defense in depth alongside the
+ * DB trigger that revokes suspended users' refresh tokens).
+ */
+export async function assertActiveUser() {
+  const active = await getActiveUser();
+  if (!active) {
+    throw new Error('Unauthorized: sign-in required');
+  }
+  return active;
+}
+
+/**
+ * Same guard as assertActiveUser but tolerant of guests: returns null when no
+ * session exists (so callers can branch) and still throws for suspended users.
+ */
+export async function getActiveUser(): Promise<{ supabase: SupabaseClient; user: User } | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return null;
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('account_status')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  if (profile?.account_status === 'suspended') {
+    throw new Error('Unauthorized: your account has been suspended.');
   }
 
   return { supabase, user };

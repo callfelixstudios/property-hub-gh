@@ -46,11 +46,18 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
   const { id } = await params;
   const supabase = await createClient();
 
+  const { data: { user } } = await supabase.auth.getUser();
+  const fullColumns = 'id, seeker_name, whatsapp_number, location, property_type, purpose, additional_details, budget, status, created_at';
+  const safeColumns = 'id, seeker_name, location, property_type, purpose, additional_details, budget, status, created_at';
+
   const { data: request, error } = await supabase
     .from('space_requests')
-    .select('*')
+    .select(user ? fullColumns : safeColumns)
     .eq('id', id)
-    .single();
+    .single() as unknown as {
+    data: SpaceRequest | null;
+    error: { message: string } | null;
+  };
 
   if (error || !request || request.status !== 'active') {
     notFound();

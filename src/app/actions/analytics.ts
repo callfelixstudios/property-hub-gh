@@ -1,7 +1,7 @@
 'use server';
 
-import { createClient } from '@/utils/supabase/server';
 import { TimeframePeriod } from '@/components/dashboard/TimeframeSelector';
+import { assertActiveUser } from '@/utils/adminHelpers';
 
 function getDateThreshold(period: TimeframePeriod): string | null {
   const now = new Date();
@@ -18,13 +18,20 @@ function getDateThreshold(period: TimeframePeriod): string | null {
 }
 
 export async function fetchTimeframeAnalytics(posterId: string, period: TimeframePeriod) {
-  const supabase = await createClient();
+  const { supabase, user } = await assertActiveUser();
+
+  // IDOR guard: posters may only view analytics for their own listings. The id is
+  // resolved from the authenticated session and never trusted from the client.
+  if (posterId !== user.id) {
+    throw new Error('Forbidden: you can only view analytics for your own listings.');
+  }
+
   const dateThreshold = getDateThreshold(period);
 
   const { data: listings } = await supabase
     .from('listings')
     .select('id, title, status')
-    .eq('poster_id', posterId);
+    .eq('poster_id', user.id);
 
   if (!listings || listings.length === 0) {
     return { totalViews: 0, totalLeads: 0, conversionRate: '0.0', listingBreakdown: [] };

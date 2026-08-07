@@ -19,7 +19,7 @@ interface Listing {
   base_rent?: number;
   outright_price?: number;
   safemove_enabled?: boolean;
-  views_count?: number;
+  views?: number;
   whatsapp_leads_count?: number;
   [key: string]: unknown;
 }
@@ -97,7 +97,7 @@ export default function DashboardTabs({
   const [period, setPeriod] = useState<TimeframePeriod>(timeframeParam || 'all');
   const [isAnalyticsPending, startAnalyticsTransition] = useTransition();
   const [analyticsData, setAnalyticsData] = useState(() => {
-    const tViews = initialListings?.reduce((sum, l) => sum + (l.views_count || 0), 0) || 0;
+    const tViews = initialListings?.reduce((sum, l) => sum + (l.views || 0), 0) || 0;
     const tLeads = initialListings?.reduce((sum, l) => sum + (l.whatsapp_leads_count || 0), 0) || 0;
     return {
       totalViews: tViews,
@@ -107,9 +107,9 @@ export default function DashboardTabs({
         id: l.id,
         title: l.title,
         status: l.status || 'active',
-        views_count: l.views_count || 0,
+        views_count: l.views || 0,
         whatsapp_leads_count: l.whatsapp_leads_count || 0,
-        conversion_rate: (l.views_count || 0) > 0 ? ((l.whatsapp_leads_count || 0) / (l.views_count || 0) * 100).toFixed(1) : '0.0'
+        conversion_rate: (l.views || 0) > 0 ? ((l.whatsapp_leads_count || 0) / (l.views || 0) * 100).toFixed(1) : '0.0'
       })) || []
     };
   });

@@ -3,9 +3,35 @@
 import { createClient } from '@/utils/supabase/client';
 import { formatGhanaPhoneNumber, isValidGhanaPhone } from '@/utils/phoneUtils';
 
+const OTP_RESEND_COOLDOWN_MS = 60_000;
+const OTP_WINDOW_MS = 15 * 60_000;
+const OTP_MAX_PER_WINDOW = 5;
+const OTP_KEY_PREFIX = 'propertyhub_otp_throttle:';
+
+type OtpThrottle = { count: number; firstAt: number; lastSentAt: number };
+
+function readOtpThrottle(key: string): OtpThrottle | null {
+  try {
+    const raw = localStorage.getItem(OTP_KEY_PREFIX + key);
+    return raw ? JSON.parse(raw) as OtpThrottle : null;
+  } catch {
+    return null;
+  }
+}
+
+function storeOtpThrottle(key: string, value: OtpThrottle) {
+  try {
+    localStorage.setItem(OTP_KEY_PREFIX + key, JSON.stringify(value));
+  } catch {
+    // Storage unavailable — cooldown only applies for this browser tab.
+  }
+}
+
 /**
  * Sends a one-time password (OTP) to a Ghanaian phone number via SMS.
  * Validates and formats the phone number to E.164 before calling Supabase.
+ * Client-side cooldown (60s between sends, max 5 per 15 minutes per phone)
+ * lives here as defense-in-depth on top of Supabase's own auth rate limits.
  */
 export async function sendPhoneOtp(rawPhone: string) {
   if (!isValidGhanaPhone(rawPhone)) {
@@ -17,6 +43,33 @@ export async function sendPhoneOtp(rawPhone: string) {
 
   const formattedPhone = formatGhanaPhoneNumber(rawPhone);
   const supabase = createClient();
+
+  const now = Date.now();
+  const throttleKey = formattedPhone;
+  const existing = readOtpThrottle(throttleKey);
+
+  if (existing) {
+    if (now - existing.firstAt >= OTP_WINDOW_MS) {
+      storeOtpThrottle(throttleKey, { count: 1, firstAt: now, lastSentAt: now });
+    } else if (now - existing.lastSentAt < OTP_RESEND_COOLDOWN_MS) {
+      const waitSecs = Math.ceil((OTP_RESEND_COOLDOWN_MS - (now - existing.lastSentAt)) / 1000);
+      return {
+        success: false as const,
+        error: `Please wait ${waitSecs} seconds before requesting a new code.`,
+      };
+    } else if (existing.count >= OTP_MAX_PER_WINDOW) {
+      return {
+        success: false as const,
+        error: 'Too many code requests. Please try again later.',
+      };
+    } else {
+      existing.count += 1;
+      existing.lastSentAt = now;
+      storeOtpThrottle(throttleKey, existing);
+    }
+  } else {
+    storeOtpThrottle(throttleKey, { count: 1, firstAt: now, lastSentAt: now });
+  }
 
   const { error } = await supabase.auth.signInWithOtp({
     phone: formattedPhone,

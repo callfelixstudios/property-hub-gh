@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server';
+import { getActiveUser } from '@/utils/adminHelpers';
 
 export async function trackWhatsAppClick(listingId: string) {
   try {
@@ -15,9 +16,10 @@ export async function trackWhatsAppClick(listingId: string) {
 }
 
 export async function fetchMatchingRequests() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
+  const active = await getActiveUser();
+  if (!active) return [];
+
+  const { supabase, user } = active;
 
   const { data, error } = await supabase
     .from('notifications')
@@ -52,9 +54,9 @@ export async function fetchMatchingRequests() {
 }
 
 export async function markLeadContacted(notificationId: string) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Unauthorized');
+  const active = await getActiveUser();
+  if (!active) throw new Error('Unauthorized');
+  const { supabase, user } = active;
 
   const { error } = await supabase
     .from('notifications')

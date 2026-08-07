@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server';
 import { CheckCircle2, Clock, XCircle, AlertTriangle } from 'lucide-react';
 import ListingModerationQueue from '@/components/admin/ListingModerationQueue';
 import { redirect } from 'next/navigation';
+import { isPlatformAdmin } from '@/utils/adminAuth';
 
 export default async function AdminListingsPage({
   searchParams,
@@ -12,7 +13,7 @@ export default async function AdminListingsPage({
 
   // Validate admin identity (guard is handled in layout, but extra sanity check doesn't hurt)
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/login');
+  if (!isPlatformAdmin(user)) redirect('/unauthorized');
 
   const { tab } = await searchParams;
   const currentTab = tab || 'pending';

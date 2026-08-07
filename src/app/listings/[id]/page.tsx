@@ -27,7 +27,7 @@ interface ListingRow {
   safemove_active?: boolean;
   media_urls?: string[];
   status?: string;
-  views_count: number;
+  views: number;
   video_url?: string | null;
   currency?: string;
   rent_advance_months?: number;
@@ -358,7 +358,7 @@ export default async function ListingDetailPage({
                     <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
                     <circle cx="12" cy="12" r="3"/>
                   </svg>
-                  {row.views_count} views
+                  {row.views} views
                 </div>
               </div>
             </div>

@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
+import { isPlatformAdmin } from '@/utils/adminAuth';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
@@ -30,7 +31,7 @@ export default async function AdminVerificationPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user || !user.email?.toLowerCase().endsWith('@propertyhubgh.com')) {
+  if (!isPlatformAdmin(user)) {
     redirect('/unauthorized');
   }
 

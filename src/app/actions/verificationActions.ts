@@ -1,34 +1,17 @@
 'use server';
 
-import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { assertAdmin } from '@/utils/adminHelpers';
 
 export type VerificationStatus = 'unverified' | 'pending_review' | 'verified' | 'rejected';
 export type VerificationDocumentType = 'ghana_card' | 'business_registration' | 'greda_license' | 'grepa_license';
 
-/** ─────────────────────────────────────────────────────────────
- *  Internal guard: abort if caller is not a @propertyhubgh.com admin
- * ───────────────────────────────────────────────────────────── */
-async function verifyAdminSession() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error || !user || !user.email?.toLowerCase().endsWith('@propertyhubgh.com')) {
-    throw new Error('Unauthorized Access: Corporate admin security violation.');
-  }
-
-  return { supabase, adminEmail: user.email, adminId: user.id };
-}
-
 /**
  * Generate a 15-minute time-limited signed URL for a private verification document.
- * Only callable server-side by @propertyhubgh.com admins.
+ * Only callable server-side by platform admins.
  */
 export async function getSecureDocumentUrl(storagePath: string): Promise<string> {
-  const { supabase } = await verifyAdminSession();
+  const { supabase } = await assertAdmin();
 
   const { data, error } = await supabase.storage
     .from('verification-documents')
@@ -49,7 +32,7 @@ export async function getSecureDocumentUrl(storagePath: string): Promise<string>
  * - (Stubbed) Fires Moolre/SMS approval notification
  */
 export async function approveVerification(targetProfileId: string): Promise<void> {
-  const { supabase, adminEmail, adminId } = await verifyAdminSession();
+  const { supabase, user } = await assertAdmin();
 
   // Capture pre-commit state for delta audit log
   const { data: original } = await supabase
@@ -71,7 +54,7 @@ export async function approveVerification(targetProfileId: string): Promise<void
 
   // Immutable audit log delta record
   await supabase.from('admin_audit_logs').insert({
-    admin_id: adminId,
+    admin_id: user.id,
     action_type: 'VERIFICATION_APPROVE',
     target_id: targetProfileId,
     previous_values: original as Record<string, unknown>,
@@ -81,7 +64,7 @@ export async function approveVerification(targetProfileId: string): Promise<void
   // TODO: Trigger Moolre/Hubtel WhatsApp & SMS notification
   // sendApprovalNotification(targetProfileId);
   console.log(
-    `[STUB] Approval notification sent for profile ${targetProfileId} by ${adminEmail}`
+    `[STUB] Approval notification sent for profile ${targetProfileId} by ${user.email}`
   );
 
   revalidatePath('/admin/verification');
@@ -98,7 +81,7 @@ export async function rejectVerification(
   targetProfileId: string,
   reason: string
 ): Promise<void> {
-  const { supabase, adminEmail, adminId } = await verifyAdminSession();
+  const { supabase, user } = await assertAdmin();
 
   const { data: original } = await supabase
     .from('profiles')
@@ -117,7 +100,7 @@ export async function rejectVerification(
   if (error) throw new Error(`Failed to reject verification: ${error.message}`);
 
   await supabase.from('admin_audit_logs').insert({
-    admin_id: adminId,
+    admin_id: user.id,
     action_type: 'VERIFICATION_REJECT',
     target_id: targetProfileId,
     previous_values: original as Record<string, unknown>,
@@ -127,7 +110,7 @@ export async function rejectVerification(
   // TODO: Trigger Moolre rejection notification template
   // sendRejectionNotification(targetProfileId, reason);
   console.log(
-    `[STUB] Rejection notification sent for profile ${targetProfileId} by ${adminEmail}. Reason: ${reason}`
+    `[STUB] Rejection notification sent for profile ${targetProfileId} by ${user.email}. Reason: ${reason}`
   );
 
   revalidatePath('/admin/verification');

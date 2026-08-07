@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
-import { isAuthorizedAdmin } from '@/utils/adminAuth';
+import { isPlatformAdmin } from '@/utils/adminAuth';
 import { AdminNavLink } from '@/components/admin/AdminNavLink';
 import {
   LogOut,
@@ -64,7 +64,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user || !isAuthorizedAdmin(user.email)) {
+  if (!isPlatformAdmin(user)) {
     redirect('/unauthorized');
   }
 

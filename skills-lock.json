@@ -7,6 +7,12 @@
       "skillPath": "skills/ai-seo/SKILL.md",
       "computedHash": "9e9ea19c98f59261b7ee45c81edbce64b4011b597e1b67b37b6679e13e864448"
     },
+    "api-security-review": {
+      "source": "owasp/secure-agent-playbook",
+      "sourceType": "github",
+      "skillPath": "plugins/code-security-skills/skills/api-security-review/SKILL.md",
+      "computedHash": "fac03deef4e335dcae09bd9b7687489881261e8abdc6cbcb6e160cb81e571fda"
+    },
     "application-security": {
       "source": "oakoss/agent-skills",
       "sourceType": "github",
@@ -31,6 +37,12 @@
       "skillPath": "skills/frontend-design/SKILL.md",
       "computedHash": "93f53fd1c0352d3d7ec17b8f73d7351bf76f4821e55d123c9d2abc2c53ba48e4"
     },
+    "netsuite-owasp-secure-coding": {
+      "source": "oracle/netsuite-suitecloud-sdk",
+      "sourceType": "github",
+      "skillPath": "packages/agent-skills/netsuite-owasp-secure-coding/SKILL.md",
+      "computedHash": "fde5209a0fe472510d420d31c3e03fc336728b78863c1c9d8109a07366801e08"
+    },
     "nextjs": {
       "source": "vercel-labs/vercel-plugin",
       "sourceType": "github",
@@ -54,6 +66,60 @@
       "sourceType": "github",
       "skillPath": "seo-geo/tune/on-page-seo-checker/SKILL.md",
       "computedHash": "d9da566c9101a75e586573f4cf58e1a0aa0e4d7b676367794f20b53652f4160f"
+    },
+    "owasp-audit": {
+      "source": "briiirussell/cybersecurity-skills",
+      "sourceType": "github",
+      "skillPath": "skills/owasp-audit/SKILL.md",
+      "computedHash": "bf18262a2bef3508e4078b7726c1cfdbfd4c17926e3039fea1ab4432f9184e05"
+    },
+    "owasp-cicd": {
+      "source": "microsoft/hve-core",
+      "sourceType": "github",
+      "skillPath": ".github/skills/security/owasp-cicd/SKILL.md",
+      "computedHash": "460707e955b736a930f4373670ba65b171a331d74044714c34304124631e79d8"
+    },
+    "owasp-infrastructure": {
+      "source": "microsoft/hve-core",
+      "sourceType": "github",
+      "skillPath": ".github/skills/security/owasp-infrastructure/SKILL.md",
+      "computedHash": "459a63ca9b13c7c1bc900e57b2c467ad005db51b0d1aa2ab8e4f6d43d27889f3"
+    },
+    "owasp-llm": {
+      "source": "microsoft/hve-core",
+      "sourceType": "github",
+      "skillPath": ".github/skills/security/owasp-llm/SKILL.md",
+      "computedHash": "e18cf299119ee4b2a5c246292823675775041cad23f7dc84cbbbd33f495ec973"
+    },
+    "owasp-llm-top10": {
+      "source": "mastepanoski/claude-skills",
+      "sourceType": "github",
+      "skillPath": "skills/owasp-llm-top10/SKILL.md",
+      "computedHash": "a84c7051fa624597a972e49fd244187f86e99b0e641a01007d82a53671878812"
+    },
+    "owasp-security": {
+      "source": "hoodini/ai-agents-skills",
+      "sourceType": "github",
+      "skillPath": "skills/owasp-security/SKILL.md",
+      "computedHash": "880d7aa73b001e7e28b9562639defeff11c073d958fe5a253eeea572539439a2"
+    },
+    "owasp-security-check": {
+      "source": "sergiodxa/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/owasp-security-check/SKILL.md",
+      "computedHash": "94875bfeb111a97687dc4f90b71c23de959ce36bfa9cab65c007116218f7413e"
+    },
+    "owasp-top-10": {
+      "source": "microsoft/hve-core",
+      "sourceType": "github",
+      "skillPath": ".github/skills/security/owasp-top-10/SKILL.md",
+      "computedHash": "0c17041b278c5fa96aaef06c38532a6e17df6794e2987aba3109e3b0ab8d6c6d"
+    },
+    "performing-threat-modeling-with-owasp-threat-dragon": {
+      "source": "mukul975/anthropic-cybersecurity-skills",
+      "sourceType": "github",
+      "skillPath": "skills/performing-threat-modeling-with-owasp-threat-dragon/SKILL.md",
+      "computedHash": "b1828b22068777312fca5df6b52a075c6c58021003378d2227fb2ba917902fff"
     },
     "security-audit": {
       "source": "sickn33/antigravity-awesome-skills",
@@ -96,6 +162,12 @@
       "sourceType": "github",
       "skillPath": "skills/supabase-postgres-best-practices/SKILL.md",
       "computedHash": "3639bed1f40b3fbadae79fee631c42c89b2d1f5c30b05d5aa3cca06422a6bbbc"
+    },
+    "testing-api-security-with-owasp-top-10": {
+      "source": "mukul975/anthropic-cybersecurity-skills",
+      "sourceType": "github",
+      "skillPath": "skills/testing-api-security-with-owasp-top-10/SKILL.md",
+      "computedHash": "d2a81677e0761f251be72f8b8a2e0a19b092dd2853279ee6281cc08f49cf733f"
     },
     "threat-modeling": {
       "source": "dralgorhythm/claude-agentic-framework",

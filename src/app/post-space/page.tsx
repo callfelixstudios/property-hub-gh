@@ -320,6 +320,22 @@ export default function PostSpaceWizard() {
       }
 
       // --- Image Upload Pipeline ---
+      const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+      const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+
+      for (const file of imageFiles) {
+        if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+          alert(`"${file.name}" is not a supported image type. Only JPEG, PNG or WEBP images are allowed.`);
+          setIsSubmitting(false);
+          return;
+        }
+        if (file.size > MAX_IMAGE_BYTES) {
+          alert(`"${file.name}" exceeds the 10MB upload limit.`);
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       const uploadedUrls: string[] = [];
 
       for (const file of imageFiles) {
@@ -385,7 +401,7 @@ export default function PostSpaceWizard() {
         media_urls: uploadedUrls.length > 0 ? uploadedUrls : null,
         video_url: videoUrl || null,
         floor_plan_url: floorPlanUrl || null,
-        status: 'active',
+        status: 'pending',
         bedrooms: bedrooms ? parseInt(bedrooms, 10) : null,
         bathrooms: bathrooms ? parseInt(bathrooms, 10) : null,
         furnishing_status: furnishingStatus || null,

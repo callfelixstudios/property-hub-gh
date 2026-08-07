@@ -1,13 +1,13 @@
 /**
  * adminAuth.ts
  * Reusable server-side admin identity guard.
- * Uses split_part logic (same as the DB RLS policy) to prevent:
- * - Case sensitivity issues (Admin@PROPERTYHUBGH.COM still passes)
- * - Subdomain spoofing (attacker@subdomain.propertyhubgh.com fails — no @ in front)
+ * Checks the Supabase user object's app_metadata for the explicit
+ * `platform_admin` role (set at the DB layer in auth.users.app_metadata).
+ * Role-based check — not derived from email domain.
  */
-export const isAuthorizedAdmin = (email: string | undefined | null): boolean => {
-  if (!email) return false;
-  const parts = email.split('@');
-  if (parts.length !== 2) return false;
-  return parts[1].toLowerCase() === 'propertyhubgh.com';
+import type { User } from '@supabase/supabase-js';
+
+export const isPlatformAdmin = (user: User | null | undefined): user is User => {
+  if (!user) return false;
+  return user.app_metadata?.role === 'platform_admin';
 };

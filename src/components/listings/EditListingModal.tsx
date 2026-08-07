@@ -44,7 +44,7 @@ interface Listing {
   service_charge?: number;
   safemove_active?: boolean;
   safemove_enabled?: boolean;
-  views_count?: number;
+  views?: number;
   description?: string;
   category?: string;
   region?: string;
@@ -290,6 +290,22 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
       setIsSaving(true);
 
       // Upload any new images
+      const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+      const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+
+      for (const file of newImageFiles) {
+        if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+          alert(`"${file.name}" is not a supported image type. Only JPEG, PNG or WEBP images are allowed.`);
+          setIsSaving(false);
+          return;
+        }
+        if (file.size > MAX_IMAGE_BYTES) {
+          alert(`"${file.name}" exceeds the 10MB upload limit.`);
+          setIsSaving(false);
+          return;
+        }
+      }
+
       const uploadedNewUrls: string[] = [];
       for (const file of newImageFiles) {
         const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');

@@ -28,12 +28,19 @@ export const metadata: Metadata = {
 export default async function RequestsPage() {
   const supabase = await createClient();
 
+  const { data: { user } } = await supabase.auth.getUser();
+  const fullColumns = 'id, seeker_name, whatsapp_number, location, property_type, purpose, additional_details, budget, status, created_at';
+  const safeColumns = 'id, seeker_name, location, property_type, purpose, additional_details, budget, status, created_at';
+
   // Fetch space requests
   const { data: requests, error } = await supabase
     .from('space_requests')
-    .select('*')
+    .select(user ? fullColumns : safeColumns)
     .eq('status', 'active')
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false }) as unknown as {
+    data: SpaceRequest[] | null;
+    error: { message: string } | null;
+  };
 
   if (error) {
     console.error("Error fetching requests:", error);
@@ -57,6 +64,7 @@ export default async function RequestsPage() {
   };
 
   const generateWhatsAppLink = (request: SpaceRequest) => {
+    if (!request.whatsapp_number) return '';
     const message = `Hi ${request.seeker_name}, I saw your request for a ${formatPropertyType(request.property_type)} in ${request.location} with a budget of ${formatCurrency(request.budget)} on Property Hub. I have a property that might fit your needs!`;
     const cleanPhone = request.whatsapp_number.replace(/[^\d+]/g, '');
     return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;

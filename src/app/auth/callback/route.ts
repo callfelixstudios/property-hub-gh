@@ -6,10 +6,22 @@ import { NextResponse, type NextRequest } from 'next/server';
  * Exchanges the auth code for a session, then redirects to the
  * destination specified via `?next=` or defaults to /rentals.
  */
+/**
+ * Restrict `next` to a same-origin local path to prevent open-redirects.
+ * Anything that is not a plain relative path falls back to the default.
+ */
+function safeDestination(raw: string | null, fallback: string): string {
+  if (!raw || !raw.startsWith('/')) return fallback;
+  if (raw.startsWith('//') || raw.startsWith('/\\')) return fallback;
+  if (raw.includes('\\') || raw.includes(':')) return fallback;
+  if (/[\u0000-\u0020]/u.test(raw[0])) return fallback;
+  return raw;
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/rentals';
+  const next = safeDestination(searchParams.get('next'), '/rentals');
 
   if (code) {
     const supabase = await createClient();

@@ -61,6 +61,12 @@ export default function RequestSpacePage() {
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setErrorMsg("Please sign in to post a space request.");
+        setIsSubmitting(false);
+        router.push('/login?next=/request-space');
+        return;
+      }
       const { error } = await supabase.from('space_requests').insert({
         seeker_name: formData.seeker_name,
         whatsapp_number: formData.whatsapp_number,
@@ -69,7 +75,7 @@ export default function RequestSpacePage() {
         budget: Number(budgetAmount),
         purpose: formData.purpose,
         additional_details: formData.additional_details,
-        user_id: user?.id || null,
+        user_id: user.id,
         status: 'active'
       });
 

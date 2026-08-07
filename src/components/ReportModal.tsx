@@ -1,6 +1,5 @@
 'use client';
 import { useState } from 'react';
-import { createClient } from '@/utils/supabase/client';
 
 export default function ReportModal({ listingId }: { listingId: string }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -8,6 +7,7 @@ export default function ReportModal({ listingId }: { listingId: string }) {
   const [details, setDetails] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const REASONS = [
     "Agent claims it's unavailable, demands money to see another place",
@@ -18,22 +18,39 @@ export default function ReportModal({ listingId }: { listingId: string }) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    const supabase = createClient();
+    setError(null);
     
-    // Call the RPC
-    await supabase.rpc('report_listing', {
-      p_listing_id: listingId,
-      p_reason: reason,
-      p_details: details
-    });
+    try {
+      const res = await fetch('/api/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          listingId,
+          reason,
+          details
+        })
+      });
 
-    setIsSubmitting(false);
-    setSuccess(true);
-    setTimeout(() => {
-      setIsOpen(false);
-      setSuccess(false);
-      setDetails("");
-    }, 2000);
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data?.error || 'Failed to submit report. Please try again.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      setIsSubmitting(false);
+      setSuccess(true);
+      setTimeout(() => {
+        setIsOpen(false);
+        setSuccess(false);
+        setDetails("");
+        setError(null);
+      }, 2000);
+    } catch {
+      setIsSubmitting(false);
+      setError('Failed to submit report. Please try again.');
+    }
   };
 
   return (
@@ -94,6 +111,9 @@ export default function ReportModal({ listingId }: { listingId: string }) {
                     placeholder="Provide any extra context that might help us investigate..."
                   />
                 </div>
+                {error && (
+                  <p className="text-sm text-rose-600 font-medium">{error}</p>
+                )}
                 <button 
                   type="submit"
                   disabled={isSubmitting}
