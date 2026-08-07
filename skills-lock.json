@@ -7,6 +7,12 @@
       "skillPath": "skills/ai-seo/SKILL.md",
       "computedHash": "9e9ea19c98f59261b7ee45c81edbce64b4011b597e1b67b37b6679e13e864448"
     },
+    "application-security": {
+      "source": "oakoss/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/application-security/SKILL.md",
+      "computedHash": "d4fbff075f57261889f8793fce70f93426680e6dc8a0754f88d55ce3d1d1daf1"
+    },
     "english-humanizer": {
       "source": "kambleakash0/agent-skills",
       "sourceType": "github",
@@ -49,6 +55,18 @@
       "skillPath": "seo-geo/tune/on-page-seo-checker/SKILL.md",
       "computedHash": "d9da566c9101a75e586573f4cf58e1a0aa0e4d7b676367794f20b53652f4160f"
     },
+    "security-audit": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "skillPath": "skills/security-audit/SKILL.md",
+      "computedHash": "75c3d961f04992c2c7adcc453a3ecbf137d4756d914614d0a41a6a6126121991"
+    },
+    "security-auditor": {
+      "source": "dralgorhythm/claude-agentic-framework",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/security-auditor/SKILL.md",
+      "computedHash": "2328c76ddb2b6b05d29ab85765217f8d92498103b497ff49b1ad6ac18f732279"
+    },
     "seo": {
       "source": "agricidaniel/claude-seo",
       "sourceType": "github",
@@ -78,6 +96,12 @@
       "sourceType": "github",
       "skillPath": "skills/supabase-postgres-best-practices/SKILL.md",
       "computedHash": "3639bed1f40b3fbadae79fee631c42c89b2d1f5c30b05d5aa3cca06422a6bbbc"
+    },
+    "threat-modeling": {
+      "source": "dralgorhythm/claude-agentic-framework",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/security/threat-modeling/SKILL.md",
+      "computedHash": "390810b1793be3db4ed5bc44f94e22139a1d0043f298d3aedcf7e722c8ea81ed"
     }
   }
 }
