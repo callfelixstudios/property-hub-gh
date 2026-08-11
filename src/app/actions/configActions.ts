@@ -24,11 +24,19 @@ export async function addAmenity(name: string, slug: string, category: string) {
 export async function updateAmenity(id: string, updates: { name?: string; is_active?: boolean }) {
   const { supabase, user } = await assertAdmin();
 
+  const safeUpdates: { name?: string; is_active?: boolean } = {};
+  if (typeof updates.name === 'string' && updates.name.trim()) safeUpdates.name = updates.name.trim();
+  if (typeof updates.is_active === 'boolean') safeUpdates.is_active = updates.is_active;
+
+  if (Object.keys(safeUpdates).length === 0) {
+    throw new Error('No valid fields to update');
+  }
+
   const { data: prev } = await supabase.from('config_amenities').select('*').eq('id', id).single();
   
   const { data, error } = await supabase
     .from('config_amenities')
-    .update(updates)
+    .update(safeUpdates)
     .eq('id', id)
     .select()
     .single();

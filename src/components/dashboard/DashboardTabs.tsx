@@ -157,6 +157,11 @@ export default function DashboardTabs({
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [passwordMsg, setPasswordMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // Reauthentication gate: proof of identity (OTP) before email/password changes
+  const [reauthPending, setReauthPending] = useState<'email' | 'password' | null>(null);
+  const [reauthToken, setReauthToken] = useState('');
+  const [reauthMsg, setReauthMsg] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+
   const [spaceRequests, setSpaceRequests] = useState<SpaceRequest[]>([]);
   const [srLoading, setSrLoading] = useState(false);
   const [srFilter, setSrFilter] = useState<'all' | 'active' | 'archived'>('active');
@@ -508,12 +513,35 @@ export default function DashboardTabs({
     }
   };
 
-  const handleUpdateEmail = async () => {
-    if (!newEmail.trim()) {
-      setEmailMsg({ type: 'error', text: 'Please enter a new email address.' });
+  const startReauth = async (pendingAction: 'email' | 'password') => {
+    setReauthMsg(null);
+    const { error } = await supabase.auth.reauthenticate();
+    if (error) {
+      setReauthMsg({ type: 'error', text: error.message || 'Failed to start verification.' });
       return;
     }
+    setReauthPending(pendingAction);
+  };
 
+  const confirmReauth = async (): Promise<boolean> => {
+    if (!reauthToken.trim()) {
+      setReauthMsg({ type: 'error', text: 'Please enter the verification code.' });
+      return false;
+    }
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+    const payload = user.email
+      ? { email: user.email, token: reauthToken.trim(), type: 'reauthentication' as const }
+      : { phone: user.phone ?? '', token: reauthToken.trim(), type: 'reauthentication' as const };
+    const { error } = await supabase.auth.verifyOtp(payload);
+    if (error) {
+      setReauthMsg({ type: 'error', text: error.message || 'Invalid verification code.' });
+      return false;
+    }
+    return true;
+  };
+
+  const performEmailUpdate = async () => {
     setIsUpdatingEmail(true);
     setEmailMsg(null);
 
@@ -527,6 +555,34 @@ export default function DashboardTabs({
       setEmailMsg({ type: 'error', text: err instanceof Error ? err.message : 'Failed to update email.' });
     } finally {
       setIsUpdatingEmail(false);
+    }
+  };
+
+  const handleUpdateEmail = async () => {
+    if (!newEmail.trim()) {
+      setEmailMsg({ type: 'error', text: 'Please enter a new email address.' });
+      return;
+    }
+
+    await startReauth('email');
+  };
+
+  const performPasswordUpdate = async () => {
+    setIsUpdatingPassword(true);
+    setPasswordMsg(null);
+
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      setPasswordMsg({ type: 'success', text: 'Password updated successfully!' });
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: unknown) {
+      console.error('Password update error:', err);
+      setPasswordMsg({ type: 'error', text: err instanceof Error ? err.message : 'Failed to update password.' });
+    } finally {
+      setIsUpdatingPassword(false);
     }
   };
 
@@ -546,21 +602,19 @@ export default function DashboardTabs({
       return;
     }
 
-    setIsUpdatingPassword(true);
-    setPasswordMsg(null);
+    await startReauth('password');
+  };
 
-    try {
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-      if (error) throw error;
-      setPasswordMsg({ type: 'success', text: 'Password updated successfully!' });
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-    } catch (err: unknown) {
-      console.error('Password update error:', err);
-      setPasswordMsg({ type: 'error', text: err instanceof Error ? err.message : 'Failed to update password.' });
-    } finally {
-      setIsUpdatingPassword(false);
+  const handleConfirmReauthAction = async () => {
+    const ok = await confirmReauth();
+    if (!ok) return;
+    setReauthMsg(null);
+    setReauthToken('');
+    setReauthPending(null);
+    if (reauthPending === 'email') {
+      await performEmailUpdate();
+    } else {
+      await performPasswordUpdate();
     }
   };
 
@@ -1283,6 +1337,47 @@ export default function DashboardTabs({
                     {emailMsg.text}
                   </div>
                 )}
+                {reauthPending === 'email' && (
+                  <div className="mt-3 border border-emerald-200 bg-emerald-50/40 rounded-md p-4 space-y-3 animate-fade-in">
+                    <p className="text-xs font-medium text-navy-base">
+                      Enter the 6-digit code sent to your email to confirm it&apos;s really you.
+                    </p>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      value={reauthToken}
+                      onChange={(e) => setReauthToken(e.target.value.replace(/\D/g, ''))}
+                      placeholder="123456"
+                      autoFocus
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 text-gray-900 transition-shadow"
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={handleConfirmReauthAction}
+                        disabled={isUpdatingEmail}
+                        className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white font-bold py-2 px-5 rounded-md transition-colors flex items-center justify-center gap-2"
+                      >
+                        {isUpdatingEmail ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                        {isUpdatingEmail ? 'Verifying...' : 'Verify & Update Email'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setReauthPending(null); setReauthToken(''); setReauthMsg(null); }}
+                        className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-5 rounded-md transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                    {reauthMsg && (
+                      <div className={`flex items-center gap-1.5 text-sm font-medium ${reauthMsg.type === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>
+                        {reauthMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 flex-shrink-0" />}
+                        {reauthMsg.text}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Divider */}
@@ -1348,6 +1443,47 @@ export default function DashboardTabs({
                   <div className={`mt-2 flex items-center gap-1.5 text-sm font-medium animate-fade-in ${passwordMsg.type === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>
                     {passwordMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 flex-shrink-0" />}
                     {passwordMsg.text}
+                  </div>
+                )}
+                {reauthPending === 'password' && (
+                  <div className="mt-3 border border-emerald-200 bg-emerald-50/40 rounded-md p-4 space-y-3 animate-fade-in">
+                    <p className="text-xs font-medium text-navy-base">
+                      Enter the 6-digit code sent to your email to confirm it&apos;s really you.
+                    </p>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      value={reauthToken}
+                      onChange={(e) => setReauthToken(e.target.value.replace(/\D/g, ''))}
+                      placeholder="123456"
+                      autoFocus
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 text-gray-900 transition-shadow"
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={handleConfirmReauthAction}
+                        disabled={isUpdatingPassword}
+                        className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white font-bold py-2 px-5 rounded-md transition-colors flex items-center justify-center gap-2"
+                      >
+                        {isUpdatingPassword ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                        {isUpdatingPassword ? 'Verifying...' : 'Verify & Update Password'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setReauthPending(null); setReauthToken(''); setReauthMsg(null); }}
+                        className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-5 rounded-md transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                    {reauthMsg && (
+                      <div className={`flex items-center gap-1.5 text-sm font-medium ${reauthMsg.type === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>
+                        {reauthMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 flex-shrink-0" />}
+                        {reauthMsg.text}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

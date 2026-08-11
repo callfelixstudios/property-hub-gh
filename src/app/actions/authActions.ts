@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/client';
 import { formatGhanaPhoneNumber, isValidGhanaPhone } from '@/utils/phoneUtils';
+import { requestPhoneOtp } from '@/app/actions/otpActions';
 
 const OTP_RESEND_COOLDOWN_MS = 60_000;
 const OTP_WINDOW_MS = 15 * 60_000;
@@ -42,7 +43,6 @@ export async function sendPhoneOtp(rawPhone: string) {
   }
 
   const formattedPhone = formatGhanaPhoneNumber(rawPhone);
-  const supabase = createClient();
 
   const now = Date.now();
   const throttleKey = formattedPhone;
@@ -71,15 +71,7 @@ export async function sendPhoneOtp(rawPhone: string) {
     storeOtpThrottle(throttleKey, { count: 1, firstAt: now, lastSentAt: now });
   }
 
-  const { error } = await supabase.auth.signInWithOtp({
-    phone: formattedPhone,
-  });
-
-  if (error) {
-    return { success: false as const, error: error.message };
-  }
-
-  return { success: true as const, formattedPhone };
+  return requestPhoneOtp(formattedPhone);
 }
 
 /**

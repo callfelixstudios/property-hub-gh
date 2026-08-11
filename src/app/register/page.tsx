@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { Phone, Mail, ArrowLeft, Loader2 } from "lucide-react";
 import { sendPhoneOtp, verifyPhoneOtp, signInWithGoogle } from "@/app/actions/authActions";
+import { safeDestination } from "@/utils/safeDestination";
 
 type AuthMethod = 'select' | 'email' | 'phone' | 'otp';
 
@@ -16,6 +17,7 @@ function RegisterForm() {
 
   // URL Params
   const next = searchParams.get('next');
+  const dest = safeDestination(next);
 
   // UI Flow State
   const [method, setMethod] = useState<AuthMethod>('select');
@@ -115,7 +117,7 @@ function RegisterForm() {
       return;
     }
 
-    router.push(next || "/rentals");
+    router.push(dest || "/rentals");
     router.refresh();
   };
 

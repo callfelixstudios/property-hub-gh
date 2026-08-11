@@ -1,10 +1,24 @@
 'use server'
 
+import { headers } from 'next/headers';
 import { createClient } from '@/utils/supabase/server';
 import { getActiveUser } from '@/utils/adminHelpers';
+import { getClientIp, rateLimit } from '@/utils/rateLimit';
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function trackWhatsAppClick(listingId: string) {
   try {
+    if (typeof listingId !== 'string' || !UUID_PATTERN.test(listingId)) {
+      return;
+    }
+
+    const h = await headers();
+    const ip = getClientIp(h);
+    if (!rateLimit('wa-click:' + ip, 60, 60_000)) {
+      return;
+    }
+
     const supabase = await createClient();
     const { error } = await supabase.rpc('increment_whatsapp_leads', { row_id: listingId });
     if (error) {

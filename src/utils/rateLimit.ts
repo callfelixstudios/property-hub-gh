@@ -28,9 +28,21 @@ export function rateLimit(key: string, limit: number, windowMs: number): boolean
   return entry.count <= limit;
 }
 
-/** Best-effort client IP from proxy headers. */
-export function getClientIp(request: Request): string {
-  const forwarded = request.headers.get('x-forwarded-for');
+/** Best-effort client IP from proxy headers (accepts a Request or raw Headers). */
+export function getClientIp(requestOrHeaders: Request | Headers): string {
+  const headers = requestOrHeaders instanceof Request ? requestOrHeaders.headers : requestOrHeaders;
+
+  const vercelForwarded = headers.get('x-vercel-forwarded-for');
+  if (vercelForwarded) return vercelForwarded.split(',')[0].trim();
+
+  const cloudflare = headers.get('cf-connecting-ip');
+  if (cloudflare) return cloudflare.trim();
+
+  const realIp = headers.get('x-real-ip');
+  if (realIp) return realIp.trim();
+
+  const forwarded = headers.get('x-forwarded-for');
   if (forwarded) return forwarded.split(',')[0].trim();
-  return request.headers.get('x-real-ip')?.trim() || 'unknown';
+
+  return 'unknown-ip';
 }

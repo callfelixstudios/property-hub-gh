@@ -19,10 +19,7 @@ interface StaleListingsRow {
 export default async function AdminListingHealthPage() {
   const supabase = await createClient();
 
-  // 1. Force trigger the stale listing detection first to ensure stats are up to date
-  await supabase.rpc('fn_update_stale_listings');
-
-  // 2. Fetch Stale listings
+  // 1. Fetch Stale listings
   const { data: staleListings } = await supabase
     .from('listings')
     .select(`
@@ -33,7 +30,7 @@ export default async function AdminListingHealthPage() {
     .eq('status', 'active')
     .order('created_at', { ascending: true });
 
-  // 3. Fetch KPI Stats
+  // 2. Fetch KPI Stats
   const { count: freshCount } = await supabase
     .from('listings')
     .select('*', { count: 'exact', head: true })

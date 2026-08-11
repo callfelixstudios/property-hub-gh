@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Archive, CheckCircle, Search, AlertTriangle, MessageCircle, Loader2 } from 'lucide-react';
-import { markListingVerified, archiveListing, bulkSendVerificationPing } from '@/app/actions/listingHealthActions';
+import { useRouter } from 'next/navigation';
+import { Archive, CheckCircle, Search, AlertTriangle, MessageCircle, Loader2, RefreshCw } from 'lucide-react';
+import { markListingVerified, archiveListing, bulkSendVerificationPing, runStaleListingDetection } from '@/app/actions/listingHealthActions';
 
 interface PosterInfo {
   full_name?: string;
@@ -29,6 +30,14 @@ export default function ListingHealthDashboard({
 }) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
+
+  const handleRunDetection = () => {
+    startTransition(async () => {
+      await runStaleListingDetection();
+      router.refresh();
+    });
+  };
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
@@ -70,6 +79,18 @@ export default function ListingHealthDashboard({
 
   return (
     <div className="space-y-6">
+      {/* Run Detection */}
+      <div className="flex justify-end">
+        <button
+          onClick={handleRunDetection}
+          disabled={isPending}
+          className="px-4 py-2 bg-navy-base text-white text-sm font-medium rounded-lg hover:bg-navy-light disabled:opacity-50 flex items-center gap-2"
+        >
+          {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+          Run Detection
+        </button>
+      </div>
+
       {/* KPI Strip */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">

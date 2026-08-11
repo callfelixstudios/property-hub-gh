@@ -5,6 +5,15 @@ import { assertAdmin, logAdminAction } from '@/utils/adminHelpers';
 
 // ─── Ghost Listing / Health Detection ──────────────────────────────────────
 
+export async function runStaleListingDetection() {
+  const { supabase } = await assertAdmin();
+
+  await supabase.rpc('fn_update_stale_listings');
+
+  revalidatePath('/admin/listing-health');
+  return { success: true };
+}
+
 export async function markListingVerified(listingId: string) {
   const { supabase, user } = await assertAdmin();
 

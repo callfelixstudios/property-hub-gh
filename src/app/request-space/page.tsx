@@ -9,6 +9,7 @@ import Footer from '@/components/Footer';
 import { RESIDENTIAL_CATEGORIES, COMMERCIAL_CATEGORIES, GHANA_REGIONS } from '@/data/propertyCategories';
 import { useCurrency } from '@/context/CurrencyContext';
 import type { Currency } from '@/utils/currency-cookie';
+import { notifyAdminNewSpaceRequest } from '@/app/actions/notifyActions';
 
 export default function RequestSpacePage() {
   const router = useRouter();
@@ -85,16 +86,15 @@ export default function RequestSpacePage() {
       } else {
         setSuccess(true);
 
-        const webhookUrl = process.env.NEXT_PUBLIC_ADMIN_WEBHOOK_URL;
-        if (webhookUrl) {
-          fetch(webhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              content: `🔔 **New Space Request**\n**Seeker:** ${formData.seeker_name}\n**Location:** ${locationPreview}\n**Budget:** ${budgetCurrency} ${budgetAmount} / ${paymentTerm === 'month' ? 'month' : 'year'}\n**Category:** ${formData.property_type} (${formData.purpose})\n**Contact:** ${formData.whatsapp_number}`
-            })
-          }).catch(err => console.error("Webhook notification failed:", err));
-        }
+        await notifyAdminNewSpaceRequest({
+          seekerName: formData.seeker_name,
+          location: locationPreview,
+          budget: `${budgetCurrency} ${budgetAmount}`,
+          paymentTerm,
+          propertyType: formData.property_type,
+          purpose: formData.purpose,
+          whatsappNumber: formData.whatsapp_number,
+        });
       }
     } catch (err: unknown) {
       console.error("Unexpected error:", err);
