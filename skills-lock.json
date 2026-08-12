@@ -19,6 +19,12 @@
       "skillPath": "skills/application-security/SKILL.md",
       "computedHash": "d4fbff075f57261889f8793fce70f93426680e6dc8a0754f88d55ce3d1d1daf1"
     },
+    "content-quality-auditor": {
+      "source": "aaron-he-zhu/aaron-marketing-skills",
+      "sourceType": "github",
+      "skillPath": "seo-geo/tune/content-quality-auditor/SKILL.md",
+      "computedHash": "10c01261c7e827366598eff440996df9a783996df1a26fd9b1adab1de6edcaaa"
+    },
     "english-humanizer": {
       "source": "kambleakash0/agent-skills",
       "sourceType": "github",
@@ -31,11 +37,29 @@
       "skillPath": "skills/find-skills/SKILL.md",
       "computedHash": "b146008599c31057cef1c145774cea5d5afb30e8f43fa802e47a4b461419aaaf"
     },
+    "firecrawl-seo-audit": {
+      "source": "firecrawl/firecrawl-workflows",
+      "sourceType": "github",
+      "skillPath": "skills/firecrawl-seo-audit/SKILL.md",
+      "computedHash": "efec8bf676c19e0b230fe3ac152651f22ba84dccc0d545f638252c26ee97c273"
+    },
     "frontend-design": {
       "source": "anthropics/skills",
       "sourceType": "github",
       "skillPath": "skills/frontend-design/SKILL.md",
       "computedHash": "93f53fd1c0352d3d7ec17b8f73d7351bf76f4821e55d123c9d2abc2c53ba48e4"
+    },
+    "keyword-research": {
+      "source": "aaron-he-zhu/aaron-marketing-skills",
+      "sourceType": "github",
+      "skillPath": "seo-geo/survey/keyword-research/SKILL.md",
+      "computedHash": "1960e23885dd24bc5cce9dca199645f77620564778b88c3fca7a783acf081a67"
+    },
+    "local-seo": {
+      "source": "kostja94/marketing-skills",
+      "sourceType": "github",
+      "skillPath": "skills/seo/local/SKILL.md",
+      "computedHash": "7ebddef17d2547c96543b08f2db54c153bd914a7c69ee30630bf58469d15100c"
     },
     "netsuite-owasp-secure-coding": {
       "source": "oracle/netsuite-suitecloud-sdk",
@@ -60,6 +84,12 @@
       "sourceType": "github",
       "skillPath": "skills-lab/nextjs-approuter-2026/SKILL.md",
       "computedHash": "6e47fee286ef69a43f8674d108953c2316cb02dd7a81ae2358d7c756097f5910"
+    },
+    "nextjs-seo": {
+      "source": "laguagu/claude-code-nextjs-skills",
+      "sourceType": "github",
+      "skillPath": "skills/nextjs-seo/SKILL.md",
+      "computedHash": "1c8e50ac12a37652d084f71f305a34f91b4f214dc5a3d59824519d9949d3470e"
     },
     "on-page-seo-checker": {
       "source": "aaron-he-zhu/aaron-marketing-skills",
@@ -115,11 +145,23 @@
       "skillPath": ".github/skills/security/owasp-top-10/SKILL.md",
       "computedHash": "0c17041b278c5fa96aaef06c38532a6e17df6794e2987aba3109e3b0ab8d6c6d"
     },
+    "parasite-seo": {
+      "source": "kostja94/marketing-skills",
+      "sourceType": "github",
+      "skillPath": "skills/seo/parasite-seo/SKILL.md",
+      "computedHash": "9f029920fdaf7fef5d8b8d9d2e45677eee48a42bd510f219aad0744e88ab428d"
+    },
     "performing-threat-modeling-with-owasp-threat-dragon": {
       "source": "mukul975/anthropic-cybersecurity-skills",
       "sourceType": "github",
       "skillPath": "skills/performing-threat-modeling-with-owasp-threat-dragon/SKILL.md",
       "computedHash": "b1828b22068777312fca5df6b52a075c6c58021003378d2227fb2ba917902fff"
+    },
+    "programmatic-seo": {
+      "source": "coreyhaines31/marketingskills",
+      "sourceType": "github",
+      "skillPath": "skills/programmatic-seo/SKILL.md",
+      "computedHash": "a53dc8741b0df338766ef8fc7d704bdfc75b8c8e7e1b1b2a5947d81d8c9508ff"
     },
     "security-audit": {
       "source": "sickn33/antigravity-awesome-skills",
@@ -139,11 +181,71 @@
       "skillPath": "skills/seo/SKILL.md",
       "computedHash": "77d8c4f4695848c47ca82c0cb49a6741851e1ab94a623b55e394d3bd9f96e3fd"
     },
+    "seo-aeo-best-practices": {
+      "source": "sanity-io/agent-toolkit",
+      "sourceType": "github",
+      "skillPath": "skills/seo-aeo-best-practices/SKILL.md",
+      "computedHash": "b6b2dd3af3c92f82f04b830dab2cc323f299d7c2e57f7d3619a5886caa7eeb08"
+    },
     "seo-audit": {
       "source": "anthropics/knowledge-work-plugins",
       "sourceType": "github",
       "skillPath": "marketing/skills/seo-audit/SKILL.md",
       "computedHash": "fc681c9ebb5a6e4bdaca74a1746c04eac7cd82e4b8a67298a3b1faf77a394e2e"
+    },
+    "seo-competitor-pages": {
+      "source": "agricidaniel/claude-seo",
+      "sourceType": "github",
+      "skillPath": "skills/seo-competitor-pages/SKILL.md",
+      "computedHash": "c2247e46691b852f7d65b924b994d1a1e3afab39b494e0d664798b749e961c7a"
+    },
+    "seo-ecommerce": {
+      "source": "agricidaniel/claude-seo",
+      "sourceType": "github",
+      "skillPath": "skills/seo-ecommerce/SKILL.md",
+      "computedHash": "ac0b634c7e7c9507478c42db21db3c29110bd38721083fab0a5d7d783d9d57a0"
+    },
+    "seo-geo": {
+      "source": "resciencelab/opc-skills",
+      "sourceType": "github",
+      "skillPath": "skills/seo-geo/SKILL.md",
+      "computedHash": "1d38520f453282af8712874c360e3e34a379827f737fb536bd45055e2d60d964"
+    },
+    "seo-google": {
+      "source": "agricidaniel/claude-seo",
+      "sourceType": "github",
+      "skillPath": "skills/seo-google/SKILL.md",
+      "computedHash": "eca5e541abf76b11a4128bf13d032a746bb544393add77794ae28a7029280ed0"
+    },
+    "seo-local": {
+      "source": "agricidaniel/claude-seo",
+      "sourceType": "github",
+      "skillPath": "skills/seo-local/SKILL.md",
+      "computedHash": "8890fb1c32bf48ba1c432c5420af4f5ac67aa30637cb8568c2454862e1f67c66"
+    },
+    "seo-maps": {
+      "source": "agricidaniel/claude-seo",
+      "sourceType": "github",
+      "skillPath": "skills/seo-maps/SKILL.md",
+      "computedHash": "9c2ad1181b8769650e8c5d75c5414011cdb6c02bcbacc40647465c636b880776"
+    },
+    "seo-plan": {
+      "source": "agricidaniel/claude-seo",
+      "sourceType": "github",
+      "skillPath": "skills/seo-plan/SKILL.md",
+      "computedHash": "037ec1185e878f8e6b3f022a7385e5277f86d891bbcb795289016fb23cbbd680"
+    },
+    "seo-schema": {
+      "source": "agricidaniel/claude-seo",
+      "sourceType": "github",
+      "skillPath": "skills/seo-schema/SKILL.md",
+      "computedHash": "040a9873e606203293302d54e6ca0794497935a6699d1085bf7a062d51903b11"
+    },
+    "seo-sitemap": {
+      "source": "agricidaniel/claude-seo",
+      "sourceType": "github",
+      "skillPath": "skills/seo-sitemap/SKILL.md",
+      "computedHash": "77aa4ff513ba758e112f839510306c6ac5f97b543123f553c20d8e754918c4d9"
     },
     "shadcn": {
       "source": "shadcn/ui",
@@ -163,6 +265,12 @@
       "skillPath": "skills/supabase-postgres-best-practices/SKILL.md",
       "computedHash": "3639bed1f40b3fbadae79fee631c42c89b2d1f5c30b05d5aa3cca06422a6bbbc"
     },
+    "technical-seo-checker": {
+      "source": "aaron-he-zhu/aaron-marketing-skills",
+      "sourceType": "github",
+      "skillPath": "seo-geo/tune/technical-seo-checker/SKILL.md",
+      "computedHash": "7b36fc8f5d7774ce5d6e1475718b3e9518c74c67d91c57e61fb3f30b08b4da26"
+    },
     "testing-api-security-with-owasp-top-10": {
       "source": "mukul975/anthropic-cybersecurity-skills",
       "sourceType": "github",
@@ -174,6 +282,12 @@
       "sourceType": "github",
       "skillPath": ".claude/skills/security/threat-modeling/SKILL.md",
       "computedHash": "390810b1793be3db4ed5bc44f94e22139a1d0043f298d3aedcf7e722c8ea81ed"
+    },
+    "youtube-seo": {
+      "source": "kostja94/marketing-skills",
+      "sourceType": "github",
+      "skillPath": "skills/platforms/youtube/SKILL.md",
+      "computedHash": "509ba5c4db8482cccf2d3dde49c6d77d16dcf3e5422eedec140d01157ffdbaf5"
     }
   }
 }
