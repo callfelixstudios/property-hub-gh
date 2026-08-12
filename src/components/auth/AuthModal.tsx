@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Phone, Mail, ArrowLeft, Loader2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
+import { resolvePostLoginDestination } from '@/utils/postLoginDestination';
 import { sendPhoneOtp, verifyPhoneOtp, signInWithGoogle } from '@/app/actions/authActions';
 
 type Step = 'select' | 'phone_input' | 'otp_verify' | 'email_login' | 'email_register';
@@ -131,7 +132,8 @@ export function AuthModal({
     }
 
     onClose();
-    router.push(redirectTo || '/rentals');
+    const supabase = createClient();
+    router.push(await resolvePostLoginDestination(supabase, redirectTo));
     router.refresh();
   };
 
@@ -161,7 +163,7 @@ export function AuthModal({
     }
 
     onClose();
-    router.push(redirectTo || '/rentals');
+    router.push(await resolvePostLoginDestination(supabase, redirectTo));
     router.refresh();
   };
 

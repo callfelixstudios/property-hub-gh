@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { NextResponse, type NextRequest } from 'next/server';
-import { safeDestination } from '@/utils/safeDestination';
+import { resolvePostLoginDestination } from '@/utils/postLoginDestination';
 
 /**
  * OAuth callback handler for Google (and other OAuth providers).
@@ -10,14 +10,14 @@ import { safeDestination } from '@/utils/safeDestination';
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  const next = safeDestination(searchParams.get('next')) ?? '/rentals';
 
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
+      const destination = await resolvePostLoginDestination(supabase, searchParams.get('next'));
+      return NextResponse.redirect(`${origin}${destination}`);
     }
   }
 
