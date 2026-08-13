@@ -32,7 +32,12 @@ export default function SearchWidget() {
         onSubmit={(e) => {
           e.preventDefault();
           const q = query.trim();
-          if (q) router.push("/rentals?search=" + encodeURIComponent(q));
+          if (!q) return;
+          const params = new URLSearchParams();
+          if (activeTab === "rent") params.set("type", "rent");
+          if (activeTab === "buy") params.set("type", "sale");
+          params.set("search", q);
+          router.push(`/properties?${params.toString()}`);
         }}
         className="flex items-center bg-white rounded-md shadow-ambient overflow-hidden"
       >

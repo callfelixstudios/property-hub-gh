@@ -170,7 +170,7 @@ export default async function Home() {
               </p>
             </div>
             <Link
-              href="/rentals"
+              href="/properties"
               className="hidden md:inline-flex items-center gap-1 text-sm font-semibold text-navy-base hover:underline"
             >
               View All Properties
@@ -190,10 +190,10 @@ export default async function Home() {
             <div className="bg-white rounded-md p-6 shadow-ambient border border-gray-100 flex flex-col items-center text-center py-14">
               <h3 className="font-bold text-navy-base mb-2">New verified listings are on the way</h3>
               <p className="text-sm text-gray-500 mb-6 max-w-sm">
-                We&apos;re onboarding fresh verified properties right now. Browse rentals to see what&apos;s currently live.
+                We&apos;re onboarding fresh verified properties right now. Browse all properties to see what&apos;s currently live.
               </p>
               <Link
-                href="/rentals"
+                href="/properties"
                 className="inline-flex items-center px-6 py-3 bg-navy-base text-white font-bold rounded-sm hover:bg-navy-light transition-colors"
               >
                 Browse Rentals
