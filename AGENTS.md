@@ -59,7 +59,7 @@
 - **Trigger:** Immediately following any successful `git push` to the remote repository.
 - **Action:** A sub-agent must automatically compile a technical update summary markdown file.
 - **Storage Target Vault Location:** `C:\Users\CallFELIX\Documents\PROJECT\property-hub-gh\obsidian-vault`
-- **Dynamic File Naming Hook:** Sub-agent must generate the filename dynamically using the runtime system date: `YYYY-MM-DD-HHmm-milestone-update.md` (e.g., `2026-06-24-1445-listing-limit-patch.md`).
+- **Dynamic File Naming Hook:** Sub-agent must generate the filename dynamically using the runtime system date plus a short hyphenated milestone descriptor: `YYYY-MM-DD-HHmm-<milestone-descriptor>.md` (e.g., `2026-08-12-1410-seo-skill-install-push.md`).
 - **Required Report Structure:**
   1. **Execution Timestamp:** `Executed on: YYYY-MM-DD at HH:mm:ss GMT` (Generated dynamically via local system clock).
   2. **Milestone Summary:** High-level summary of the pushed changes.
