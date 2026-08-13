@@ -104,9 +104,10 @@ Single `fetchListings()` inside `ListingsBrowser`:
    - sale: `rawPrice = outright_price`, `priceSuffix = ''` (explicit empty string
      to defeat PropertyCard's `/mo` default), `is_rental = false`
    - shared: `title` (fallback `${category} in ${neighborhood|region}`),
-     `location`, `beds`, `baths`, `area` (land_size for land / square_meters),
-     `media_urls[0]` image, `safemove_active` → badge, `is_verified`,
-     `viewing_fee`, resiliency flags.
+     `location`, `beds`, `baths`, `area` (String(square_meters) — PropertyCard
+     renders it as "N m²"; land listings omit it and PropertyCard shows the
+     "Verified Plot / Acreage" badge instead), `media_urls[0]` image,
+     `safemove_active` → badge, `is_verified`, `viewing_fee`, resiliency flags.
 
 ## 5. UI Components
 
@@ -170,6 +171,8 @@ Single `fetchListings()` inside `ListingsBrowser`:
 - Page beyond range → empty-state UI with reset link.
 - `type` values other than `rent`/`sale` (e.g. `type=foo`, `type=all`) → treated
   as all.
+- `sort=price_asc` / `sort=price_desc` in All mode → clamped to `newest`
+  (price sorting is only valid within a single type).
 - Supabase query error → log + render empty grid with the empty state (current
   pages return `[]` on error; same behavior).
 - No schema changes; no migrations.
