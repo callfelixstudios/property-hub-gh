@@ -52,18 +52,36 @@ function PropertyFiltersContent() {
     loadConfig();
   }, []);
 
-  const isRentalContext = pathname.includes('rentals');
+  type FilterMode = 'rent' | 'sale' | 'all';
+
+  const typeParam = searchParams.get('type');
+  const isSalesContext = pathname.includes('sales');
+  const filterMode: FilterMode = pathname.includes('rentals')
+    ? 'rent'
+    : isSalesContext
+      ? 'sale'
+      : typeParam === 'rent' || typeParam === 'sale'
+        ? typeParam
+        : 'all';
 
   let maxBounds = 0;
   let stepValue = 0;
 
-  if (isRentalContext) {
+  if (filterMode === 'rent') {
     if (displayCurrency === 'GHS') {
       maxBounds = 50000;
       stepValue = 500;
     } else {
       maxBounds = 5000;
       stepValue = 50;
+    }
+  } else if (filterMode === 'sale') {
+    if (displayCurrency === 'GHS') {
+      maxBounds = 10000000;
+      stepValue = 50000;
+    } else {
+      maxBounds = 1000000;
+      stepValue = 5000;
     }
   } else {
     if (displayCurrency === 'GHS') {
@@ -99,6 +117,8 @@ function PropertyFiltersContent() {
         params.set(key, value);
       }
     });
+
+    params.delete('page');
 
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
   }, [searchParams, pathname, router]);
@@ -308,7 +328,11 @@ function PropertyFiltersContent() {
       {/* Price Range */}
       <div className="mb-6">
         <h3 className="text-sm font-semibold text-navy-base mb-3">
-          {isRentalContext ? `Monthly Rent (${displayCurrency})` : `Total Price (${displayCurrency})`}
+          {filterMode === 'rent'
+            ? `Monthly Rent (${displayCurrency})`
+            : filterMode === 'sale'
+              ? `Total Price (${displayCurrency})`
+              : `Price (Rent: /mo · Sale: total)`}
         </h3>
         <div className="flex items-center gap-2">
           <input
@@ -412,7 +436,7 @@ function PropertyFiltersContent() {
       </div>
 
       {/* Titled / Litigation-Free Only (Sales Only) */}
-      {!isRentalContext && (
+      {filterMode !== 'rent' && (
         <div className="mb-6 p-4 bg-accent-gold/10 border border-accent-gold/30 rounded-sm">
           <label className="flex items-start gap-3 cursor-pointer group">
             <div className="mt-0.5 relative flex items-center justify-center w-5 h-5 border border-accent-gold rounded-[4px] bg-white">
