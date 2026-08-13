@@ -45,10 +45,10 @@ export default function Footer() {
           <div>
             <h4 className="text-sm font-semibold uppercase tracking-wider text-gray-300 mb-4">Company</h4>
             <ul className="space-y-3">
-              <li><Link href="/about" className="text-sm text-gray-400 hover:text-white transition-colors">About Us</Link></li>
-              <li><Link href="/careers" className="text-sm text-gray-400 hover:text-white transition-colors">Careers</Link></li>
-              <li><Link href="/agents" className="text-sm text-gray-400 hover:text-white transition-colors">Agents / Pros</Link></li>
-              <li><Link href="/scout" className="text-sm text-gray-400 hover:text-white transition-colors">The Scout Program</Link></li>
+              <li><Link href="/rentals" className="text-sm text-gray-400 hover:text-white transition-colors">Rentals</Link></li>
+              <li><Link href="/sales" className="text-sm text-gray-400 hover:text-white transition-colors">Sales</Link></li>
+              <li><Link href="/safemove" className="text-sm text-gray-400 hover:text-white transition-colors">SafeMove</Link></li>
+              <li><Link href="/requests" className="text-sm text-gray-400 hover:text-white transition-colors">Property Requests</Link></li>
             </ul>
           </div>
 
@@ -56,10 +56,10 @@ export default function Footer() {
           <div>
             <h4 className="text-sm font-semibold uppercase tracking-wider text-gray-300 mb-4">Resources</h4>
             <ul className="space-y-3">
-              <li><Link href="/guides/buying" className="text-sm text-gray-400 hover:text-white transition-colors">Home Buying Fundamentals</Link></li>
-              <li><Link href="/guides/mortgage" className="text-sm text-gray-400 hover:text-white transition-colors">Mortgage FAQs</Link></li>
-              <li><Link href="/insights" className="text-sm text-gray-400 hover:text-white transition-colors">Market Trends</Link></li>
-              <li><Link href="/help" className="text-sm text-gray-400 hover:text-white transition-colors">Help Center</Link></li>
+              <li><Link href="/post-space" className="text-sm text-gray-400 hover:text-white transition-colors">List Your Property</Link></li>
+              <li><Link href="/request-space" className="text-sm text-gray-400 hover:text-white transition-colors">Request a Space</Link></li>
+              <li><Link href="/requests" className="text-sm text-gray-400 hover:text-white transition-colors">Property Requests</Link></li>
+              <li><Link href="/terms" className="text-sm text-gray-400 hover:text-white transition-colors">Terms of Service</Link></li>
             </ul>
           </div>
 

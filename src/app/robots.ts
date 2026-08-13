@@ -37,6 +37,26 @@ export default function robots(): MetadataRoute.Robots {
         allow: '/',
         disallow: ['/admin/', '/dashboard/', '/api/'],
       },
+      {
+        userAgent: 'OAI-SearchBot',
+        allow: '/',
+        disallow: ['/admin/', '/dashboard/', '/api/'],
+      },
+      {
+        userAgent: 'Google-Extended',
+        allow: '/',
+        disallow: ['/admin/', '/dashboard/', '/api/'],
+      },
+      {
+        userAgent: 'anthropic-ai',
+        allow: '/',
+        disallow: ['/admin/', '/dashboard/', '/api/'],
+      },
+      {
+        userAgent: 'Bingbot',
+        allow: '/',
+        disallow: ['/admin/', '/dashboard/', '/api/'],
+      },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,
   };

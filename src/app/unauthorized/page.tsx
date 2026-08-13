@@ -4,6 +4,7 @@ import { ShieldX, ArrowLeft, Lock } from 'lucide-react';
 export const metadata = {
   title: 'Access Restricted | Property Hub GH',
   description: 'This area is restricted to authorized administrators only.',
+  robots: { index: false, follow: false },
 };
 
 export default async function UnauthorizedPage({

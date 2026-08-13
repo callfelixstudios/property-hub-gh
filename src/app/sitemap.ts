@@ -1,42 +1,20 @@
 import type { MetadataRoute } from 'next';
 import { createClient } from '@supabase/supabase-js';
-import { generateListingSlug } from '@/utils/slugify';
+import {
+  ACTIVE_LISTING_QUERY,
+  STATIC_SITEMAP_ENTRIES,
+  toListingEntry,
+} from '@/utils/sitemapEntries';
+
+const ORIGIN = 'https://www.propertyhubgh.com';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://www.propertyhubgh.com';
-
-  const staticRoutes: MetadataRoute.Sitemap = [
-    {
-      url: `${baseUrl}`,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 1.0,
-    },
-    {
-      url: `${baseUrl}/rentals`,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/sales`,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/safemove`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/requests`,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 0.7,
-    },
-  ];
+  const staticRoutes: MetadataRoute.Sitemap = STATIC_SITEMAP_ENTRIES.map(
+    (entry) => ({
+      url: `${ORIGIN}${entry.url}`,
+      lastModified: entry.lastModified,
+    })
+  );
 
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -46,22 +24,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
     const { data: listings } = await supabase
       .from('listings')
-      .select('id, category, neighborhood, region, created_at')
-      .order('created_at', { ascending: false })
+      .select('id, category, neighborhood, region, updated_at')
+      .eq('status', ACTIVE_LISTING_QUERY.status)
+      .eq('moderation_status', ACTIVE_LISTING_QUERY.moderation_status)
+      .order('updated_at', { ascending: false })
+      // Single sitemap files cap at ~50k URLs; paginate (e.g. updated_at cursor) and split before exceeding that.
       .limit(1000);
 
     if (listings && listings.length > 0) {
-      const listingRoutes: MetadataRoute.Sitemap = listings.map((listing) => {
-        const locationStr = [listing.neighborhood, listing.region].filter(Boolean).join(' ');
-        const slug = generateListingSlug(listing.category, locationStr, listing.id);
-
-        return {
-          url: `${baseUrl}/listings/${slug}`,
-          lastModified: listing.created_at ? new Date(listing.created_at) : new Date(),
-          changeFrequency: 'weekly',
-          priority: 0.8,
-        };
-      });
+      const listingRoutes: MetadataRoute.Sitemap = listings.map((listing) =>
+        toListingEntry(
+          {
+            id: listing.id,
+            category: listing.category,
+            neighborhood: listing.neighborhood,
+            region: listing.region,
+            updated_at: listing.updated_at,
+          },
+          ORIGIN
+        )
+      );
 
       return [...staticRoutes, ...listingRoutes];
     }

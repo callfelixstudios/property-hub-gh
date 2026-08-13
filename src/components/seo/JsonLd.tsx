@@ -44,9 +44,10 @@ export function getOrganizationSchema() {
       name: 'Ghana',
     },
     sameAs: [
-      'https://twitter.com/propertyhubgh',
-      'https://facebook.com/propertyhubgh',
-      'https://instagram.com/propertyhubgh',
+      'https://x.com/propertyhub_gh',
+      'https://www.facebook.com/prophub.gh',
+      'https://www.instagram.com/propertyhub.gh/',
+      'https://www.tiktok.com/@propertyhub.gh',
     ],
     priceRange: '₵₵ - ₵₵₵₵',
   };

@@ -106,7 +106,7 @@ export default function Home() {
               </p>
             </div>
             <Link
-              href="/search"
+              href="/rentals"
               className="hidden md:inline-flex items-center gap-1 text-sm font-semibold text-navy-base hover:underline"
             >
               View All Properties
@@ -214,7 +214,7 @@ export default function Home() {
             ].map((n) => (
               <Link
                 key={n.name}
-                href={`/search?area=${encodeURIComponent(n.name)}`}
+                href={`/rentals?neighborhood=${encodeURIComponent(n.name)}`}
                 className="group relative h-64 md:h-72 rounded-md overflow-hidden"
               >
                 <Image
@@ -293,7 +293,7 @@ export default function Home() {
               ))}
             </div>
             <div className="px-6 py-4 border-t border-gray-100">
-              <Link href="/insights" className="text-sm font-semibold text-navy-base hover:underline flex items-center gap-1">
+              <Link href="/rentals" className="text-sm font-semibold text-navy-base hover:underline flex items-center gap-1">
                 View Full Q3 Market Report
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
               </Link>

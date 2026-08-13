@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function SearchWidget() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<"rent" | "buy" | "safemove">("rent");
+  const [query, setQuery] = useState("");
 
   return (
     <div className="w-full max-w-2xl">
@@ -25,7 +28,14 @@ export default function SearchWidget() {
       </div>
 
       {/* Search Bar */}
-      <div className="flex items-center bg-white rounded-md shadow-ambient overflow-hidden">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          const q = query.trim();
+          if (q) router.push("/rentals?search=" + encodeURIComponent(q));
+        }}
+        className="flex items-center bg-white rounded-md shadow-ambient overflow-hidden"
+      >
         <div className="flex items-center gap-2 flex-1 px-4 py-3">
           <svg
             className="w-5 h-5 text-gray-400 flex-shrink-0"
@@ -48,12 +58,19 @@ export default function SearchWidget() {
           </svg>
           <input
             type="text"
+            name="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
             placeholder="Neighbourhood, Baatsona..."
+            aria-label="Search properties in Ghana"
             className="flex-1 text-navy-base placeholder:text-gray-400 outline-none bg-transparent text-sm"
             autoFocus
           />
         </div>
-        <button className="flex items-center justify-center bg-navy-base hover:bg-navy-light transition-colors px-5 py-3 m-1.5 rounded-sm cursor-pointer">
+        <button
+          type="submit"
+          className="flex items-center justify-center bg-navy-base hover:bg-navy-light transition-colors px-5 py-3 m-1.5 rounded-sm cursor-pointer"
+        >
           <svg
             className="w-5 h-5 text-white"
             fill="none"
@@ -68,7 +85,7 @@ export default function SearchWidget() {
             />
           </svg>
         </button>
-      </div>
+      </form>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
@@ -8,6 +9,11 @@ import RequestsBudget from '@/components/RequestsBudget';
 import { MapPin, Calendar, ArrowLeft, ArrowRight, Lock } from 'lucide-react';
 
 export const revalidate = 0;
+
+export const metadata: Metadata = {
+  title: 'Property Request | Property Hub GH',
+  robots: { index: false, follow: false },
+};
 
 function formatPropertyType(type: string) {
   return type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');

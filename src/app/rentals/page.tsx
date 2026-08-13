@@ -9,6 +9,7 @@ import { generateListingSlug } from '@/utils/slugify';
 import { RESIDENTIAL_CATEGORIES, COMMERCIAL_CATEGORIES } from '@/data/propertyCategories';
 import { normalizeRegionForDb, formatRegionForUi } from '@/utils/regionMapper';
 import { convertFilterPriceToDb } from '@/utils/currency';
+import { buildSearchFilter } from '@/utils/searchQuery';
 import { JsonLd, getBreadcrumbSchema } from '@/components/seo/JsonLd';
 
 export const metadata: Metadata = {
@@ -159,6 +160,9 @@ async function fetchRentalListings(searchParams: { [key: string]: string | strin
   if (targetAmenities.length > 0) {
     query = query.contains('amenities', targetAmenities);
   }
+
+  const search = buildSearchFilter(searchParams.search as string);
+  if (search) query = query.or(search);
 
   const { data, error } = await query.order('created_at', { ascending: false });
   if (error) {

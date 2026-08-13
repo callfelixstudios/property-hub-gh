@@ -12,19 +12,6 @@ export const metadata: Metadata = {
     template: '%s | Property Hub GH',
   },
   description: 'Ghana’s unified property directory for renting rooms, hostels, and luxury apartments, or buying litigation-free land and houses across Accra, Kumasi, and all 16 regions.',
-  keywords: [
-    'real estate ghana',
-    'apartments for rent accra',
-    'houses for sale ghana',
-    'land for sale ghana',
-    'student hostels accra',
-    'chamber and hall for rent',
-    'property hub gh',
-    'cantonments apartments',
-    'east legon houses',
-    'litigation free land ghana',
-    'safemove ghana',
-  ],
   authors: [{ name: 'Property Hub GH Team' }],
   creator: 'Property Hub GH',
   publisher: 'Property Hub GH',
@@ -54,7 +41,7 @@ export const metadata: Metadata = {
     title: 'Property Hub GH | Rent & Buy Properties in Ghana',
     description: 'Find your next space in Ghana. Search verified rentals, hostels, apartments, houses for sale & litigation-free land.',
     images: ['https://www.propertyhubgh.com/opengraph-image'],
-    creator: '@propertyhubgh',
+    creator: '@propertyhub_gh',
   },
   robots: {
     index: true,
@@ -86,12 +73,6 @@ export default async function RootLayout({
       className="h-full antialiased"
     >
       <head>
-        <link
-          rel="stylesheet"
-          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-          crossOrigin=""
-        />
         <JsonLd data={getOrganizationSchema()} />
         <JsonLd data={getWebSiteSchema()} />
       </head>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { createClient } from '@/utils/supabase/server';
 import ListingGallery from "@/components/listings/ListingGallery";
@@ -155,6 +156,8 @@ export async function generateMetadata({
     .from('listings')
     .select('*')
     .eq('id', id)
+    .eq('status', 'active')
+    .eq('moderation_status', 'approved')
     .single();
 
   if (!listing) {
@@ -207,7 +210,13 @@ export default async function ListingDetailPage({
     .from('listings')
     .select('*')
     .eq('id', id)
+    .eq('status', 'active')
+    .eq('moderation_status', 'approved')
     .single();
+
+  if (error || !listing) {
+    notFound();
+  }
 
   let initialIsSaved = false;
   if (user) {
@@ -216,29 +225,10 @@ export default async function ListingDetailPage({
       .select('id')
       .match({ user_id: user.id, listing_id: id })
       .maybeSingle();
-    
+
     if (savedListing) {
       initialIsSaved = true;
     }
-  }
-
-  if (error || !listing) {
-    return (
-      <div className="w-full min-h-screen bg-surface-primary flex items-center justify-center px-4 pt-32">
-        <div className="text-center max-w-md">
-          <div className="w-16 h-16 mx-auto mb-6 bg-slate-100 rounded-full flex items-center justify-center">
-            <svg className="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-navy-base mb-3">Listing Not Found</h1>
-          <p className="text-gray-500 mb-8">The property you&apos;re looking for doesn&apos;t exist or may have been removed.</p>
-          <Link href="/rentals" className="inline-block bg-navy-base hover:bg-navy-light text-white font-bold py-3 px-8 rounded-md transition-colors">
-            Browse Rentals
-          </Link>
-        </div>
-      </div>
-    );
   }
 
   const row = listing as ListingRow;
