@@ -78,7 +78,7 @@ describe('toListingEntry', () => {
 });
 
 describe('STATIC_SITEMAP_ENTRIES', () => {
-  it('includes all 11 expected paths', () => {
+  it('includes all 12 expected paths', () => {
     const paths = STATIC_SITEMAP_ENTRIES.map((entry) => entry.url);
 
     expect(paths).toEqual([
