@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   ACTIVE_LISTING_QUERY,
+  LOCATION_ENTRIES_LAST_MODIFIED,
   STATIC_SITEMAP_ENTRIES,
   toListingEntry,
+  toLocationEntries,
 } from './sitemapEntries';
 
 const ORIGIN = 'https://www.propertyhubgh.com';
@@ -107,5 +109,151 @@ describe('ACTIVE_LISTING_QUERY', () => {
       status: 'active',
       moderation_status: 'approved',
     });
+  });
+});
+
+describe('toLocationEntries', () => {
+  it('maps a rent row to a rentals URL using the neighborhood slug', () => {
+    const entries = toLocationEntries(
+      [
+        {
+          transaction_type: 'rent',
+          region: 'greater_accra',
+          neighborhood: 'Dansoman',
+        },
+      ],
+      ORIGIN
+    );
+
+    expect(entries).toEqual([
+      { url: `${ORIGIN}/rentals/dansoman`, lastModified: LOCATION_ENTRIES_LAST_MODIFIED },
+    ]);
+  });
+
+  it('emits both rentals and sales entries when both transaction types are present', () => {
+    const entries = toLocationEntries(
+      [
+        {
+          transaction_type: 'rent',
+          region: 'greater_accra',
+          neighborhood: 'Dansoman',
+        },
+        {
+          transaction_type: 'sale',
+          region: 'greater_accra',
+          neighborhood: 'Dansoman',
+        },
+      ],
+      ORIGIN
+    );
+
+    expect(entries.map((entry) => entry.url)).toEqual([
+      `${ORIGIN}/rentals/dansoman`,
+      `${ORIGIN}/sales/dansoman`,
+    ]);
+  });
+
+  it('falls back to region when neighborhood is null', () => {
+    const entries = toLocationEntries(
+      [{ transaction_type: 'rent', region: 'ashanti', neighborhood: null }],
+      ORIGIN
+    );
+
+    expect(entries.map((entry) => entry.url)).toEqual([
+      `${ORIGIN}/rentals/ashanti`,
+    ]);
+  });
+
+  it('turns underscores in region keys into hyphens', () => {
+    const entries = toLocationEntries(
+      [{ transaction_type: 'sale', region: 'greater_accra', neighborhood: null }],
+      ORIGIN
+    );
+
+    expect(entries.map((entry) => entry.url)).toEqual([
+      `${ORIGIN}/sales/greater-accra`,
+    ]);
+  });
+
+  it('slugifies neighborhood names with spaces', () => {
+    const entries = toLocationEntries(
+      [
+        {
+          transaction_type: 'rent',
+          region: 'greater_accra',
+          neighborhood: 'Airport Residential Area',
+        },
+      ],
+      ORIGIN
+    );
+
+    expect(entries.map((entry) => entry.url)).toEqual([
+      `${ORIGIN}/rentals/airport-residential-area`,
+    ]);
+  });
+
+  it('skips rows with both region and neighborhood null', () => {
+    const entries = toLocationEntries(
+      [
+        { transaction_type: 'rent', region: null, neighborhood: null },
+        { transaction_type: 'sale', region: null, neighborhood: null },
+      ],
+      ORIGIN
+    );
+
+    expect(entries).toEqual([]);
+  });
+
+  it('dedupes identical URLs across duplicate rows', () => {
+    const entries = toLocationEntries(
+      [
+        {
+          transaction_type: 'rent',
+          region: 'greater_accra',
+          neighborhood: 'Dansoman',
+        },
+        {
+          transaction_type: 'rent',
+          region: 'greater_accra',
+          neighborhood: 'Dansoman',
+        },
+        {
+          transaction_type: 'rent',
+          region: 'greater_accra',
+          neighborhood: 'Dansoman',
+        },
+      ],
+      ORIGIN
+    );
+
+    expect(entries).toHaveLength(1);
+  });
+
+  it('uses the stable fixed lastModified constant', () => {
+    const entries = toLocationEntries(
+      [{ transaction_type: 'rent', region: 'ashanti', neighborhood: 'Kumasi' }],
+      ORIGIN
+    );
+
+    expect(entries[0].lastModified).toBe(LOCATION_ENTRIES_LAST_MODIFIED);
+    expect(entries[0].lastModified).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+  });
+
+  it('returns entries sorted by URL', () => {
+    const entries = toLocationEntries(
+      [
+        { transaction_type: 'sale', region: 'ashanti', neighborhood: 'Kumasi' },
+        {
+          transaction_type: 'rent',
+          region: 'greater_accra',
+          neighborhood: 'Dansoman',
+        },
+        { transaction_type: 'rent', region: 'ashanti', neighborhood: 'Kumasi' },
+      ],
+      ORIGIN
+    );
+
+    const urls = entries.map((entry) => entry.url);
+    expect(urls).toEqual([...urls].sort());
   });
 });

@@ -11,6 +11,7 @@ import { normalizeRegionForDb, formatRegionForUi } from '@/utils/regionMapper';
 import { convertFilterPriceToDb } from '@/utils/currency';
 import { buildSearchFilter } from '@/utils/searchQuery';
 import { JsonLd, getBreadcrumbSchema } from '@/components/seo/JsonLd';
+import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
   title: 'Apartments & Rooms for Rent in Ghana | Property Hub GH',
@@ -98,7 +99,8 @@ async function fetchRentalListings(searchParams: { [key: string]: string | strin
     .from('listings')
     .select('*')
     .eq('transaction_type', 'rent')
-    .eq('status', 'active');
+    .eq('status', 'active')
+    .eq('moderation_status', 'approved');
 
   const posterRole = searchParams.posterRole as string;
   const beds = searchParams.beds as string;
@@ -352,6 +354,7 @@ export default async function RentalsPage(props: { searchParams: Promise<{ [key:
           </div>
         </main>
       </div>
+      <Footer />
     </div>
   );
 }

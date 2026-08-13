@@ -4,6 +4,8 @@ import {
   ACTIVE_LISTING_QUERY,
   STATIC_SITEMAP_ENTRIES,
   toListingEntry,
+  toLocationEntries,
+  type LocationRow,
 } from '@/utils/sitemapEntries';
 
 const ORIGIN = 'https://www.propertyhubgh.com';
@@ -31,22 +33,46 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       // Single sitemap files cap at ~50k URLs; paginate (e.g. updated_at cursor) and split before exceeding that.
       .limit(1000);
 
-    if (listings && listings.length > 0) {
-      const listingRoutes: MetadataRoute.Sitemap = listings.map((listing) =>
-        toListingEntry(
-          {
-            id: listing.id,
-            category: listing.category,
-            neighborhood: listing.neighborhood,
-            region: listing.region,
-            updated_at: listing.updated_at,
-          },
-          ORIGIN
-        )
-      );
+    const listingRoutes: MetadataRoute.Sitemap =
+      listings && listings.length > 0
+        ? listings.map((listing) =>
+            toListingEntry(
+              {
+                id: listing.id,
+                category: listing.category,
+                neighborhood: listing.neighborhood,
+                region: listing.region,
+                updated_at: listing.updated_at,
+              },
+              ORIGIN
+            )
+          )
+        : [];
 
+    const { data: locationRows, error: locationError } = await supabase
+      .from('listings')
+      .select('transaction_type, region, neighborhood')
+      .eq('status', ACTIVE_LISTING_QUERY.status)
+      .eq('moderation_status', ACTIVE_LISTING_QUERY.moderation_status)
+      .limit(2000);
+
+    if (locationError) {
+      console.error('Error fetching locations for sitemap:', locationError);
       return [...staticRoutes, ...listingRoutes];
     }
+
+    const locationRoutes: MetadataRoute.Sitemap = toLocationEntries(
+      (locationRows ?? []).map(
+        (row): LocationRow => ({
+          transaction_type: row.transaction_type as 'rent' | 'sale',
+          region: row.region,
+          neighborhood: row.neighborhood,
+        })
+      ),
+      ORIGIN
+    );
+
+    return [...staticRoutes, ...listingRoutes, ...locationRoutes];
   } catch (err) {
     console.error('Error fetching listings for sitemap:', err);
   }

@@ -38,3 +38,42 @@ export function toListingEntry(
     lastModified: row.updated_at ?? '',
   };
 }
+
+export interface LocationRow {
+  transaction_type: 'rent' | 'sale';
+  region: string | null;
+  neighborhood: string | null;
+}
+
+export const LOCATION_ENTRIES_LAST_MODIFIED = '2026-08-13T00:00:00.000Z';
+
+function slugifyLocationName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s_-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+export function toLocationEntries(
+  rows: LocationRow[],
+  origin: string
+): { url: string; lastModified: string }[] {
+  const seen = new Set<string>();
+  const entries: { url: string; lastModified: string }[] = [];
+
+  for (const row of rows) {
+    const locationName = row.neighborhood || row.region;
+    if (!locationName) continue;
+
+    const slug = slugifyLocationName(locationName);
+    const path = row.transaction_type === 'rent' ? 'rentals' : 'sales';
+    const url = `${origin}/${path}/${slug}`;
+
+    if (seen.has(url)) continue;
+    seen.add(url);
+    entries.push({ url, lastModified: LOCATION_ENTRIES_LAST_MODIFIED });
+  }
+
+  return entries.sort((a, b) => a.url.localeCompare(b.url));
+}
