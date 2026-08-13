@@ -12,6 +12,7 @@ export const STATIC_SITEMAP_ENTRIES: { url: string; lastModified: string }[] = [
   { url: '/', lastModified: '2026-08-01T00:00:00.000Z' },
   { url: '/rentals', lastModified: '2026-08-01T00:00:00.000Z' },
   { url: '/sales', lastModified: '2026-08-01T00:00:00.000Z' },
+  { url: '/properties', lastModified: '2026-08-13T00:00:00.000Z' },
   { url: '/safemove', lastModified: '2026-08-01T00:00:00.000Z' },
   { url: '/requests', lastModified: '2026-08-01T00:00:00.000Z' },
   { url: '/insights', lastModified: '2026-08-13T00:00:00.000Z' },

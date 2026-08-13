@@ -85,6 +85,7 @@ describe('STATIC_SITEMAP_ENTRIES', () => {
       '/',
       '/rentals',
       '/sales',
+      '/properties',
       '/safemove',
       '/requests',
       '/insights',
@@ -94,7 +95,7 @@ describe('STATIC_SITEMAP_ENTRIES', () => {
       '/copyright',
       '/llms.txt',
     ]);
-    expect(STATIC_SITEMAP_ENTRIES).toHaveLength(11);
+    expect(STATIC_SITEMAP_ENTRIES).toHaveLength(12);
   });
 
   it('includes a url ending in /insights', () => {
