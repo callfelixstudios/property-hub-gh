@@ -4,7 +4,7 @@ import PriceDisplay from "./PriceDisplay";
 import VerifiedBadge from "./VerifiedBadge";
 import { generateListingSlug } from "@/utils/slugify";
 
-interface PropertyCardProps {
+export interface PropertyCardProps {
   id?: string | number;
   imageSrc?: string;
   title?: string;
