@@ -14,6 +14,7 @@ export const STATIC_SITEMAP_ENTRIES: { url: string; lastModified: string }[] = [
   { url: '/sales', lastModified: '2026-08-01T00:00:00.000Z' },
   { url: '/safemove', lastModified: '2026-08-01T00:00:00.000Z' },
   { url: '/requests', lastModified: '2026-08-01T00:00:00.000Z' },
+  { url: '/insights', lastModified: '2026-08-13T00:00:00.000Z' },
   { url: '/terms', lastModified: '2026-08-01T00:00:00.000Z' },
   { url: '/privacy', lastModified: '2026-08-01T00:00:00.000Z' },
   { url: '/cookie-policy', lastModified: '2026-08-01T00:00:00.000Z' },

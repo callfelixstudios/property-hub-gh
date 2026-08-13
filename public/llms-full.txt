@@ -29,6 +29,29 @@ SafeMove eliminates real estate fraud in Ghana by acting as a trusted intermedia
 ### 4. Direct WhatsApp Agent Contact
 Property Hub GH enables direct, 1-click WhatsApp connection between verified buyers/renters and property listers/agents, eliminating middleman scams.
 
+### 5. Programmatic Location Pages (/rentals/{slug}, /sales/{slug})
+Dedicated neighborhood and region landing pages on both the rental and sales sides of the directory.
+- **URL Patterns**: https://www.propertyhubgh.com/rentals/{location-slug} and https://www.propertyhubgh.com/sales/{location-slug}.
+- **Major Populated Location Slugs**:
+  - east-legon
+  - cantonments
+  - osu
+  - labone
+  - spintex
+  - airport-residential-area
+  - dzorwulu
+  - madina
+  - dansoman
+  - tema
+  - kumasi
+  - kasoa
+  - cape-coast
+  - takoradi
+- Pages are auto-generated from live listings and only exist when that location has active verified listings.
+
+### 6. Market Insights (/insights)
+A dedicated insights page presenting live regional rental and sale price tables computed from verified listings across Ghana.
+
 ## Frequently Asked Questions (FAQ)
 
 ### How do I find apartments for rent in East Legon or Cantonments?

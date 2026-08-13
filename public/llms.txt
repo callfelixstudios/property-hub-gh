@@ -8,6 +8,7 @@
 - **Sales & Land Directory** (/sales): Verified directory of litigation-free plots of land, uncompleted structures, and complete residential estate properties for sale in Ghana.
 - **SafeMove Verification & Escrow** (/safemove): Fraud protection service offering physical property inspection, title verification, and rent advance escrow hold.
 - **Property Requests** (/requests): Direct buyer & tenant request board enabling listers and agents to match specific property requests.
+- **Location Pages & Insights** (/rentals/{location}, /sales/{location}, /insights): Auto-generated neighborhood pages for popular areas and regional rental/sale price tables, built from verified listings.
 
 ## Popular Locations Covered
 

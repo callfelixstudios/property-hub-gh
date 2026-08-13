@@ -78,7 +78,7 @@ describe('toListingEntry', () => {
 });
 
 describe('STATIC_SITEMAP_ENTRIES', () => {
-  it('includes all 10 expected paths', () => {
+  it('includes all 11 expected paths', () => {
     const paths = STATIC_SITEMAP_ENTRIES.map((entry) => entry.url);
 
     expect(paths).toEqual([
@@ -87,13 +87,26 @@ describe('STATIC_SITEMAP_ENTRIES', () => {
       '/sales',
       '/safemove',
       '/requests',
+      '/insights',
       '/terms',
       '/privacy',
       '/cookie-policy',
       '/copyright',
       '/llms.txt',
     ]);
-    expect(STATIC_SITEMAP_ENTRIES).toHaveLength(10);
+    expect(STATIC_SITEMAP_ENTRIES).toHaveLength(11);
+  });
+
+  it('includes a url ending in /insights', () => {
+    const paths = STATIC_SITEMAP_ENTRIES.map((entry) => entry.url);
+
+    expect(paths).toContain('/insights');
+  });
+
+  it('has unique static urls', () => {
+    const paths = STATIC_SITEMAP_ENTRIES.map((entry) => entry.url);
+
+    expect(new Set(paths).size).toBe(paths.length);
   });
 
   it('uses stable fixed ISO dates, not new Date() semantics', () => {
