@@ -9,7 +9,7 @@ import RequestsBudget from '@/components/RequestsBudget';
 import SeekerCardActions from '@/components/requests/SeekerCardActions';
 import { JsonLd, getBreadcrumbSchema } from '@/components/seo/JsonLd';
 
-export const revalidate = 0; // Disable caching to always show latest requests
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: 'Property Requests & Tenant Space Finder | Property Hub GH',
@@ -65,7 +65,8 @@ export default async function RequestsPage() {
 
   const generateWhatsAppLink = (request: SpaceRequest) => {
     if (!request.whatsapp_number) return '';
-    const message = `Hi ${request.seeker_name}, I saw your request for a ${formatPropertyType(request.property_type)} in ${request.location} with a budget of ${formatCurrency(request.budget)} on Property Hub. I have a property that might fit your needs!`;
+    const name = user ? request.seeker_name : 'Seeker';
+    const message = `Hi ${name}, I saw your request for a ${formatPropertyType(request.property_type)} in ${request.location} with a budget of ${formatCurrency(request.budget)} on Property Hub. I have a property that might fit your needs!`;
     const cleanPhone = request.whatsapp_number.replace(/[^\d+]/g, '');
     return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
   };
@@ -127,7 +128,7 @@ export default async function RequestsPage() {
                     </div>
                     <div className="flex items-center text-gray-600">
                       <Calendar className="w-4 h-4 mr-2 text-gray-400" />
-                      <span className="text-sm font-medium">Seeker: {req.seeker_name}</span>
+                      {user ? <>Seeker: {req.seeker_name}</> : 'Seeker'}
                     </div>
                   </div>
 

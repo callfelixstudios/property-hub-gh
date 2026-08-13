@@ -30,7 +30,7 @@ export function getOrganizationSchema() {
     '@id': 'https://www.propertyhubgh.com/#organization',
     name: 'Property Hub GH',
     url: 'https://www.propertyhubgh.com',
-    logo: 'https://www.propertyhubgh.com/hero-bg.png',
+    logo: 'https://www.propertyhubgh.com/logo.svg',
     image: 'https://www.propertyhubgh.com/hero-bg.png',
     description: 'Unified Property Directory for Renting Rooms, Hostels, Apartments & Buying Litigation-Free Land and Houses in Ghana.',
     address: {

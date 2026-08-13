@@ -4,6 +4,7 @@ import PropertyCard from "@/components/PropertyCard";
 import Footer from "@/components/Footer";
 import Link from "next/link";
 import Image from "next/image";
+import { createClient } from '@/utils/supabase/server';
 
 export const metadata: Metadata = {
   title: 'Property Hub GH | Rent & Buy Properties in Ghana',
@@ -19,53 +20,116 @@ export const metadata: Metadata = {
   },
 };
 
-const featuredListings = [
-  {
-    imageSrc: "/property-1.png",
-    title: "The Apex Residency",
-    rawPrice: 2500,
-    currency: "USD",
-    priceSuffix: "/mo",
-    location: "East Legon, Accra",
-    beds: 3,
-    baths: 2,
-    area: "120 m²",
-    badge: "verified" as const,
-  },
-  {
-    imageSrc: "/property-2.png",
-    title: "Vista Heights",
-    rawPrice: 1800,
-    currency: "USD",
-    priceSuffix: "/mo",
-    location: "Cantonments, Accra",
-    beds: 2,
-    baths: 2,
-    area: "90 m²",
-    badge: "safemove" as const,
-  },
-  {
-    imageSrc: "/property-3.png",
-    title: "Eco-Haven Estate",
-    rawPrice: 450000,
-    currency: "USD",
-    priceSuffix: "",
-    location: "Trasacco, East Legon",
-    beds: 5,
-    baths: 4,
-    area: "315 m²",
-    badge: "verified" as const,
-  },
-];
+function formatCategory(cat?: string) {
+  if (!cat) return 'Apartment';
+  return cat
+    .split('_')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
 
-export default function Home() {
+const formatRegion = (str?: string) =>
+  str ? str.split('_').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') : '';
+
+interface FeaturedListing {
+  id: string | number;
+  imageSrc: string;
+  title: string;
+  rawPrice?: number;
+  currency: string;
+  priceSuffix?: string;
+  location?: string;
+  beds?: number;
+  baths?: number;
+  area?: string;
+  badge?: 'verified' | 'new' | 'safemove';
+  isVerified?: boolean;
+}
+
+interface MarketRow {
+  category: string | null;
+  bedrooms: number | null;
+  base_rent: number | null;
+}
+
+export default async function Home() {
+  const supabase = await createClient();
+
+  const [featuredResult, neighborhoodResult, marketResult] = await Promise.all([
+    supabase
+      .from('listings')
+      .select('id, title, transaction_type, category, neighborhood, region, base_rent, outright_price, currency, bedrooms, bathrooms, square_meters, image_url, media_urls, is_verified, safemove_active, views')
+      .eq('status', 'active')
+      .eq('moderation_status', 'approved')
+      .order('is_verified', { ascending: false })
+      .order('views', { ascending: false })
+      .limit(6),
+    supabase
+      .from('listings')
+      .select('neighborhood')
+      .eq('status', 'active')
+      .eq('moderation_status', 'approved')
+      .in('neighborhood', ['East Legon', 'Cantonments', 'Labone'])
+      .limit(1000),
+    supabase
+      .from('listings')
+      .select('category, bedrooms, base_rent')
+      .eq('transaction_type', 'rent')
+      .eq('status', 'active')
+      .eq('moderation_status', 'approved')
+      .not('base_rent', 'is', null)
+      .limit(1000),
+  ]);
+
+  const featuredListings: FeaturedListing[] = (featuredResult.data || []).map((row) => {
+    const isRent = row.transaction_type === 'rent';
+    return {
+      id: row.id,
+      imageSrc: row.image_url || row.media_urls?.[0] || '/property-1.webp',
+      title: row.title || `${formatCategory(row.category)} in ${row.neighborhood || formatRegion(row.region) || 'Ghana'}`,
+      rawPrice: (isRent ? row.base_rent : row.outright_price) ?? undefined,
+      currency: row.currency || 'GHS',
+      priceSuffix: isRent ? '/mo' : undefined,
+      location: [row.neighborhood, formatRegion(row.region)].filter(Boolean).join(', '),
+      beds: row.bedrooms ?? undefined,
+      baths: row.bathrooms ?? undefined,
+      area: row.square_meters != null ? String(row.square_meters) : undefined,
+      badge: row.is_verified ? 'verified' : row.safemove_active ? 'safemove' : undefined,
+      isVerified: !!row.is_verified,
+    };
+  });
+
+  const neighborhoodCounts: Record<string, number> = {};
+  for (const row of neighborhoodResult.data || []) {
+    if (row.neighborhood) {
+      neighborhoodCounts[row.neighborhood] = (neighborhoodCounts[row.neighborhood] || 0) + 1;
+    }
+  }
+
+  const marketRows = (marketResult.data || []) as MarketRow[];
+  const ghsFormat = new Intl.NumberFormat('en-GH', { style: 'currency', currency: 'GHS', maximumFractionDigits: 0 });
+  const bandRange = (predicate: (row: MarketRow) => boolean) => {
+    const prices = marketRows
+      .filter(predicate)
+      .map((row) => Number(row.base_rent))
+      .filter((n) => Number.isFinite(n));
+    if (prices.length === 0) return '—';
+    return `${ghsFormat.format(Math.min(...prices))} – ${ghsFormat.format(Math.max(...prices))}`;
+  };
+  const marketBands = [
+    { label: 'Top 1-Bed Apartments', range: bandRange((row) => row.bedrooms === 1) },
+    { label: '2-Bed Apartments, Rent', range: bandRange((row) => row.bedrooms === 2) },
+    { label: 'Serviced Studios (Accra)', range: bandRange((row) => (row.category || '').toLowerCase().includes('studio')) },
+    { label: '3-Bed Detached Villa, Rent', range: bandRange((row) => (row.category || '').toLowerCase().includes('villa') && row.bedrooms === 3) },
+  ];
+
   return (
     <div className="w-full">
       {/* ─── BLOCK 1: HERO ─── */}
       <section className="relative w-full min-h-[540px] md:min-h-[600px] flex items-center overflow-hidden">
         {/* Background Image */}
         <Image
-          src="/hero-bg.png"
+          src="/hero-bg.webp"
           alt="Modern residential estate in Ghana"
           fill
           className="object-cover"
@@ -116,11 +180,26 @@ export default function Home() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-            {featuredListings.map((listing, i) => (
-              <PropertyCard key={i} {...listing} />
-            ))}
-          </div>
+          {featuredListings.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+              {featuredListings.map((listing) => (
+                <PropertyCard key={listing.id} {...listing} />
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-md p-6 shadow-ambient border border-gray-100 flex flex-col items-center text-center py-14">
+              <h3 className="font-bold text-navy-base mb-2">New verified listings are on the way</h3>
+              <p className="text-sm text-gray-500 mb-6 max-w-sm">
+                We&apos;re onboarding fresh verified properties right now. Browse rentals to see what&apos;s currently live.
+              </p>
+              <Link
+                href="/rentals"
+                className="inline-flex items-center px-6 py-3 bg-navy-base text-white font-bold rounded-sm hover:bg-navy-light transition-colors"
+              >
+                Browse Rentals
+              </Link>
+            </div>
+          )}
         </div>
       </section>
 
@@ -175,7 +254,7 @@ export default function Home() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="bg-white rounded-md p-6 shadow-ambient border border-gray-100">
                 <div className="w-10 h-10 rounded-sm bg-navy-base flex items-center justify-center mb-4">
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 00-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                 </div>
                 <h3 className="font-bold text-navy-base mb-1">Safe Payments</h3>
                 <p className="text-sm text-gray-500">Every money exchange is independently tracked, verified and escrowed.</p>
@@ -208,28 +287,33 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { name: "East Legon", img: "/neighborhood-eastlegon.png", count: "124 listings" },
-              { name: "Cantonments", img: "/neighborhood-cantonments.png", count: "87 listings" },
-              { name: "Labone", img: "/neighborhood-labone.png", count: "63 listings" },
-            ].map((n) => (
-              <Link
-                key={n.name}
-                href={`/rentals?neighborhood=${encodeURIComponent(n.name)}`}
-                className="group relative h-64 md:h-72 rounded-md overflow-hidden"
-              >
-                <Image
-                  src={n.img}
-                  alt={n.name}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-navy-base/80 via-navy-base/20 to-transparent" />
-                <div className="absolute bottom-0 left-0 p-6">
-                  <h3 className="text-xl font-bold text-white mb-1">{n.name}</h3>
-                  <p className="text-sm text-white/70">{n.count}</p>
-                </div>
-              </Link>
-            ))}
+              { name: "East Legon", img: "/neighborhood-eastlegon.webp" },
+              { name: "Cantonments", img: "/neighborhood-cantonments.webp" },
+              { name: "Labone", img: "/neighborhood-labone.webp" },
+            ].map((n) => {
+              const count = neighborhoodCounts[n.name] || 0;
+              return (
+                <Link
+                  key={n.name}
+                  href={`/rentals?neighborhood=${encodeURIComponent(n.name)}`}
+                  className="group relative h-64 md:h-72 rounded-md overflow-hidden"
+                >
+                  <Image
+                    src={n.img}
+                    alt={n.name}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-navy-base/80 via-navy-base/20 to-transparent" />
+                  <div className="absolute bottom-0 left-0 p-6">
+                    <h3 className="text-xl font-bold text-white mb-1">{n.name}</h3>
+                    {count > 0 && (
+                      <p className="text-sm text-white/70">{count} listings</p>
+                    )}
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -276,22 +360,25 @@ export default function Home() {
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <p className="font-semibold text-navy-base">Your Rental Trend (GHS)</p>
               <span className="text-xs font-bold bg-accent-emerald/10 text-accent-emerald px-3 py-1 rounded-full">
-                +5.7% avg growth
+                Live market data
               </span>
             </div>
-            <div className="divide-y divide-gray-50">
-              {[
-                { label: "Top 1-Bed Apartments", range: "₵1,200 – ₵3,500" },
-                { label: "2-Bed Apartments, Rent", range: "₵2,000 – ₵6,200" },
-                { label: "Serviced Studios (Accra)", range: "₵900 – ₵2,800" },
-                { label: "3-Bed Detached Villa, Rent", range: "₵5,500 – ₵15,000" },
-              ].map((row) => (
-                <div key={row.label} className="flex items-center justify-between px-6 py-4">
-                  <span className="text-sm text-gray-600">{row.label}</span>
-                  <span className="text-sm font-semibold text-navy-base">{row.range}</span>
-                </div>
-              ))}
-            </div>
+            {marketRows.length >= 10 ? (
+              <div className="divide-y divide-gray-50">
+                {marketBands.map((row) => (
+                  <div key={row.label} className="flex items-center justify-between px-6 py-4">
+                    <span className="text-sm text-gray-600">{row.label}</span>
+                    <span className="text-sm font-semibold text-navy-base">{row.range}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="px-6 py-10 text-center">
+                <p className="text-sm text-gray-500">
+                  Market data is being compiled — check back soon.
+                </p>
+              </div>
+            )}
             <div className="px-6 py-4 border-t border-gray-100">
               <Link href="/rentals" className="text-sm font-semibold text-navy-base hover:underline flex items-center gap-1">
                 View Full Q3 Market Report

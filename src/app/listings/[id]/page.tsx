@@ -9,6 +9,10 @@ import PriceDisplay from "@/components/PriceDisplay";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import SaveListingButton from "@/components/SaveListingButton";
 import MapLoader from "@/components/MapLoader";
+import ListingSellerCard from "@/components/listings/ListingSellerCard";
+import ListingContextSection from "@/components/listings/ListingContextSection";
+import ListingAboutBoilerplate from "@/components/listings/ListingAboutBoilerplate";
+import { buildListingTitle, buildListingDescription } from '@/utils/listingMeta';
 import { JsonLd, getRealEstateListingSchema, getBreadcrumbSchema } from "@/components/seo/JsonLd";
 
 interface ListingRow {
@@ -164,8 +168,24 @@ export async function generateMetadata({
     return { title: 'Property Not Found | Property Hub GH' };
   }
 
-  const title = `${formatCategory(listing.category || '')} in ${listing.neighborhood || formatRegion(listing.region) || 'Ghana'} | Property Hub GH`;
-  const description = `${formatCategory(listing.category || '')} for ${listing.transaction_type === 'rent' ? 'Rent' : 'Sale'} - ₵${(listing.base_rent || listing.outright_price || 0).toLocaleString()}. ${listing.description?.substring(0, 150) || ''}...`;
+  const title = buildListingTitle({
+    category: listing.category || '',
+    transactionType: listing.transaction_type,
+    neighborhood: listing.neighborhood,
+    region: listing.region,
+  });
+  const description = buildListingDescription({
+    category: listing.category || '',
+    transactionType: listing.transaction_type,
+    price: listing.base_rent || listing.outright_price || null,
+    currency: listing.currency,
+    bedrooms: listing.bedrooms,
+    bathrooms: listing.bathrooms,
+    isVerified: listing.is_verified,
+    safemoveActive: listing.safemove_active,
+    neighborhood: listing.neighborhood,
+    region: listing.region,
+  });
   const imageUrl = listing.image_url || (listing.media_urls && listing.media_urls[0]) || 'https://www.propertyhubgh.com/opengraph-image';
   const pageUrl = `https://www.propertyhubgh.com/listings/${slug}`;
 
@@ -425,12 +445,23 @@ export default async function ListingDetailPage({
             )}
 
             {/* Description */}
-            {row.description && (
+            {row.description && row.description.trim().length >= 50 ? (
               <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6">
                 <h2 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-3">Description</h2>
                 <p className="text-slate-600 leading-relaxed text-[15px] whitespace-pre-line">{row.description}</p>
               </div>
+            ) : (
+              <ListingAboutBoilerplate
+                category={row.category}
+                bedrooms={row.bedrooms}
+                bathrooms={row.bathrooms}
+                neighborhood={row.neighborhood}
+                region={row.region}
+              />
             )}
+
+            {/* Neighborhood context */}
+            <ListingContextSection region={row.region} neighborhood={row.neighborhood} category={row.category} />
 
             {/* Amenities */}
             {row.amenities && row.amenities.length > 0 && (
@@ -557,81 +588,38 @@ export default async function ListingDetailPage({
           <div className="lg:col-span-1 space-y-6 sticky top-24">
 
               {/* ── Agent Card (TOP of sidebar) ──────────────────────────── */}
-              {!user ? (
-                <div className="bg-slate-50 border border-slate-200 rounded-xl shadow-sm p-6 flex flex-col items-center text-center relative overflow-hidden">
-                  <div className="absolute inset-0 bg-slate-100/50 backdrop-blur-[1px] pointer-events-none" />
-                  <div className="relative z-10 flex flex-col items-center">
-                    <div className="w-12 h-12 bg-white border border-slate-200 rounded-full flex items-center justify-center mb-4 shadow-sm">
-                      <span className="text-xl">🔒</span>
-                    </div>
-                    <h3 className="text-base font-bold text-slate-900 mb-2">Want to contact this lister?</h3>
-                    <p className="text-sm text-slate-500 mb-6 leading-relaxed">
-                      Sign in or create a free account to view the agent&apos;s name, phone number, and message them directly on WhatsApp.
-                    </p>
-                    <Link href="/login" className="bg-navy-base hover:bg-navy-light text-white font-bold py-2.5 px-6 rounded-lg transition-colors w-full">
+              <ListingSellerCard
+                fullName={profile.full_name}
+                companyName={profile.company_name}
+                posterRole={row.poster_role}
+                isVerifiedAgent={profile.is_verified_agent}
+                isAuthenticated={!!user}
+                cta={
+                  user ? (
+                    profile.whatsapp_link ? (
+                      <WhatsAppButton
+                        profileWhatsAppLink={profile.whatsapp_link}
+                        listingId={id}
+                        displayTitle={displayTitle}
+                        rawPrice={primaryPrice || 0}
+                        currency={row.currency || 'GHS'}
+                        rentAdvanceMonths={row.rent_advance_months || 1}
+                        isRental={isRent}
+                        serviceCharge={row.service_charge || 0}
+                        floorPlanUrl={row.floor_plan_url}
+                      />
+                    ) : (
+                      <div className="w-full py-3 bg-slate-100 text-slate-400 font-semibold rounded-xl text-center text-sm">
+                        Contact info unavailable
+                      </div>
+                    )
+                  ) : (
+                    <Link href="/login" className="bg-navy-base hover:bg-navy-light text-white font-bold py-2.5 px-6 rounded-lg transition-colors w-full block text-center">
                       Sign In to View Contact
                     </Link>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
-                  <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">Listed By</h3>
-                  <div className="flex items-center gap-3 mb-5">
-                    <div className="w-11 h-11 bg-navy-base rounded-full overflow-hidden flex items-center justify-center text-white font-extrabold text-base flex-shrink-0">
-                      {profile.avatar_url ? (
-                        <img 
-                          src={profile.avatar_url} 
-                          alt={profile.full_name || 'Agent'} 
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        (profile.full_name || 'A').charAt(0).toUpperCase()
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-bold text-slate-900">
-                        {profile.full_name || 'Property Agent'}
-                        {row.poster_role === 'owner' && (
-                          <span className="bg-blue-50 text-blue-700 border border-blue-200 text-xs px-2.5 py-0.5 rounded-full font-medium inline-block ml-2">Owner</span>
-                        )}
-                        {row.poster_role === 'agent' && (
-                          <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs px-2.5 py-0.5 rounded-full font-medium inline-block ml-2">Agent</span>
-                        )}
-                      </p>
-                      {profile.company_name && (
-                        <p className="text-xs text-slate-500">{profile.company_name}</p>
-                      )}
-                      {profile.is_verified_agent && (
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <svg className="w-3.5 h-3.5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                          <span className="text-xs font-semibold text-emerald-600">Verified Agent</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* ── Premium CTA Button ────────────────────────────────── */}
-                  {profile.whatsapp_link ? (
-                    <WhatsAppButton 
-                      profileWhatsAppLink={profile.whatsapp_link}
-                      listingId={id}
-                      displayTitle={displayTitle}
-                      rawPrice={primaryPrice || 0}
-                      currency={row.currency || 'GHS'}
-                      rentAdvanceMonths={row.rent_advance_months || 1}
-                      isRental={isRent}
-                      serviceCharge={row.service_charge || 0}
-                      floorPlanUrl={row.floor_plan_url}
-                    />
-                  ) : (
-                    <div className="w-full py-3 bg-slate-100 text-slate-400 font-semibold rounded-xl text-center text-sm">
-                      Contact info unavailable
-                    </div>
-                  )}
-                </div>
-              )}
+                  )
+                }
+              />
 
               {/* ── Price Card (underneath agent) ────────────────────────── */}
               <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">

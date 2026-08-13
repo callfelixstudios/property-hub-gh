@@ -49,7 +49,7 @@ function formatAdvanceDuration(duration?: string | number | null): string {
 
 export default function PropertyCard({
   id = "1",
-  imageSrc = "/property-1.png",
+  imageSrc = "/property-1.webp",
   title = "Modern Apartment",
   rawPrice = 4500,
   currency = "GHS",
