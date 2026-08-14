@@ -132,7 +132,7 @@ export default function TermsOfServicePage() {
                 Every administrative action — such as approving an account, reviewing a listing, or changing verification status — is automatically recorded in an immutable internal audit ledger. This log tracks previous and new values, timestamps, and staff account IDs.
               </p>
               <p>
-                Administrative access is strictly restricted to verified corporate accounts (@propertyhubgh.com) to protect platform integrity and prevent unauthorized modifications.
+                Administrative access is strictly restricted to verified corporate accounts of Property Hub GH to protect platform integrity and prevent unauthorized modifications.
               </p>
             </section>
 

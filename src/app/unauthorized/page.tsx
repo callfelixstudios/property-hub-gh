@@ -50,11 +50,6 @@ export default async function UnauthorizedPage({
             <p className="text-slate-400 text-base leading-relaxed mb-2">
               This area is reserved for authorized Property Hub GH administrators only.
             </p>
-            <p className="text-slate-500 text-sm mb-8">
-              Valid sessions require a{' '}
-              <span className="text-slate-300 font-mono">@propertyhubgh.com</span>{' '}
-              email address.
-            </p>
           </>
         )}
 
