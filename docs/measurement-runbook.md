@@ -15,6 +15,10 @@
 - Import site from GSC (or DNS verify); submit the same sitemap.
 - Vercel dashboard → Integrations → Bing Webmaster → enable IndexNow
   (no code; pings automatically on each deploy).
+- **Status (2026-08-14): DEFERRED — the Bing/IndexNow integration was not
+  available in this Vercel account's Marketplace (no search results for
+  "IndexNow" or "Bing"). Not blocking: all 16 sitemap URLs already indexed.
+  Return here if deploy-time pings are ever needed.**
 - Optional first-deploy fallback ping (if integration off):
   `curl -X POST "https://api.indexnow.org/indexnow" -H "Content-Type: application/json" -d "{\"host\":\"www.propertyhubgh.com\",\"key\":\"<BING_KEY>\",\"keyLocation\":\"https://www.propertyhubgh.com/<BING_KEY>.txt\",\"urlList\":[\"https://www.propertyhubgh.com/\"]}"`
 
@@ -27,9 +31,9 @@
   `page_view` events. Event names/params beyond page_view are future work.
 
 ## 4. First-push checklist
-- [ ] GSC: 2 properties added + verified + sitemap submitted
-- [ ] Bing: site imported, sitemap submitted, IndexNow enabled
-- [ ] GA4: Measurement ID set on Vercel, page_view firing in DebugView
+- [x] GSC: property verified ("You are a verified owner"), sitemap Success (16 URLs), homepage indexed (2026-08-14)
+- [~] Bing: site added + verified, sitemap Success (16 URLs indexed) — IndexNow **deferred** (see §2)
+- [ ] GA4: Measurement ID set on Vercel, page_view firing in DebugView (pending)
 
 ## 5. Monthly AI-visibility review (≤1h)
 Log every citation found; table template:
