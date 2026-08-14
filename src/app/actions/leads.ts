@@ -93,7 +93,7 @@ export async function fetchListingNotifications() {
     .from('notifications')
     .select('*')
     .eq('user_id', user.id)
-    .in('type', ['listing_suspended', 'listing_unsuspended', 'listing_deleted', 'listing_restored'])
+    .in('type', ['listing_suspended', 'listing_unsuspended', 'listing_deleted', 'listing_restored', 'admin_notice', 'account_suspended', 'account_deleted', 'account_reactivated'])
     .order('created_at', { ascending: false });
 
   if (error) {

@@ -47,10 +47,18 @@ function getNotificationStyle(type: string): { icon: ReactNode; iconCls: string;
       };
     case 'listing_unsuspended':
     case 'listing_restored':
+    case 'account_reactivated':
       return {
         icon: <RefreshCw className="w-5 h-5" />,
         iconCls: "bg-emerald-100 text-emerald-600",
         badgeCls: "bg-emerald-100 text-emerald-700 border-emerald-200"
+      };
+    case 'account_suspended':
+    case 'account_deleted':
+      return {
+        icon: <AlertTriangle className="w-5 h-5" />,
+        iconCls: "bg-amber-100 text-amber-600",
+        badgeCls: "bg-amber-100 text-amber-700 border-amber-200"
       };
     default:
       return {
@@ -71,6 +79,14 @@ function getTypeLabel(type: string): string {
       return "Listing Deleted";
     case 'listing_restored':
       return "Listing Restored";
+    case 'admin_notice':
+      return "Notice";
+    case 'account_suspended':
+      return "Account Suspended";
+    case 'account_deleted':
+      return "Account Deleted";
+    case 'account_reactivated':
+      return "Account Reactivated";
     default:
       return "Notification";
   }
