@@ -1,7 +1,41 @@
 import { createServerClient } from '@supabase/ssr';
+import type { SupabaseClient, User } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
 
 const SESSION_COOKIE_PREFIX = 'sb-';
+
+/**
+ * Redirects to /unauthorized when the profile is suspended or deleted.
+ * Returns null when the user may proceed.
+ */
+async function redirectIfBlocked(
+  supabase: SupabaseClient,
+  request: NextRequest,
+  user: User,
+  response: NextResponse
+) {
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('account_status')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  if (profile?.account_status === 'suspended' || profile?.account_status === 'deleted') {
+    await supabase.auth.signOut();
+
+    const url = request.nextUrl.clone();
+    url.pathname = '/unauthorized';
+    url.search = '';
+    url.searchParams.set('reason', profile.account_status);
+
+    const redirect = NextResponse.redirect(url);
+    // Carry the cleared session cookies from signOut onto the redirect.
+    response.cookies.getAll().forEach((cookie) => redirect.cookies.set(cookie));
+    return redirect;
+  }
+
+  return null;
+}
 
 /**
  * L5 hardening: reject suspended/deleted accounts at the network edge.
@@ -44,24 +78,15 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('account_status')
-      .eq('id', user.id)
-      .maybeSingle();
-
-    if (profile?.account_status === 'suspended' || profile?.account_status === 'deleted') {
-      await supabase.auth.signOut();
-
-      const url = request.nextUrl.clone();
-      url.pathname = '/unauthorized';
-      url.search = '';
-      url.searchParams.set('reason', profile.account_status);
-
-      const redirect = NextResponse.redirect(url);
-      // Carry the cleared session cookies from signOut onto the redirect.
-      response.cookies.getAll().forEach((cookie) => redirect.cookies.set(cookie));
-      return redirect;
+    const blocked = await redirectIfBlocked(supabase, request, user, response);
+    if (blocked) return blocked;
+  } else {
+    // Fall back to the cookie session when the token is expired/refresh is
+    // blocked, so stale sessions can still be rejected at the edge.
+    const { data } = await supabase.auth.getSession();
+    if (data.session?.user) {
+      const blocked = await redirectIfBlocked(supabase, request, data.session.user, response);
+      if (blocked) return blocked;
     }
   }
 

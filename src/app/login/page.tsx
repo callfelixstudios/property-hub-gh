@@ -4,7 +4,7 @@ import { useState, FormEvent, Suspense, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { Phone, Mail, ArrowLeft, Loader2 } from "lucide-react";
+import { Phone, Mail, ArrowLeft, Loader2, Lock, X } from "lucide-react";
 import { sendPhoneOtp, verifyPhoneOtp, signInWithGoogle } from "@/app/actions/authActions";
 import { resolvePostLoginDestination } from "@/utils/postLoginDestination";
 
@@ -35,6 +35,17 @@ function LoginForm() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [suspended, setSuspended] = useState(() => searchParams.get('suspended') === '1');
+
+  // Close suspension modal on Escape
+  useEffect(() => {
+    if (!suspended) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSuspended(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [suspended]);
 
   // Cooldown timer for OTP resend
   useEffect(() => {
@@ -52,7 +63,11 @@ function LoginForm() {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
-        setErrorMsg(error.message);
+        if (error.message === 'User is banned') {
+          setSuspended(true);
+        } else {
+          setErrorMsg(error.message);
+        }
       } else {
         router.push(await resolvePostLoginDestination(supabase, next));
         router.refresh();
@@ -107,7 +122,11 @@ function LoginForm() {
     setLoading(false);
 
     if (!res.success) {
-      setErrorMsg(res.error || 'Invalid OTP code. Please try again.');
+      if (res.error === 'User is banned') {
+        setSuspended(true);
+      } else {
+        setErrorMsg(res.error || 'Invalid OTP code. Please try again.');
+      }
       return;
     }
 
@@ -349,6 +368,59 @@ function LoginForm() {
           </p>
         )}
       </div>
+
+      {/* Account Suspended Modal */}
+      {suspended && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 px-4"
+          onClick={() => setSuspended(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-md rounded-xl border border-slate-200 bg-white p-8 shadow-ambient"
+          >
+            <button
+              type="button"
+              onClick={() => setSuspended(false)}
+              aria-label="Close"
+              className="absolute right-4 top-4 text-slate-400 hover:text-slate-700 transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="flex items-center justify-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-100 text-red-600">
+                <Lock className="h-7 w-7" />
+              </div>
+            </div>
+
+            <h2 className="mt-5 text-center text-2xl font-bold text-navy-base">
+              Account Suspended
+            </h2>
+            <p className="mt-3 text-center text-sm leading-relaxed text-slate-600">
+              Your account has been suspended by the Property Hub GH trust team. If you
+              believe this is a mistake, please contact our support team.
+            </p>
+
+            <div className="mt-6 flex flex-col gap-3">
+              <Link
+                href="/"
+                className="w-full rounded-lg bg-navy-base px-5 py-2.5 text-center font-bold text-white transition-colors hover:bg-navy-light"
+              >
+                Back to Home
+              </Link>
+              <a
+                href="mailto:support@propertyhubgh.com"
+                className="w-full rounded-lg border border-slate-300 px-5 py-2.5 text-center font-bold text-slate-700 transition-colors hover:bg-slate-50"
+              >
+                Contact Support
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
