@@ -10,6 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@next/third-parties": "^16.3.1",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.107.0",
     "browser-image-compression": "^2.0.2",
