@@ -561,6 +561,21 @@ export async function impersonateUser(userId: string) {
   const target = await assertCanTargetUser(supabase, userId);
   if (!target.email) throw new Error('Target user has no email on file');
 
+  const cookieStore = await cookies();
+  const { data: { session: adminSession } } = await supabase.auth.getSession();
+  if (!adminSession) throw new Error('Could not capture your admin session');
+
+  // Capture + audit BEFORE any session mutation, so the audit insert runs
+  // under the admin identity.
+  cookieStore.set('ph_admin_session', JSON.stringify({
+    access_token: adminSession.access_token,
+    refresh_token: adminSession.refresh_token,
+  }), { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/' });
+
+  await logAdminAction(supabase, adminUser.id, 'USER_IMPERSONATE_START', userId, null, {
+    expiresInMinutes: 30,
+  });
+
   const admin = createAdminClient();
   const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
     type: 'magiclink',
@@ -581,15 +596,6 @@ export async function impersonateUser(userId: string) {
     throw new Error(`Failed to establish impersonation session: ${sessionError?.message ?? 'unknown'}`);
   }
 
-  const cookieStore = await cookies();
-  const { data: { session: adminSession } } = await supabase.auth.getSession();
-  if (!adminSession) throw new Error('Could not capture your admin session');
-
-  cookieStore.set('ph_admin_session', JSON.stringify({
-    access_token: adminSession.access_token,
-    refresh_token: adminSession.refresh_token,
-  }), { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/' });
-
   await supabase.auth.setSession({
     access_token: sessionData.session.access_token,
     refresh_token: sessionData.session.refresh_token,
@@ -600,10 +606,6 @@ export async function impersonateUser(userId: string) {
     adminId: adminUser.id,
     expiresAt: Date.now() + IMPERSONATION_TTL_MS,
   }), { sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/', maxAge: IMPERSONATION_TTL_MS / 1000 });
-
-  await logAdminAction(supabase, adminUser.id, 'USER_IMPERSONATE_START', userId, null, {
-    expiresInMinutes: 30,
-  });
 
   redirect('/dashboard');
 }
