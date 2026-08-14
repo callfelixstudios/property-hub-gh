@@ -63,7 +63,7 @@ function LoginForm() {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
-        if (error.message === 'User is banned') {
+        if (error.message.toLowerCase().includes('user is banned')) {
           setSuspended(true);
         } else {
           setErrorMsg(error.message);
@@ -122,7 +122,7 @@ function LoginForm() {
     setLoading(false);
 
     if (!res.success) {
-      if (res.error === 'User is banned') {
+      if (res.error?.toLowerCase().includes('user is banned')) {
         setSuspended(true);
       } else {
         setErrorMsg(res.error || 'Invalid OTP code. Please try again.');
