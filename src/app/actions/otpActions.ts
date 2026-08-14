@@ -2,6 +2,7 @@
 
 import { headers } from 'next/headers';
 import { createClient } from '@/utils/supabase/server';
+import { createAdminClient } from '@/utils/supabase/admin';
 import { formatGhanaPhoneNumber, isValidGhanaPhone } from '@/utils/phoneUtils';
 import { getClientIp, rateLimit } from '@/utils/rateLimit';
 
@@ -46,4 +47,28 @@ export async function requestPhoneOtp(
   }
 
   return { success: true, formattedPhone };
+}
+
+/**
+ * Revokes every active session for the currently authenticated user.
+ * Used after a password change so the recovery session (and any other
+ * lingering session) cannot be reused.
+ */
+export async function revokeAllUserSessions() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false as const, error: 'No active session found.' };
+  }
+
+  const admin = createAdminClient();
+  const { error } = await admin.auth.admin.signOut(user.id);
+  if (error) {
+    return { success: false as const, error: 'Failed to revoke active sessions.' };
+  }
+
+  return { success: true as const };
 }

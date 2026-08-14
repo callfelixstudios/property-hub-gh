@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import { assertAdmin, logAdminAction } from '@/utils/adminHelpers';
@@ -205,10 +205,16 @@ export async function resetUserPassword(userId: string) {
   const target = await assertCanTargetUser(supabase, userId);
   if (!target.email) throw new Error('Target user has no email on file');
 
+  const headersList = await headers();
+  const host = headersList.get('host') ?? 'localhost:3000';
+  const proto = headersList.get('x-forwarded-proto') ?? 'http';
+  const origin = `${proto}://${host}`;
+
   const admin = createAdminClient();
   const { data, error } = await admin.auth.admin.generateLink({
     type: 'recovery',
     email: target.email,
+    options: { redirectTo: `${origin}/update-password` },
   });
   if (error || !data.properties.action_link) {
     throw new Error(`Failed to generate recovery link: ${error?.message ?? 'unknown'}`);
