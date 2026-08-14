@@ -72,7 +72,7 @@ export default function CookiePolicyPage() {
                 No Third-Party Advertising Trackers
               </h2>
               <p>
-                Property Hub Ghana does not use invasive third-party ad trackers or cross-site behavioral marketing cookies. The only external services with browser storage footprints are functional infrastructure partners required to operate authentication and SMS/WhatsApp notification delivery.
+                Property Hub Ghana does not use invasive third-party ad trackers or cross-site behavioral marketing cookies. The only external services with browser storage footprints are functional infrastructure partners required to operate authentication and SMS/WhatsApp notification delivery. We do run Google Analytics in aggregate, privacy-friendly mode to understand general page performance and traffic levels — it does not track you across other websites and is never used for advertising.
               </p>
             </section>
 
