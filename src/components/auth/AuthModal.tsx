@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Phone, Mail, ArrowLeft, Loader2, X } from 'lucide-react';
+import { Phone, Mail, ArrowLeft, Loader2, X, Lock } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { resolvePostLoginDestination } from '@/utils/postLoginDestination';
@@ -40,6 +41,7 @@ export function AuthModal({
   // Shared state
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [suspended, setSuspended] = useState(false);
 
   // OTP resend cooldown
   const [resendCooldown, setResendCooldown] = useState(0);
@@ -59,6 +61,7 @@ export function AuthModal({
       setErrorMsg(null);
       setLoading(false);
       setResendCooldown(0);
+      setSuspended(false);
     }
   }
 
@@ -91,7 +94,11 @@ export function AuthModal({
     setLoading(false);
 
     if (!res.success) {
-      setErrorMsg(res.error || 'Failed to send OTP code.');
+      if (res.error?.toLowerCase().includes('user is banned')) {
+        setSuspended(true);
+      } else {
+        setErrorMsg(res.error || 'Failed to send OTP code.');
+      }
       return;
     }
 
@@ -111,7 +118,11 @@ export function AuthModal({
     setLoading(false);
 
     if (!res.success) {
-      setErrorMsg(res.error || 'Failed to resend OTP code.');
+      if (res.error?.toLowerCase().includes('user is banned')) {
+        setSuspended(true);
+      } else {
+        setErrorMsg(res.error || 'Failed to resend OTP code.');
+      }
       return;
     }
 
@@ -127,7 +138,11 @@ export function AuthModal({
     setLoading(false);
 
     if (!res.success) {
-      setErrorMsg(res.error || 'Invalid OTP code. Please try again.');
+      if (res.error?.toLowerCase().includes('user is banned')) {
+        setSuspended(true);
+      } else {
+        setErrorMsg(res.error || 'Invalid OTP code. Please try again.');
+      }
       return;
     }
 
@@ -143,7 +158,11 @@ export function AuthModal({
     const res = await signInWithGoogle(redirectTo);
     if (!res.success) {
       setLoading(false);
-      setErrorMsg(res.error || 'Failed to initiate Google sign-in.');
+      if (res.error?.toLowerCase().includes('user is banned')) {
+        setSuspended(true);
+      } else {
+        setErrorMsg(res.error || 'Failed to initiate Google sign-in.');
+      }
     }
     // Browser will redirect to Google — loading stays true
   };
@@ -158,7 +177,11 @@ export function AuthModal({
     setLoading(false);
 
     if (error) {
-      setErrorMsg(error.message);
+      if (error.message.toLowerCase().includes('user is banned')) {
+        setSuspended(true);
+      } else {
+        setErrorMsg(error.message);
+      }
       return;
     }
 
@@ -209,12 +232,45 @@ export function AuthModal({
         </button>
 
         {/* Error Alert */}
-        {errorMsg && (
+        {errorMsg && !suspended && (
           <div className="mb-4 p-3 text-sm text-red-800 bg-red-50 border border-red-200 rounded-md">
             {errorMsg}
           </div>
         )}
 
+        {suspended ? (
+          <div className="py-4">
+            <div className="flex items-center justify-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-100 text-red-600">
+                <Lock className="h-7 w-7" />
+              </div>
+            </div>
+
+            <h2 className="mt-5 text-center text-xl font-bold text-navy-base">
+              Account Suspended
+            </h2>
+            <p className="mt-3 text-center text-sm leading-relaxed text-slate-600">
+              Your account has been suspended by the Property Hub GH trust team. If you
+              believe this is a mistake, please contact our support team.
+            </p>
+
+            <div className="mt-6 flex flex-col gap-3">
+              <Link
+                href="/"
+                className="w-full rounded-lg bg-navy-base px-5 py-2.5 text-center font-bold text-white transition-colors hover:bg-navy-light"
+              >
+                Back to Home
+              </Link>
+              <a
+                href="mailto:support@propertyhubgh.com"
+                className="w-full rounded-lg border border-slate-300 px-5 py-2.5 text-center font-bold text-slate-700 transition-colors hover:bg-slate-50"
+              >
+                Contact Support
+              </a>
+            </div>
+          </div>
+        ) : (
+          <>
         {/* ─── STEP: Method Selection ─── */}
         {step === 'select' && (
           <div className="space-y-4">
@@ -496,6 +552,8 @@ export function AuthModal({
               </button>
             </p>
           </form>
+        )}
+          </>
         )}
       </div>
     </div>

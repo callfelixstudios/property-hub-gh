@@ -13,7 +13,7 @@ export default async function UnauthorizedPage({
   searchParams: Promise<{ reason?: string }>;
 }) {
   const { reason } = await searchParams;
-  const isSuspended = reason === 'suspended';
+  const isSuspended = reason === 'suspended' || reason === 'deleted';
 
   return (
     <div className="min-h-screen bg-[#0d1b2a] flex items-center justify-center p-6">
@@ -31,13 +31,20 @@ export default async function UnauthorizedPage({
 
         {/* Heading */}
         <h1 className="text-3xl font-bold text-white mb-3 tracking-tight">
-          {isSuspended ? 'Account Suspended' : 'Access Restricted'}
+          {isSuspended ? (reason === 'deleted' ? 'Account Deleted' : 'Account Suspended') : 'Access Restricted'}
         </h1>
         {isSuspended ? (
-          <p className="text-slate-400 text-base leading-relaxed mb-2">
-            Your account has been suspended by the Property Hub GH trust team. If you
-            believe this is a mistake, please contact our support team.
-          </p>
+          reason === 'deleted' ? (
+            <p className="text-slate-400 text-base leading-relaxed mb-2">
+              Your account has been deleted by the Property Hub GH trust team. If you
+              believe this is a mistake, please contact our support team.
+            </p>
+          ) : (
+            <p className="text-slate-400 text-base leading-relaxed mb-2">
+              Your account has been suspended by the Property Hub GH trust team. If you
+              believe this is a mistake, please contact our support team.
+            </p>
+          )
         ) : (
           <>
             <p className="text-slate-400 text-base leading-relaxed mb-2">
