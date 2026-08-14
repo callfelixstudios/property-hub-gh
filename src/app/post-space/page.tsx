@@ -13,6 +13,7 @@ import { GHANA_REGIONS } from "@/constants/locations";
 import { normalizeRegionForDb } from '@/utils/regionMapper';
 import { Combobox } from "@/components/ui/Combobox";
 import { getConfigData } from '@/app/actions/configActions';
+import Footer from "@/components/Footer";
 
 const REGION_LABELS: Record<string, string> = {
   greater_accra:  "Greater Accra Region",
@@ -457,8 +458,8 @@ export default function PostSpaceWizard() {
   };
 
   return (
-    <div className="min-h-screen bg-surface-primary pt-28 px-6 pb-24">
-      <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen bg-surface-primary pt-28 flex flex-col">
+      <div className="max-w-3xl mx-auto px-6 flex-1 pb-24">
         
         {/* Header */}
         <div className="mb-10 text-center">
@@ -1363,6 +1364,7 @@ export default function PostSpaceWizard() {
         </div>
 
       </div>
+      <Footer />
     </div>
   );
 }

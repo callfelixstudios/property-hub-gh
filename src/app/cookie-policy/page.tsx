@@ -8,7 +8,8 @@ export const metadata = {
 export default function CookiePolicyPage() {
   return (
     <>
-      <div className="min-h-screen bg-slate-50 py-16 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-slate-50 pt-16 flex flex-col">
+        <div className="flex-1 px-4 sm:px-6 lg:px-8 pb-16">
         <div className="max-w-4xl mx-auto bg-white p-8 sm:p-12 rounded-xl shadow-sm border border-slate-200">
           <div className="border-b border-slate-200 pb-6 mb-8">
             <h1 className="text-3xl sm:text-4xl font-bold text-navy-base tracking-tight mb-2">
@@ -105,6 +106,7 @@ export default function CookiePolicyPage() {
             </section>
           </div>
         </div>
+      </div>
       </div>
       <Footer />
     </>

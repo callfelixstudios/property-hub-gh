@@ -11,9 +11,10 @@ import SaveListingButton from "@/components/SaveListingButton";
 import MapLoader from "@/components/MapLoader";
 import ListingSellerCard from "@/components/listings/ListingSellerCard";
 import ListingContextSection from "@/components/listings/ListingContextSection";
-import ListingAboutBoilerplate from "@/components/listings/ListingAboutBoilerplate";
 import { buildListingTitle, buildListingDescription } from '@/utils/listingMeta';
+import { isPlatformAdmin } from '@/utils/adminAuth';
 import { JsonLd, getRealEstateListingSchema, getBreadcrumbSchema } from "@/components/seo/JsonLd";
+import Footer from "@/components/Footer";
 
 interface ListingRow {
   id: string;
@@ -156,25 +157,34 @@ export async function generateMetadata({
   const id = uuidMatch ? uuidMatch[1] : (slug.split('-').pop() || slug);
 
   const supabase = await createClient();
-  const { data: listing } = await supabase
+  const { data: { user } } = await supabase.auth.getUser();
+  const isAdmin = isPlatformAdmin(user);
+
+  const { data: listing, error } = await supabase
     .from('listings')
     .select('*')
     .eq('id', id)
-    .eq('status', 'active')
-    .eq('moderation_status', 'approved')
     .single();
 
-  if (!listing) {
-    return { title: 'Property Not Found | Property Hub GH' };
+  const isOwner = user && listing && listing.poster_id === user.id;
+
+  if (error || !listing) {
+    notFound();
   }
 
-  const title = buildListingTitle({
+  // Visibility gate: public can only see live listings; admins and the
+  // listing owner may preview pending / archived / rejected drafts.
+  if (!isAdmin && !isOwner && !(listing.status === 'active' && listing.moderation_status === 'approved')) {
+    notFound();
+  }
+
+  const title = listing.title?.trim() || buildListingTitle({
     category: listing.category || '',
     transactionType: listing.transaction_type,
     neighborhood: listing.neighborhood,
     region: listing.region,
   });
-  const description = buildListingDescription({
+  const description = listing.description?.trim() || buildListingDescription({
     category: listing.category || '',
     transactionType: listing.transaction_type,
     price: listing.base_rent || listing.outright_price || null,
@@ -225,16 +235,23 @@ export default async function ListingDetailPage({
   const id = uuidMatch ? uuidMatch[1] : (slug.split('-').pop() || slug);
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  const isAdmin = isPlatformAdmin(user);
 
   const { data: listing, error } = await supabase
     .from('listings')
     .select('*')
     .eq('id', id)
-    .eq('status', 'active')
-    .eq('moderation_status', 'approved')
     .single();
 
+  const isOwner = user && listing && listing.poster_id === user.id;
+
   if (error || !listing) {
+    notFound();
+  }
+
+  // Visibility gate: public can only see live listings; admins and the
+  // listing owner may preview pending / archived / rejected drafts.
+  if (!isAdmin && !isOwner && !(listing.status === 'active' && listing.moderation_status === 'approved')) {
     notFound();
   }
 
@@ -265,7 +282,7 @@ export default async function ListingDetailPage({
   supabase.rpc("increment_listing_views", { row_id: id }).then(() => {});
 
   // Build display values
-  const displayTitle = `${formatCategory(row.category)} in ${row.neighborhood || formatRegion(row.region) || 'Ghana'}`;
+  const displayTitle = row.title?.trim() || `${formatCategory(row.category)} in ${row.neighborhood || formatRegion(row.region) || 'Ghana'}`;
   const displayLocation = [row.neighborhood, row.region ? (REGION_LABELS[row.region] || formatRegion(row.region)) : null].filter(Boolean).join(', ');
   const allImages = Array.from(new Set([row.image_url, ...(row.media_urls || [])].filter(Boolean) as string[]));
   const isRent = row.transaction_type === 'rent';
@@ -301,7 +318,7 @@ export default async function ListingDetailPage({
   ]);
 
   return (
-    <div className="w-full min-h-screen bg-[#f8f9fb]">
+    <div className="w-full min-h-screen bg-[#f8f9fb] flex flex-col">
       <JsonLd data={listingSchema} />
       <JsonLd data={breadcrumbSchema} />
 
@@ -321,7 +338,7 @@ export default async function ListingDetailPage({
       </div>
 
       {/* ── Two-Column Content Grid (Jiji Style) ──────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 py-10">
+      <div className="max-w-7xl mx-auto px-4 py-10 flex-1">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 items-start">
 
           {/* ──────────────────── LEFT COLUMN (2/3) ──────────────────── */}
@@ -445,20 +462,12 @@ export default async function ListingDetailPage({
             )}
 
             {/* Description */}
-            {row.description && row.description.trim().length >= 50 ? (
+            {row.description && row.description.trim().length > 0 ? (
               <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6">
                 <h2 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-3">Description</h2>
                 <p className="text-slate-600 leading-relaxed text-[15px] whitespace-pre-line">{row.description}</p>
               </div>
-            ) : (
-              <ListingAboutBoilerplate
-                category={row.category}
-                bedrooms={row.bedrooms}
-                bathrooms={row.bathrooms}
-                neighborhood={row.neighborhood}
-                region={row.region}
-              />
-            )}
+            ) : null}
 
             {/* Neighborhood context */}
             <ListingContextSection region={row.region} neighborhood={row.neighborhood} category={row.category} />
@@ -776,6 +785,7 @@ export default async function ListingDetailPage({
           {/* ─────────────────────────────────────────────────────────── */}
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

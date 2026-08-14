@@ -2,6 +2,7 @@ import React from 'react';
 import type { Metadata } from 'next';
 import WaitlistForm from '@/components/safemove/WaitlistForm';
 import { JsonLd, getServiceSchema, getBreadcrumbSchema } from '@/components/seo/JsonLd';
+import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
   title: 'SafeMove Escrow & Property Verification | Property Hub GH',
@@ -19,10 +20,10 @@ export const metadata: Metadata = {
 
 export default function SafeMovePage() {
   return (
-    <div className="min-h-screen bg-slate-50 pt-28 pb-20">
+    <div className="min-h-screen bg-slate-50 pt-28 flex flex-col">
       <JsonLd data={getServiceSchema()} />
       <JsonLd data={getBreadcrumbSchema([{ name: 'Home', url: '/' }, { name: 'SafeMove', url: '/safemove' }])} />
-      <div className="max-w-4xl mx-auto px-6">
+      <div className="max-w-4xl mx-auto px-6 flex-1 pb-20">
         {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-4xl md:text-5xl font-extrabold text-navy-base mb-6">
@@ -96,6 +97,7 @@ export default function SafeMovePage() {
           </div>
         </section>
       </div>
+      <Footer />
     </div>
   );
 }

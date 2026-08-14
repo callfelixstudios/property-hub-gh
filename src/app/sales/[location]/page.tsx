@@ -90,7 +90,7 @@ export default async function SalesLocationPage({
       : `/sales?region=${encodeURIComponent(displayRegion)}`;
 
   return (
-    <div className="w-full min-h-screen bg-surface-primary pb-20">
+    <div className="w-full min-h-screen bg-surface-primary flex flex-col">
       <JsonLd
         data={getBreadcrumbSchema([
           { name: 'Home', url: '/' },
@@ -137,7 +137,7 @@ export default async function SalesLocationPage({
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-10 space-y-12">
+      <div className="max-w-7xl mx-auto px-4 py-10 space-y-12 flex-1">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
           {listings.map((listing) => (
             <PropertyCard key={listing.id} {...listing} />
