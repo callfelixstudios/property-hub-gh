@@ -4,10 +4,10 @@ import { NextResponse, type NextRequest } from 'next/server';
 const SESSION_COOKIE_PREFIX = 'sb-';
 
 /**
- * L5 hardening: reject suspended accounts at the network edge.
+ * L5 hardening: reject suspended/deleted accounts at the network edge.
  * Only runs when a Supabase auth cookie exists (avoids work for anonymous
  * visitors / public endpoints), validates the session, and — if the signed-in
- * profile is suspended — signs the session out and redirects to /unauthorized.
+ * profile is suspended or deleted — signs the session out and redirects to /unauthorized.
  */
 export async function proxy(request: NextRequest) {
   const hasAuthCookie = request.cookies
@@ -50,13 +50,13 @@ export async function proxy(request: NextRequest) {
       .eq('id', user.id)
       .maybeSingle();
 
-    if (profile?.account_status === 'suspended') {
+    if (profile?.account_status === 'suspended' || profile?.account_status === 'deleted') {
       await supabase.auth.signOut();
 
       const url = request.nextUrl.clone();
       url.pathname = '/unauthorized';
       url.search = '';
-      url.searchParams.set('reason', 'suspended');
+      url.searchParams.set('reason', profile.account_status);
 
       const redirect = NextResponse.redirect(url);
       // Carry the cleared session cookies from signOut onto the redirect.

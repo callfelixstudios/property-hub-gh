@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { cookies } from 'next/headers';
 import "./globals.css";
 import NavigationHeader from "@/components/NavigationHeader";
+import ImpersonationBanner from "@/components/admin/ImpersonationBanner";
 import { Providers } from "@/components/Providers";
 import { JsonLd, getOrganizationSchema, getWebSiteSchema } from "@/components/seo/JsonLd";
 
@@ -78,6 +79,7 @@ export default async function RootLayout({
       </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <Providers initialCurrency={initialCurrency}>
+          <ImpersonationBanner />
           <NavigationHeader />
           <main className="flex-grow">
             {/* Sentinel element observed by NavigationHeader IntersectionObserver
