@@ -5,6 +5,7 @@ import NavigationHeader from "@/components/NavigationHeader";
 import ImpersonationBanner from "@/components/admin/ImpersonationBanner";
 import { Providers } from "@/components/Providers";
 import Analytics from "@/components/Analytics";
+import ConsentBanner from "@/components/ConsentBanner";
 import { JsonLd, getOrganizationSchema, getWebSiteSchema } from "@/components/seo/JsonLd";
 
 export const metadata: Metadata = {
@@ -90,6 +91,7 @@ export default async function RootLayout({
           </main>
         </Providers>
         <Analytics />
+        <ConsentBanner />
       </body>
     </html>
   );

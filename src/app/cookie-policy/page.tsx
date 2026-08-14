@@ -88,6 +88,9 @@ export default function CookiePolicyPage() {
                 <li><strong>Mozilla Firefox:</strong> Settings → Privacy & Security → Cookies and Site Data</li>
                 <li><strong>Apple Safari:</strong> Preferences → Privacy → Block all cookies</li>
               </ul>
+              <p>
+                On your first visit, a consent banner asks you to accept or decline Google Analytics measurement cookies. Your choice is stored in a preference cookie named <code>ph_consent</code> (valid for about one year) and is used solely to honor it. Declining does not restrict your use of the site — analytics cookies are simply not placed.
+              </p>
               <p className="text-sm text-slate-500 pt-2">
                 Note: Disabling essential authentication cookies will prevent you from logging in, accessing dashboards, or managing property listings.
               </p>

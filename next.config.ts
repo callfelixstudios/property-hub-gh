@@ -16,10 +16,10 @@ const nextConfig: NextConfig = {
 
     const cspDirectives = [
       "default-src 'self'",
-      `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
+      `script-src 'self' 'unsafe-inline' https://www.googletagmanager.com${isDev ? " 'unsafe-eval'" : ''}`,
       "style-src 'self' 'unsafe-inline' https://unpkg.com",
       "img-src 'self' data: blob: https://lqitnsvtqhsowvmaxjio.supabase.co",
-      "connect-src 'self' https://lqitnsvtqhsowvmaxjio.supabase.co wss://lqitnsvtqhsowvmaxjio.supabase.co",
+      "connect-src 'self' https://www.google-analytics.com https://www.googletagmanager.com https://lqitnsvtqhsowvmaxjio.supabase.co wss://lqitnsvtqhsowvmaxjio.supabase.co",
       "frame-src https://www.openstreetmap.org https://www.youtube.com https://player.vimeo.com",
       "font-src 'self' data:",
       "base-uri 'self'",
