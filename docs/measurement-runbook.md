@@ -29,11 +29,16 @@
   (all environments) → redeploy. The app renders the gtag script only when set.
 - Verify: GA4 DebugView (Admin → DebugView) while browsing the live site; expect
   `page_view` events. Event names/params beyond page_view are future work.
+- **Status (2026-08-14): DONE — Measurement ID `G-16MWX98XYD`; env var set on Vercel
+  (all environments); gtag verified in live HTML post-redeploy. Access note: the
+  office ISP DNS-blocked analytics.google.com (null-routed) — use a VPN when
+  checking reports. Confirm `page_view` in Realtime while browsing (DebugView needs
+  the GA Debugger extension).**
 
 ## 4. First-push checklist
 - [x] GSC: property verified ("You are a verified owner"), sitemap Success (16 URLs), homepage indexed (2026-08-14)
 - [~] Bing: site added + verified, sitemap Success (16 URLs indexed) — IndexNow **deferred** (see §2)
-- [ ] GA4: Measurement ID set on Vercel, page_view firing in DebugView (pending)
+- [x] GA4: `NEXT_PUBLIC_GA_MEASUREMENT_ID` = `G-16MWX98XYD` set on Vercel (all envs), gtag verified in live HTML (2026-08-14); confirm page_view in Realtime
 
 ## 5. Monthly AI-visibility review (≤1h)
 Log every citation found; table template:
