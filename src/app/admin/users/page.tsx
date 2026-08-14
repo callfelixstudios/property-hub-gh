@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import UserManagementTable from '@/components/admin/UserManagementTable';
-import { Users, UserCheck, UserX, Crown, Loader2 } from 'lucide-react';
+import { Users, UserCheck, UserX, Crown, Trash2, Loader2 } from 'lucide-react';
 import { Suspense } from 'react';
 
 export const metadata = {
@@ -34,6 +34,7 @@ export default async function AdminUsersPage() {
   const totalUsers = users.length;
   const activeUsers = users.filter((u) => u.account_status !== 'suspended').length;
   const suspendedUsers = users.filter((u) => u.account_status === 'suspended').length;
+  const deletedUsers = users.filter((u) => u.account_status === 'deleted').length;
   const verifiedUsers = users.filter((u) => u.is_verified).length;
   const proUsers = users.filter(
     (u) => u.membership_tier === 'pro' || u.membership_tier === 'developer'
@@ -56,7 +57,7 @@ export default async function AdminUsersPage() {
       </div>
 
       {/* ── KPI strip ─────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <StatCard
           label="Total Users"
           value={totalUsers}
@@ -74,6 +75,12 @@ export default async function AdminUsersPage() {
           value={suspendedUsers}
           icon={UserX}
           color="red"
+        />
+        <StatCard
+          label="Deleted"
+          value={deletedUsers}
+          icon={Trash2}
+          color="slate"
         />
         <StatCard
           label="Verified Agents"
@@ -114,13 +121,14 @@ function StatCard({
   label: string;
   value: number;
   icon: React.ElementType;
-  color: 'navy' | 'emerald' | 'red' | 'gold';
+  color: 'navy' | 'emerald' | 'red' | 'gold' | 'slate';
 }) {
   const colorMap = {
     navy: 'bg-[#0d1b2a]/10 text-[#0d1b2a]',
     emerald: 'bg-emerald-100 text-emerald-700',
     red: 'bg-red-100 text-red-600',
     gold: 'bg-yellow-100 text-yellow-700',
+    slate: 'bg-slate-100 text-slate-600',
   };
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-5 flex items-center gap-4">

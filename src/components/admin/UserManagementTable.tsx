@@ -16,6 +16,7 @@ import {
   setAccountStatus,
   setMembershipTier,
 } from '@/app/actions/adminActions';
+import UserDetailDrawer from '@/components/admin/UserDetailDrawer';
 import type { AdminUser } from '@/app/admin/users/page';
 
 interface Props {
@@ -23,7 +24,7 @@ interface Props {
   proUsersCount: number;
 }
 
-type StatusFilter = 'all' | 'active' | 'suspended';
+type StatusFilter = 'all' | 'active' | 'suspended' | 'deleted';
 type TierFilter = 'all' | 'free' | 'pro' | 'developer';
 
 const TIER_LABELS: Record<string, string> = {
@@ -45,6 +46,7 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [tierFilter, setTierFilter] = useState<TierFilter>('all');
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [, startTransition] = useTransition();
@@ -61,7 +63,11 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
         u.phone?.toLowerCase().includes(q);
       const matchesStatus =
         statusFilter === 'all' ||
-        (statusFilter === 'suspended' ? u.account_status === 'suspended' : u.account_status !== 'suspended');
+        (statusFilter === 'deleted'
+          ? u.account_status === 'deleted'
+          : statusFilter === 'suspended'
+            ? u.account_status === 'suspended'
+            : u.account_status !== 'suspended' && u.account_status !== 'deleted');
       const matchesTier = tierFilter === 'all' || u.membership_tier === tierFilter;
       return matchesSearch && matchesStatus && matchesTier;
     });
@@ -181,6 +187,7 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
               <option value="all">All Status</option>
               <option value="active">Active</option>
               <option value="suspended">Suspended</option>
+              <option value="deleted">Deleted</option>
             </select>
             <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
           </div>
@@ -246,8 +253,11 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
                 filtered.map((user) => (
                   <tr
                     key={user.id}
-                    className={`hover:bg-slate-50/80 transition-colors ${
-                      user.account_status === 'suspended' ? 'opacity-60' : ''
+                    onClick={() => setSelectedUserId(user.id)}
+                    className={`cursor-pointer hover:bg-slate-50/80 transition-colors ${
+                      user.account_status === 'suspended' || user.account_status === 'deleted'
+                        ? 'opacity-60'
+                        : ''
                     }`}
                   >
                     {/* User info */}
@@ -299,9 +309,10 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
                         <div className="relative inline-block">
                           <select
                             value={user.membership_tier ?? 'free'}
-                            onChange={(e) =>
-                              handleTierChange(user.id, e.target.value as 'free' | 'pro' | 'developer')
-                            }
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              handleTierChange(user.id, e.target.value as 'free' | 'pro' | 'developer');
+                            }}
                             className={`appearance-none pl-2.5 pr-6 py-1 rounded-full text-xs font-semibold border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0d1b2a]/20 ${
                               TIER_STYLES[user.membership_tier ?? 'free'] ?? TIER_STYLES.free
                             }`}
@@ -321,9 +332,10 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
                         <Loader2 className="w-4 h-4 animate-spin text-slate-400 mx-auto" />
                       ) : (
                         <button
-                          onClick={() =>
-                            handleToggleVerification(user.id, user.is_verified ?? false)
-                          }
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleVerification(user.id, user.is_verified ?? false);
+                          }}
                           title={user.is_verified ? 'Remove verification' : 'Verify user'}
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${
                             user.is_verified
@@ -343,9 +355,10 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
                         <Loader2 className="w-4 h-4 animate-spin text-slate-400 mx-auto" />
                       ) : (
                         <button
-                          onClick={() =>
-                            handleToggleStatus(user.id, user.account_status)
-                          }
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleStatus(user.id, user.account_status);
+                          }}
                           title={
                             user.account_status === 'suspended'
                               ? 'Reactivate account'
@@ -373,6 +386,12 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
           </table>
         </div>
       </div>
+
+      <UserDetailDrawer
+        userId={selectedUserId}
+        open={selectedUserId !== null}
+        onClose={() => setSelectedUserId(null)}
+      />
     </div>
   );
 }
