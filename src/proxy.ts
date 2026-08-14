@@ -1,19 +1,13 @@
-import { createServerClient } from '@supabase/ssr';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import type { SupabaseClient, User } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
-
 const SESSION_COOKIE_PREFIX = 'sb-';
 
 /**
  * Redirects to /unauthorized when the profile is suspended or deleted.
  * Returns null when the user may proceed.
  */
-async function redirectIfBlocked(
-  supabase: SupabaseClient,
-  request: NextRequest,
-  user: User,
-  response: NextResponse
-) {
+async function redirectIfBlocked(supabase: SupabaseClient, request: NextRequest, user: User) {
   const { data: profile } = await supabase
     .from('profiles')
     .select('account_status')
@@ -28,10 +22,7 @@ async function redirectIfBlocked(
     url.search = '';
     url.searchParams.set('reason', profile.account_status);
 
-    const redirect = NextResponse.redirect(url);
-    // Carry the cleared session cookies from signOut onto the redirect.
-    response.cookies.getAll().forEach((cookie) => redirect.cookies.set(cookie));
-    return redirect;
+    return NextResponse.redirect(url);
   }
 
   return null;
@@ -53,6 +44,10 @@ export async function proxy(request: NextRequest) {
   }
 
   let response = NextResponse.next({ request });
+  // Accumulate every cookie write across all setAll batches. setAll rebinds
+  // `response` per call, so earlier batches (e.g. signOut clearing the
+  // auth-token cookie) would otherwise be lost from the final response.
+  const pendingCookieSets: { name: string; value: string; options?: CookieOptions }[] = [];
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -63,6 +58,9 @@ export async function proxy(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            pendingCookieSets.push({ name, value, options })
+          );
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           response = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
@@ -73,24 +71,29 @@ export async function proxy(request: NextRequest) {
     }
   );
 
+  const applyPendingCookieSets = (res: NextResponse) => {
+    pendingCookieSets.forEach(({ name, value, options }) => res.cookies.set(name, value, options));
+    return res;
+  };
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (user) {
-    const blocked = await redirectIfBlocked(supabase, request, user, response);
-    if (blocked) return blocked;
+    const blocked = await redirectIfBlocked(supabase, request, user);
+    if (blocked) return applyPendingCookieSets(blocked);
   } else {
     // Fall back to the cookie session when the token is expired/refresh is
     // blocked, so stale sessions can still be rejected at the edge.
     const { data } = await supabase.auth.getSession();
     if (data.session?.user) {
-      const blocked = await redirectIfBlocked(supabase, request, data.session.user, response);
-      if (blocked) return blocked;
+      const blocked = await redirectIfBlocked(supabase, request, data.session.user);
+      if (blocked) return applyPendingCookieSets(blocked);
     }
   }
 
-  return response;
+  return applyPendingCookieSets(response);
 }
 
 export const config = {
