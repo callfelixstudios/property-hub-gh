@@ -15,7 +15,8 @@ export default async function AdminDashboardPage() {
   const { count: pendingListingsCount } = await supabase
     .from('listings')
     .select('*', { count: 'exact', head: true })
-    .eq('moderation_status', 'pending');
+    .eq('moderation_status', 'pending')
+    .neq('status', 'archived');
 
   const { count: requestsCount } = await supabase
     .from('space_requests')

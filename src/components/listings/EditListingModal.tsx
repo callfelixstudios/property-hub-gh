@@ -381,7 +381,15 @@ export default function EditListingModal({ listing, userId, onClose, onSaved }: 
       if (error) {
         alert("Failed to update listing: " + error.message);
       } else {
-        onSaved({ ...listing, ...updatePayload });
+        const wasApproved = listing.moderation_status === 'approved';
+        if (wasApproved) {
+          alert("Your changes have been submitted for review. The listing will go live again once approved.");
+        }
+        onSaved({
+          ...listing,
+          ...updatePayload,
+          ...(wasApproved ? { status: 'pending', moderation_status: 'pending' } : {}),
+        });
         router.refresh();
 
         // Fire-and-forget: re-geocode neighborhood into lat/lng

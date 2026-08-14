@@ -241,3 +241,269 @@ export async function flagListing(listingId: string, note?: string) {
   return { success: true };
 }
 
+// ─── Private helper: notify listing owner ───────────────────────────────────
+async function notifyListingOwner(
+  supabase: Awaited<ReturnType<typeof assertAdmin>>['supabase'],
+  userId: string,
+  type: string,
+  title: string,
+  body: string,
+  metadata: Record<string, unknown>
+) {
+  const { error } = await supabase.from('notifications').insert({
+    user_id: userId,
+    type,
+    title,
+    body,
+    metadata,
+  });
+
+  if (error) throw new Error(`Failed to notify listing owner: ${error.message}`);
+}
+
+// ─── Suspend Listing ────────────────────────────────────────────────────────
+export async function suspendListing(listingId: string, reason?: string) {
+  const { supabase, user } = await assertAdmin();
+
+  const { data: listing } = await supabase
+    .from('listings')
+    .select('title, poster_id, status, moderation_status, moderated_by, moderated_at, moderation_note')
+    .eq('id', listingId)
+    .single();
+
+  const next = {
+    moderation_status: 'suspended',
+    status: 'pending',
+    moderation_note: reason || null,
+    moderated_by: user.email,
+    moderated_at: new Date().toISOString(),
+  };
+
+  const { error } = await supabase
+    .from('listings')
+    .update(next)
+    .eq('id', listingId);
+
+  if (error) throw new Error(`Failed to suspend listing: ${error.message}`);
+
+  await logAdminAction(
+    supabase,
+    user.id,
+    'LISTING_SUSPEND',
+    listingId,
+    listing ? {
+      moderation_status: listing.moderation_status,
+      status: listing.status,
+    } : null,
+    { moderation_status: next.moderation_status, status: next.status }
+  );
+
+  if (listing) {
+    await notifyListingOwner(
+      supabase,
+      listing.poster_id,
+      'listing_suspended',
+      'Listing Suspended',
+      `Your listing "${listing.title}" has been suspended by the platform team.${reason ? ' Reason: ' + reason : ''}`,
+      { listing_id: listingId, listing_title: listing.title, reason: reason || null }
+    );
+  }
+
+  revalidatePath('/admin/listings');
+  revalidatePath('/admin');
+  return { success: true };
+}
+
+// ─── Unsuspend Listing ──────────────────────────────────────────────────────
+export async function unsuspendListing(listingId: string) {
+  const { supabase, user } = await assertAdmin();
+
+  const { data: listing } = await supabase
+    .from('listings')
+    .select('title, poster_id, status, moderation_status, moderation_note')
+    .eq('id', listingId)
+    .single();
+
+  const next = {
+    moderation_status: 'pending',
+    status: 'pending',
+    moderation_note: null,
+    moderated_by: user.email,
+    moderated_at: new Date().toISOString(),
+  };
+
+  const { error } = await supabase
+    .from('listings')
+    .update(next)
+    .eq('id', listingId);
+
+  if (error) throw new Error(`Failed to unsuspend listing: ${error.message}`);
+
+  await logAdminAction(
+    supabase,
+    user.id,
+    'LISTING_UNSUSPEND',
+    listingId,
+    listing ? {
+      moderation_status: listing.moderation_status,
+      status: listing.status,
+    } : null,
+    { moderation_status: next.moderation_status, status: next.status }
+  );
+
+  if (listing) {
+    await notifyListingOwner(
+      supabase,
+      listing.poster_id,
+      'listing_unsuspended',
+      'Listing Returned to Review',
+      `Your listing "${listing.title}" is no longer suspended and has been returned to the review queue.`,
+      { listing_id: listingId, listing_title: listing.title }
+    );
+  }
+
+  revalidatePath('/admin/listings');
+  revalidatePath('/admin');
+  return { success: true };
+}
+
+// ─── Delete Listing (soft delete) ───────────────────────────────────────────
+export async function deleteListing(listingId: string) {
+  const { supabase, user } = await assertAdmin();
+
+  const { data: listing } = await supabase
+    .from('listings')
+    .select('title, poster_id, status, moderation_status')
+    .eq('id', listingId)
+    .single();
+
+  const next = {
+    status: 'archived',
+    moderation_status: 'deleted',
+    listing_health: 'archived',
+    moderated_by: user.email,
+    moderated_at: new Date().toISOString(),
+  };
+
+  const { error } = await supabase
+    .from('listings')
+    .update(next)
+    .eq('id', listingId);
+
+  if (error) throw new Error(`Failed to delete listing: ${error.message}`);
+
+  await logAdminAction(
+    supabase,
+    user.id,
+    'LISTING_DELETE',
+    listingId,
+    listing ? {
+      status: listing.status,
+      moderation_status: listing.moderation_status,
+    } : null,
+    { status: next.status, moderation_status: next.moderation_status }
+  );
+
+  if (listing) {
+    await notifyListingOwner(
+      supabase,
+      listing.poster_id,
+      'listing_deleted',
+      'Listing Removed',
+      `Your listing "${listing.title}" has been removed from Property Hub GH by the platform team.`,
+      { listing_id: listingId, listing_title: listing.title }
+    );
+  }
+
+  revalidatePath('/admin/listings');
+  revalidatePath('/admin');
+  return { success: true };
+}
+
+// ─── Renew (un-archive) Listing ─────────────────────────────────────────────
+export async function renewListing(listingId: string) {
+  const { supabase, user } = await assertAdmin();
+
+  const { data: listing } = await supabase
+    .from('listings')
+    .select('status, moderation_status, listing_health')
+    .eq('id', listingId)
+    .single();
+
+  if (!listing || listing.status !== 'archived') {
+    throw new Error('Listing is not archived and cannot be renewed');
+  }
+
+  if (listing.moderation_status === 'deleted') {
+    const next = {
+      moderation_status: 'pending',
+      status: 'pending',
+      moderated_by: null,
+      moderated_at: null,
+      moderation_note: null,
+      rejection_reason: null,
+    };
+
+    const { error } = await supabase
+      .from('listings')
+      .update(next)
+      .eq('id', listingId);
+
+    if (error) throw new Error(`Failed to restore listing: ${error.message}`);
+
+    await logAdminAction(
+      supabase,
+      user.id,
+      'LISTING_RESTORE',
+      listingId,
+      { status: listing.status, moderation_status: listing.moderation_status },
+      { status: next.status, moderation_status: next.moderation_status }
+    );
+
+    const { data: restored } = await supabase
+      .from('listings')
+      .select('title, poster_id')
+      .eq('id', listingId)
+      .single();
+
+    if (restored) {
+      await notifyListingOwner(
+        supabase,
+        restored.poster_id,
+        'listing_restored',
+        'Listing Restored',
+        `Your listing "${restored.title}" has been restored and returned to the review queue.`,
+        { listing_id: listingId, listing_title: restored.title }
+      );
+    }
+
+    revalidatePath('/admin/listings');
+    revalidatePath('/admin');
+    return { success: true };
+  }
+
+  const { error } = await supabase
+    .from('listings')
+    .update({
+      status: 'active',
+      listing_health: 'fresh',
+      last_verified_at: new Date().toISOString(),
+    })
+    .eq('id', listingId);
+
+  if (error) throw new Error(`Failed to renew listing: ${error.message}`);
+
+  await logAdminAction(
+    supabase,
+    user.id,
+    'LISTING_RENEW',
+    listingId,
+    { status: listing.status, moderation_status: listing.moderation_status },
+    { status: 'active', moderation_status: listing.moderation_status }
+  );
+
+  revalidatePath('/admin/listings');
+  revalidatePath('/admin');
+  return { success: true };
+}
+

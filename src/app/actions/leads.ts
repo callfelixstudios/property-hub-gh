@@ -82,3 +82,40 @@ export async function markLeadContacted(notificationId: string) {
 
   return { success: true };
 }
+
+export async function fetchListingNotifications() {
+  const active = await getActiveUser();
+  if (!active) return [];
+
+  const { supabase, user } = active;
+
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('user_id', user.id)
+    .in('type', ['listing_suspended', 'listing_unsuspended', 'listing_deleted', 'listing_restored'])
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching listing notifications:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
+export async function markNotificationRead(notificationId: string) {
+  const active = await getActiveUser();
+  if (!active) throw new Error('Unauthorized');
+  const { supabase, user } = active;
+
+  const { error } = await supabase
+    .from('notifications')
+    .update({ is_read: true })
+    .eq('id', notificationId)
+    .eq('user_id', user.id);
+
+  if (error) throw new Error(`Failed to mark as read: ${error.message}`);
+
+  return { success: true };
+}

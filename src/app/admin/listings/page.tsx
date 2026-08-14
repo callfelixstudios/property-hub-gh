@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/server';
-import { CheckCircle2, Clock, XCircle, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, Clock, XCircle, AlertTriangle, Archive, Ban } from 'lucide-react';
 import ListingModerationQueue from '@/components/admin/ListingModerationQueue';
 import { redirect } from 'next/navigation';
 import { isPlatformAdmin } from '@/utils/adminAuth';
@@ -22,34 +22,53 @@ export default async function AdminListingsPage({
   const { count: pendingCount } = await supabase
     .from('listings')
     .select('*', { count: 'exact', head: true })
-    .eq('moderation_status', 'pending');
+    .eq('moderation_status', 'pending')
+    .neq('status', 'archived');
 
   const { count: approvedCount } = await supabase
     .from('listings')
     .select('*', { count: 'exact', head: true })
-    .eq('moderation_status', 'approved');
+    .eq('moderation_status', 'approved')
+    .neq('status', 'archived');
 
   const { count: rejectedCount } = await supabase
     .from('listings')
     .select('*', { count: 'exact', head: true })
-    .eq('moderation_status', 'rejected');
+    .eq('moderation_status', 'rejected')
+    .neq('status', 'archived');
 
   const { count: flaggedCount } = await supabase
     .from('listings')
     .select('*', { count: 'exact', head: true })
-    .eq('moderation_status', 'flagged');
+    .eq('moderation_status', 'flagged')
+    .neq('status', 'archived');
+
+  const { count: suspendedCount } = await supabase
+    .from('listings')
+    .select('*', { count: 'exact', head: true })
+    .eq('moderation_status', 'suspended')
+    .neq('status', 'archived');
+
+  const { count: archivedCount } = await supabase
+    .from('listings')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'archived');
 
   // 2. Build Query based on tab
   let query = supabase
     .from('listings')
     .select(`
       *,
-      poster:profiles!poster_id(full_name, phone_number)
+      poster:profiles!poster_id(full_name, contact_phone)
     `)
     .order('created_at', { ascending: false });
 
-  if (currentTab !== 'all') {
-    query = query.eq('moderation_status', currentTab);
+  if (currentTab === 'archived') {
+    query = query.eq('status', 'archived');
+  } else if (currentTab !== 'all') {
+    query = query
+      .eq('moderation_status', currentTab)
+      .neq('status', 'archived');
   }
 
   const { data: listings } = await query;
@@ -70,7 +89,7 @@ export default async function AdminListingsPage({
       </div>
 
       {/* KPI Strip */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex items-center gap-4">
           <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
             <Clock className="w-5 h-5" />
@@ -107,10 +126,28 @@ export default async function AdminListingsPage({
             <p className="text-xl font-bold text-gray-900">{flaggedCount || 0}</p>
           </div>
         </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center text-violet-600">
+            <Ban className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Suspended</p>
+            <p className="text-xl font-bold text-gray-900">{suspendedCount || 0}</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600">
+            <Archive className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Archived</p>
+            <p className="text-xl font-bold text-gray-900">{archivedCount || 0}</p>
+          </div>
+        </div>
       </div>
 
       {/* Main Queue Component */}
-      <ListingModerationQueue initialListings={listings || []} currentTab={currentTab} />
+      <ListingModerationQueue key={currentTab} initialListings={listings || []} currentTab={currentTab} />
     </div>
   );
 }

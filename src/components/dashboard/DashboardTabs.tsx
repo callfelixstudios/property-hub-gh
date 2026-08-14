@@ -5,11 +5,12 @@ import { createClient } from '@/utils/supabase/client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import EditListingModal from '@/components/listings/EditListingModal';
 import imageCompression from 'browser-image-compression';
-import { Heart, Camera, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Heart, Camera, Loader2, CheckCircle2, AlertCircle, Bell } from 'lucide-react';
 import TimeframeSelector, { TimeframePeriod } from './TimeframeSelector';
 import { fetchTimeframeAnalytics } from '@/app/actions/analytics';
 import { SidebarProfile } from './SidebarProfile';
 import MatchingRequestsTab from './MatchingRequestsTab';
+import NotificationsTab from './NotificationsTab';
 
 interface Listing {
   id: string;
@@ -85,12 +86,12 @@ export default function DashboardTabs({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const tabParam = searchParams.get('tab') as 'overview' | 'listings' | 'archived' | 'safemove' | 'profile' | 'space-requests' | 'matching-requests' | null;
+  const tabParam = searchParams.get('tab') as 'overview' | 'listings' | 'archived' | 'safemove' | 'profile' | 'space-requests' | 'matching-requests' | 'notifications' | null;
   const timeframeParam = searchParams.get('timeframe') as TimeframePeriod | null;
 
   const supabase = createClient();
 
-  const [internalActiveTab, setInternalActiveTab] = useState<'overview' | 'listings' | 'archived' | 'safemove' | 'profile' | 'space-requests' | 'matching-requests'>('overview');
+  const [internalActiveTab, setInternalActiveTab] = useState<'overview' | 'listings' | 'archived' | 'safemove' | 'profile' | 'space-requests' | 'matching-requests' | 'notifications'>('overview');
   const activeTab = tabParam || internalActiveTab;
   const setActiveTab = setInternalActiveTab;
 
@@ -340,12 +341,12 @@ export default function DashboardTabs({
 
   const ACTIVE_LISTING_LIMIT = 2;
 
-  const handleRestoreListing = async (listingId: string) => {
+  const handleRenewListing = async (listingId: string) => {
     setRestoreError(null);
 
-    // ── Pre-restoration limit guard ──────────────────────────────────────
+    // ── Pre-renewal limit guard ─────────────────────────────────────────
     // Count the user's currently active (non-archived, non-sold/rented)
-    // listings. If the limit is already reached, block the restore and
+    // listings. If the limit is already reached, block the renewal and
     // surface a descriptive error instead of performing the DB write.
     const { data: activeListings, error: countError } = await supabase
       .from('listings')
@@ -362,7 +363,7 @@ export default function DashboardTabs({
     if ((activeListings?.length ?? 0) >= ACTIVE_LISTING_LIMIT) {
       setRestoreError(
         `Limit reached. You can only have ${ACTIVE_LISTING_LIMIT} active listings at a time as a free user. ` +
-        `Archive or delete an existing listing before restoring this one.`
+        `Archive or delete an existing listing before renewing this one.`
       );
       return;
     }
@@ -370,16 +371,20 @@ export default function DashboardTabs({
 
     const { error } = await supabase
       .from('listings')
-      .update({ status: 'active' })
+      .update({
+        status: 'active',
+        listing_health: 'fresh',
+        last_verified_at: new Date().toISOString(),
+      })
       .eq('id', listingId)
       .eq('poster_id', userId);
     
     if (error) {
-      console.error('Restore failed:', error.message, error);
-      setRestoreError(`Failed to restore listing: ${error.message}`);
+      console.error('Renew failed:', error.message, error);
+      setRestoreError(`Failed to renew listing: ${error.message}`);
       return;
     }
-    setListings(prev => prev.map(l => l.id === listingId ? { ...l, status: 'active' } : l));
+    setListings(prev => prev.map(l => l.id === listingId ? { ...l, status: 'active', listing_health: 'fresh' } : l));
     router.refresh();
   };
 
@@ -653,6 +658,7 @@ export default function DashboardTabs({
     { id: 'overview', label: 'Overview', path: '/dashboard?tab=overview' },
     { id: 'listings', label: 'My Listings', path: '/dashboard?tab=listings' },
     { id: 'matching-requests', label: '🤝 Matching Requests', path: '/dashboard?tab=matching-requests' },
+    { id: 'notifications', label: 'Notifications', path: '/dashboard?tab=notifications', icon: <Bell className="w-4 h-4 mr-2 inline-block opacity-70" /> },
     { id: 'archived', label: 'Archived Listings', path: '/dashboard?tab=archived' },
     { id: 'safemove', label: 'SafeMove Tracker', path: '/dashboard?tab=safemove' },
     { id: 'space-requests', label: 'My Space Requests', path: '/dashboard?tab=space-requests' },
@@ -681,7 +687,7 @@ export default function DashboardTabs({
                   if (tab.path) {
                     router.push(tab.path, { scroll: false });
                   } else {
-                    setActiveTab(tab.id as 'overview' | 'listings' | 'archived' | 'safemove' | 'profile' | 'space-requests' | 'matching-requests');
+                    setActiveTab(tab.id as 'overview' | 'listings' | 'archived' | 'safemove' | 'profile' | 'space-requests' | 'matching-requests' | 'notifications');
                     router.push(`/dashboard?tab=${tab.id}`, { scroll: false });
                   }
                 }}
@@ -859,7 +865,7 @@ export default function DashboardTabs({
               <div className="mb-6 flex items-start gap-3 bg-red-50 border border-red-200 text-red-800 rounded-md px-4 py-3">
                 <svg className="w-5 h-5 mt-0.5 flex-shrink-0 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>
                 <div className="flex-1">
-                  <p className="text-sm font-semibold">Restore Blocked</p>
+                  <p className="text-sm font-semibold">Renewal Blocked</p>
                   <p className="text-sm mt-0.5">{restoreError}</p>
                 </div>
                 <button onClick={() => setRestoreError(null)} className="text-red-400 hover:text-red-600 transition-colors" aria-label="Dismiss error">
@@ -867,11 +873,11 @@ export default function DashboardTabs({
                 </button>
               </div>
             )}
-            {listings.filter(l => l.status === 'archived').length === 0 ? (
+            {listings.filter(l => l.status === 'archived' && l.moderation_status !== 'deleted').length === 0 ? (
               <p className="text-gray-500">You don&apos;t have any archived listings.</p>
             ) : (
               <div className="space-y-4">
-                {listings.filter(l => l.status === 'archived').map((listing) => (
+                {listings.filter(l => l.status === 'archived' && l.moderation_status !== 'deleted').map((listing) => (
                   <div key={listing.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-md border border-gray-200 hover:border-gray-300 transition-colors bg-slate-50 opacity-75 hover:opacity-100">
                     <div className="mb-4 sm:mb-0">
                       <div className="flex items-center gap-3 mb-1">
@@ -895,10 +901,10 @@ export default function DashboardTabs({
                         Edit
                       </button>
                       <button
-                        onClick={() => handleRestoreListing(listing.id)}
+                        onClick={() => handleRenewListing(listing.id)}
                         className="text-teal-600 hover:bg-teal-50 text-sm font-bold py-2 px-4 rounded-md transition-colors border border-teal-600 flex-1 sm:flex-none"
                       >
-                        Restore
+                        Renew
                       </button>
                       <button
                         onClick={() => handleDeleteListing(listing.id)}
@@ -1186,6 +1192,11 @@ export default function DashboardTabs({
         {/* MATCHING REQUESTS TAB */}
         {activeTab === 'matching-requests' && (
           <MatchingRequestsTab userId={userId} />
+        )}
+
+        {/* NOTIFICATIONS TAB */}
+        {activeTab === 'notifications' && (
+          <NotificationsTab />
         )}
 
         {/* PROFILE SETTINGS TAB */}

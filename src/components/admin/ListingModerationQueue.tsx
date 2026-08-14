@@ -4,8 +4,8 @@ import React, { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { CheckCircle2, XCircle, AlertTriangle, Loader2, MapPin, User, ChevronDown, Check, Info } from 'lucide-react';
-import { approveListing, rejectListing, flagListing } from '@/app/actions/adminActions';
+import { CheckCircle2, XCircle, AlertTriangle, Loader2, MapPin, User, ChevronDown, Check, Info, RefreshCw, Ban, Trash2 } from 'lucide-react';
+import { approveListing, rejectListing, flagListing, renewListing, suspendListing, unsuspendListing, deleteListing } from '@/app/actions/adminActions';
 
 interface ListingWithPoster {
   id: string;
@@ -20,6 +20,7 @@ interface ListingWithPoster {
   created_at: string;
   media_urls: string[] | null;
   image_url: string | null;
+  status: string;
   moderation_status: string;
   moderated_by: string | null;
   moderated_at: string | null;
@@ -27,7 +28,7 @@ interface ListingWithPoster {
   moderation_note: string | null;
   poster?: {
     full_name: string;
-    phone_number: string;
+    contact_phone: string;
   };
 }
 
@@ -36,6 +37,8 @@ const TABS = [
   { id: 'approved', label: 'Approved' },
   { id: 'rejected', label: 'Rejected' },
   { id: 'flagged', label: 'Flagged' },
+  { id: 'suspended', label: 'Suspended' },
+  { id: 'archived', label: 'Archived' },
   { id: 'all', label: 'All Listings' },
 ];
 
@@ -114,6 +117,116 @@ export default function ListingModerationQueue({
     optimisticUpdate(id, 'flagged', () => flagListing(id, "Flagged for manual review"));
   };
 
+  const onRenew = (id: string) => {
+    setActiveActionId(id);
+    setShowRejectDropdown(null);
+    setCustomReason("");
+
+    // On the archived tab, remove the card. On 'all', mark it as active again.
+    setListings(prev =>
+      currentTab !== 'all'
+        ? prev.filter(l => l.id !== id)
+        : prev.map(l => l.id === id ? { ...l, status: 'active' } : l)
+    );
+
+    startTransition(async () => {
+      try {
+        await renewListing(id);
+        const wasDeleted = listings.find(l => l.id === id)?.moderation_status === 'deleted';
+        triggerToast(wasDeleted ? 'Listing restored to review queue' : 'Listing renewed and reactivated', 'success');
+      } catch (err) {
+        console.error(err);
+        triggerToast("Renew failed. Please refresh.", "error");
+        router.refresh();
+      } finally {
+        setActiveActionId(null);
+      }
+    });
+  };
+
+  const onSuspend = (id: string) => {
+    const reason = window.prompt('Reason for suspension (optional):');
+    if (reason === null) return;
+
+    setActiveActionId(id);
+    setShowRejectDropdown(null);
+    setCustomReason("");
+
+    // On other tabs, remove the card. On 'all', suspend it in place.
+    setListings(prev =>
+      currentTab !== 'all'
+        ? prev.filter(l => l.id !== id)
+        : prev.map(l => l.id === id ? { ...l, moderation_status: 'suspended', status: 'pending' } : l)
+    );
+
+    startTransition(async () => {
+      try {
+        await suspendListing(id, reason || undefined);
+        triggerToast('Listing suspended', 'success');
+      } catch (err) {
+        console.error(err);
+        triggerToast("Suspend failed. Please refresh.", "error");
+        router.refresh();
+      } finally {
+        setActiveActionId(null);
+      }
+    });
+  };
+
+  const onUnsuspend = (id: string) => {
+    setActiveActionId(id);
+    setShowRejectDropdown(null);
+    setCustomReason("");
+
+    // On other tabs, remove the card. On 'all', return it to review.
+    setListings(prev =>
+      currentTab !== 'all'
+        ? prev.filter(l => l.id !== id)
+        : prev.map(l => l.id === id ? { ...l, moderation_status: 'pending' } : l)
+    );
+
+    startTransition(async () => {
+      try {
+        await unsuspendListing(id);
+        triggerToast('Listing returned to review', 'success');
+      } catch (err) {
+        console.error(err);
+        triggerToast("Action failed. Please refresh.", "error");
+        router.refresh();
+      } finally {
+        setActiveActionId(null);
+      }
+    });
+  };
+
+  const onDelete = (id: string) => {
+    if (!window.confirm('Delete this listing? It will be hidden and can be restored from the Archived tab.')) return;
+
+    setActiveActionId(id);
+    setShowRejectDropdown(null);
+    setCustomReason("");
+
+    // On other tabs, remove the card. On 'all', soft-delete it in place.
+    setListings(prev =>
+      currentTab !== 'all'
+        ? prev.filter(l => l.id !== id)
+        : prev.map(l => l.id === id ? { ...l, status: 'archived', moderation_status: 'deleted' } : l)
+    );
+
+    startTransition(async () => {
+      try {
+        await deleteListing(id);
+        triggerToast('Listing deleted (soft delete)', 'success');
+      } catch (err) {
+        console.error(err);
+        triggerToast("Delete failed. Please refresh.", "error");
+        router.refresh();
+      } finally {
+        setActiveActionId(null);
+      }
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Toast */}
@@ -170,35 +283,45 @@ export default function ListingModerationQueue({
                 className={`bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm flex flex-col transition-opacity ${isProcessing ? 'opacity-50 pointer-events-none' : ''}`}
               >
                 {/* Image Section */}
-                <div className="relative h-48 w-full bg-gray-100">
+                <Link href={`/listings/${listing.id}`} className="relative h-48 w-full bg-gray-100 block group">
                   <Image 
                     src={heroImg} 
                     alt={listing.title || 'Property'} 
                     fill 
-                    className="object-cover"
+                    className="object-cover transition-transform group-hover:scale-105"
                     unoptimized={heroImg.startsWith('http')} 
                   />
                   <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md text-white text-xs font-medium px-2.5 py-1 rounded-full uppercase tracking-wider">
                     {listing.listing_category_type || 'Residential'}
                   </div>
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                   {/* Status Badge */}
-                  {currentTab === 'all' && (
+                  {currentTab === 'all' && listing.moderation_status !== 'deleted' && (
                     <div className={`absolute top-3 right-3 text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
                       listing.moderation_status === 'approved' ? 'bg-emerald-500 text-white' :
                       listing.moderation_status === 'rejected' ? 'bg-red-500 text-white' :
                       listing.moderation_status === 'flagged' ? 'bg-orange-500 text-white' :
+                      listing.moderation_status === 'suspended' ? 'bg-violet-500 text-white' :
+                      listing.moderation_status === 'deleted' ? 'bg-gray-500 text-white' :
                       'bg-amber-500 text-white'
                     }`}>
                       {listing.moderation_status}
                     </div>
                   )}
-                </div>
+                  {listing.moderation_status === 'deleted' && (
+                    <div className="absolute top-3 right-3 text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider bg-gray-700 text-white">
+                      Deleted by admin
+                    </div>
+                  )}
+                </Link>
 
                 {/* Details Section */}
                 <div className="p-5 flex-1 flex flex-col">
-                  <h3 className="font-semibold text-gray-900 text-base line-clamp-2 mb-2 leading-snug">
-                    {listing.title || 'Untitled Property'}
-                  </h3>
+                  <Link href={`/listings/${listing.id}`} className="hover:text-emerald-600 transition-colors">
+                    <h3 className="font-semibold text-gray-900 text-base line-clamp-2 mb-2 leading-snug">
+                      {listing.title || 'Untitled Property'}
+                    </h3>
+                  </Link>
                   
                   <div className="space-y-2 mb-4 flex-1">
                     <div className="flex items-center text-sm text-gray-500 gap-1.5">
@@ -218,7 +341,7 @@ export default function ListingModerationQueue({
                         className="truncate hover:underline text-emerald-600 font-medium"
                       >
                         {listing.poster?.full_name || 'Unknown User'} 
-                        {listing.poster?.phone_number && ` (${listing.poster.phone_number})`}
+                        {listing.poster?.contact_phone && ` (${listing.poster.contact_phone})`}
                       </Link>
                     </div>
                     <div className="text-xs text-gray-400 pl-5.5">
@@ -227,7 +350,7 @@ export default function ListingModerationQueue({
                   </div>
 
                   {/* Audit Info (for processed items) */}
-                  {(listing.moderation_status === 'approved' || listing.moderation_status === 'rejected' || listing.moderation_status === 'flagged') && currentTab !== 'pending' && (
+                  {(listing.moderation_status === 'approved' || listing.moderation_status === 'rejected' || listing.moderation_status === 'flagged' || listing.moderation_status === 'suspended' || listing.moderation_status === 'deleted') && currentTab !== 'pending' && (
                     <div className="mt-2 mb-4 p-3 rounded-lg bg-gray-50 border border-gray-100 text-xs">
                       <div className="flex items-center gap-1.5 text-gray-600 mb-1">
                         <Info className="w-3.5 h-3.5" />
@@ -238,11 +361,78 @@ export default function ListingModerationQueue({
                           Reason: {listing.rejection_reason}
                         </div>
                       )}
+                      {listing.moderation_note && (
+                        <div className={`font-medium ml-5 ${listing.moderation_status === 'suspended' ? 'text-violet-600' : 'text-red-600'}`}>
+                          Reason: {listing.moderation_note}
+                        </div>
+                      )}
                     </div>
                   )}
 
                   {/* Actions Section */}
-                  {listing.moderation_status === 'pending' || listing.moderation_status === 'flagged' ? (
+                  {listing.moderation_status === 'suspended' ? (
+                    <div className="grid grid-cols-2 gap-2 mt-auto relative">
+                      <button
+                        onClick={() => onUnsuspend(listing.id)}
+                        disabled={isProcessing}
+                        className="flex items-center justify-center gap-1.5 bg-teal-50 text-teal-700 hover:bg-teal-100 font-medium py-2 rounded-lg transition-colors"
+                      >
+                        {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} Unsuspend
+                      </button>
+                      <Link
+                        href={`/listings/${listing.id}`}
+                        className="flex items-center justify-center gap-1.5 bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 font-medium py-2 rounded-lg transition-colors"
+                      >
+                        <Info className="w-4 h-4" /> View Details
+                      </Link>
+                      <button
+                        onClick={() => onDelete(listing.id)}
+                        disabled={isProcessing}
+                        className="col-span-2 flex items-center justify-center gap-1.5 bg-red-50 text-red-700 hover:bg-red-100 font-medium py-2 rounded-lg transition-colors"
+                      >
+                        {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />} Delete
+                      </button>
+                    </div>
+                  ) : listing.status === 'archived' ? (
+                    <div className="grid grid-cols-2 gap-2 mt-auto relative">
+                      <button
+                        onClick={() => onRenew(listing.id)}
+                        disabled={isProcessing}
+                        className="flex items-center justify-center gap-1.5 bg-teal-50 text-teal-700 hover:bg-teal-100 font-medium py-2 rounded-lg transition-colors"
+                      >
+                        {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />} Renew
+                      </button>
+                      <Link
+                        href={`/listings/${listing.id}`}
+                        className="flex items-center justify-center gap-1.5 bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 font-medium py-2 rounded-lg transition-colors"
+                      >
+                        <Info className="w-4 h-4" /> View Details
+                      </Link>
+                    </div>
+                  ) : listing.moderation_status === 'approved' ? (
+                    <div className="grid grid-cols-2 gap-2 mt-auto relative">
+                      <button
+                        onClick={() => onSuspend(listing.id)}
+                        disabled={isProcessing}
+                        className="flex items-center justify-center gap-1.5 bg-violet-50 text-violet-700 hover:bg-violet-100 font-medium py-2 rounded-lg transition-colors"
+                      >
+                        {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Ban className="w-4 h-4" />} Suspend
+                      </button>
+                      <Link
+                        href={`/listings/${listing.id}`}
+                        className="flex items-center justify-center gap-1.5 bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 font-medium py-2 rounded-lg transition-colors"
+                      >
+                        <Info className="w-4 h-4" /> View Details
+                      </Link>
+                      <button
+                        onClick={() => onDelete(listing.id)}
+                        disabled={isProcessing}
+                        className="col-span-2 flex items-center justify-center gap-1.5 bg-red-50 text-red-700 hover:bg-red-100 font-medium py-2 rounded-lg transition-colors"
+                      >
+                        {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />} Delete
+                      </button>
+                    </div>
+                  ) : (listing.moderation_status === 'pending' || listing.moderation_status === 'flagged') ? (
                     <div className="grid grid-cols-2 gap-2 mt-auto relative">
                       <button
                         onClick={() => onApprove(listing.id)}
