@@ -45,7 +45,7 @@ BEFORE UPDATE OF `account_status` ON `profiles`:
 AFTER UPDATE OF `account_status` ON `profiles`, per affected profile row:
 - → `'suspended'`: all their `status='active'` listings → `status='pending'`, `moderation_status='suspended'`, `moderation_note='Account suspended by admin'`, `moderated_by`/`moderated_at` set (admin email from `auth.jwt()`).
 - → `'deleted'`: all their `status='active'` listings → `status='archived'`, `moderation_status='deleted'`, `listing_health='archived'` (mirrors existing `deleteListing` server action).
-- → `'active'` (reactivate/restore): listings touched by the takedown (`moderation_status IN ('suspended','deleted')` with matching `status`) return to `status='pending'`, `moderation_status='pending'` (review queue). Individually-suspended listings not part of an account takedown are unaffected by the restore logic unless they match the takedown state.
+- → `'active'` (reactivate/restore): listings touched by the takedown return to `status='pending'`, `moderation_status='pending'` (review queue). Restore condition is explicit per takedown state: `(moderation_status='suspended' AND status='pending')` OR `(moderation_status='deleted' AND status='archived')`. Listings in any other state (e.g. a listing individually suspended before the account takedown) are not touched.
 - Insert account-level notifications: `account_suspended`, `account_deleted`, `account_reactivated` (SECURITY DEFINER bypasses RLS; atomic with the status change).
 
 ## 4. New service-role client
