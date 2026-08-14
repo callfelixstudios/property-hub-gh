@@ -32,7 +32,7 @@ export default async function AdminUsersPage() {
 
   // KPI counts
   const totalUsers = users.length;
-  const activeUsers = users.filter((u) => u.account_status !== 'suspended').length;
+  const activeUsers = users.filter((u) => u.account_status === 'active').length;
   const suspendedUsers = users.filter((u) => u.account_status === 'suspended').length;
   const deletedUsers = users.filter((u) => u.account_status === 'deleted').length;
   const verifiedUsers = users.filter((u) => u.is_verified).length;
