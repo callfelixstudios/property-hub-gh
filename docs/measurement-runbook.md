@@ -9,7 +9,7 @@
 - Submit `https://www.propertyhubgh.com/sitemap.xml` (Sitemaps report → Submit).
 - After 48h: Coverage ≈ submitted URLs; no soft-404s (all routes listed in
   sitemap must return 200 — includes /properties, /rentals/{location}, /sales/{location},
-  /guides/buying, /guides/mortgage, /insights).
+  /insights).
 
 ## 2. Bing Webmaster Tools + IndexNow
 - Import site from GSC (or DNS verify); submit the same sitemap.
@@ -55,7 +55,7 @@ Success signal: ≥1 citation for priority queries within 90 days of launch.
 - Grep crawl: zero 404s from internal links (Sitemaps → Submitted URLs all 200).
 
 ## 7. Quarterly content refresh
-- Refresh /guides/buying + /guides/mortgage (stats, rates, legal changes).
+- Once /guides/buying and /guides/mortgage ship (SEO plan T22–T23), refresh them quarterly (stats, rates, legal changes).
 - Refresh /insights methodology note; confirm homepage market table matches.
 - Update last-modified dates honestly (no fabricated dates).
 

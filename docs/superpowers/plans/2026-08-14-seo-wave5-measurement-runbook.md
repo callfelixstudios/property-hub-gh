@@ -93,7 +93,7 @@ git commit -m "feat: env-gated GA4 analytics via next/third-parties"
 - Create: `docs/measurement-runbook.md`
 
 **Interfaces:**
-- Consumes: A1 keyword-map clusters from `SEO-AUDIT-2026-08-12.md` (7 clusters below); SEO Wave 1–4 routes (`/properties`, `/rentals/{location}`, `/sales/{location}`, `/guides/buying`, `/guides/mortgage`, `/insights`).
+- Consumes: A1 keyword-map clusters from `SEO-AUDIT-2026-08-12.md` (7 clusters below); SEO Wave 1–4 routes (`/properties`, `/rentals/{location}`, `/sales/{location}`, `/insights`; `/guides/buying` + `/guides/mortgage` planned T22–T23).
 - Produces: the durable T26/T27 artifact referenced by `SEO-IMPLEMENTATION-PLAN-2026-08-12.md` Wave 5.
 
 - [ ] **Step 1: Write the runbook with this exact structure**
