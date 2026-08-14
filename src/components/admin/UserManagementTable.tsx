@@ -349,10 +349,18 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
                       )}
                     </td>
 
-                    {/* Account status toggle */}
+                    {/* Account status */}
                     <td className="px-5 py-4 text-center">
                       {isLoading(user.id, 'status') ? (
                         <Loader2 className="w-4 h-4 animate-spin text-slate-400 mx-auto" />
+                      ) : user.account_status === 'deleted' ? (
+                        <span
+                          title="Deleted accounts are restored from the user detail drawer"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-200 text-slate-600"
+                        >
+                          <ShieldOff className="w-3.5 h-3.5" />
+                          Deleted
+                        </span>
                       ) : (
                         <button
                           onClick={(e) => {

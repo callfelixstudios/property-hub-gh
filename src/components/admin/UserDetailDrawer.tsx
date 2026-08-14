@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useEffect, useCallback } from 'react';
+import { useState, useTransition, useEffect, useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import {
@@ -165,15 +165,30 @@ export default function UserDetailDrawer({ userId, open, onClose }: Props) {
     });
   }
 
-  // Close on Escape.
+  // Close on Escape. Nested overlays (confirmations, recovery link, notify
+  // panel) close first so Escape never collapses the whole drawer underneath.
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key !== 'Escape') return;
+      if (recoveryLink) { setRecoveryLink(null); return; }
+      if (confirmDelete) { setConfirmDelete(false); return; }
+      if (confirmImpersonate) { setConfirmImpersonate(false); return; }
+      if (notifyOpen) { setNotifyOpen(false); return; }
+      onClose();
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [open, onClose]);
+  }, [open, onClose, recoveryLink, confirmDelete, confirmImpersonate, notifyOpen]);
+
+  // Move focus into the drawer on open and restore it on close.
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    closeButtonRef.current?.focus();
+    return () => previouslyFocused?.focus?.();
+  }, [open]);
 
   const refreshDetail = () => {
     if (!userId) return;
@@ -328,7 +343,12 @@ export default function UserDetailDrawer({ userId, open, onClose }: Props) {
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
       {/* Panel */}
-      <aside className="absolute inset-y-0 right-0 w-full max-w-lg bg-white shadow-2xl flex flex-col overflow-hidden">
+      <aside
+        role="dialog"
+        aria-modal="true"
+        aria-label="User Details"
+        className="absolute inset-y-0 right-0 w-full max-w-lg bg-white shadow-2xl flex flex-col overflow-hidden"
+      >
         {/* Panel header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 bg-[#0d1b2a] flex-shrink-0">
           <h2 className="text-white font-semibold flex items-center gap-2">
@@ -336,6 +356,7 @@ export default function UserDetailDrawer({ userId, open, onClose }: Props) {
             User Details
           </h2>
           <button
+            ref={closeButtonRef}
             onClick={onClose}
             aria-label="Close"
             className="text-white/70 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10"

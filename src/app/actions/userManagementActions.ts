@@ -237,11 +237,6 @@ export async function impersonateUser(userId: string) {
 
   // Capture + audit BEFORE any session mutation, so the audit insert runs
   // under the admin identity.
-  cookieStore.set('ph_admin_session', JSON.stringify({
-    access_token: adminSession.access_token,
-    refresh_token: adminSession.refresh_token,
-  }), { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/' });
-
   await logAdminAction(supabase, adminUser.id, 'USER_IMPERSONATE_START', userId, null, {
     expiresInMinutes: 30,
   });
@@ -270,6 +265,13 @@ export async function impersonateUser(userId: string) {
     access_token: sessionData.session.access_token,
     refresh_token: sessionData.session.refresh_token,
   });
+
+  // Only persist the admin session cookie after the impersonation session is
+  // fully established, so a failed attempt never leaves it orphaned.
+  cookieStore.set('ph_admin_session', JSON.stringify({
+    access_token: adminSession.access_token,
+    refresh_token: adminSession.refresh_token,
+  }), { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/' });
 
   cookieStore.set('ph_impersonating', JSON.stringify({
     userId,
@@ -314,6 +316,10 @@ export async function exitImpersonation() {
   if (user) {
     await logAdminAction(supabase, user.id, 'USER_IMPERSONATE_END', impersonatedUserId ?? user.id, null, {});
   }
+
+  // Force a fresh render of the admin surface; the router cache would
+  // otherwise serve the page state from the impersonation session.
+  revalidatePath('/admin/users');
 
   redirect('/admin/users');
 }
