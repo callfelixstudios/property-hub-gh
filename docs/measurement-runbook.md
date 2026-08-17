@@ -15,13 +15,14 @@
 - Import site from GSC (or DNS verify); submit the same sitemap.
 - Vercel dashboard → Integrations → Bing Webmaster → enable IndexNow
   (no code; pings automatically on each deploy).
-- **Status (2026-08-14): CLOSED — decision: no IndexNow integration. Vercel
-  Marketplace offered no IndexNow/Bing integration for this account, and it is
-  not needed: all 16 sitemap URLs are already indexed and sitemap polling keeps
-  Bing current at this content volume. Revisit only if deploy-time pings become
-  necessary; the curl fallback below remains valid reference.**
-- Optional first-deploy fallback ping (if integration off):
-  `curl -X POST "https://api.indexnow.org/indexnow" -H "Content-Type: application/json" -d "{\"host\":\"www.propertyhubgh.com\",\"key\":\"<BING_KEY>\",\"keyLocation\":\"https://www.propertyhubgh.com/<BING_KEY>.txt\",\"urlList\":[\"https://www.propertyhubgh.com/\"]}"`
+- **Status (2026-08-17): DONE — key file hosted at
+  `public/e601750775e841c794c3a562dafb954e.txt`; after deploy it is served at
+  `https://www.propertyhubgh.com/e601750775e841c794c3a562dafb954e.txt`
+  (keyLocation for pings). Vercel Marketplace still has no IndexNow integration
+  for this account, so pings are manual/scripted `curl` calls (see below) after
+  content deploys.**
+- Ping (manual/scripted, keyLocation now live):
+  `curl -X POST "https://api.indexnow.org/indexnow" -H "Content-Type: application/json" -d "{\"host\":\"www.propertyhubgh.com\",\"key\":\"e601750775e841c794c3a562dafb954e\",\"keyLocation\":\"https://www.propertyhubgh.com/e601750775e841c794c3a562dafb954e.txt\",\"urlList\":[\"https://www.propertyhubgh.com/\"]}"`
 
 ## 3. Google Analytics 4
 - Create GA4 property (analytics-only; no ads measurement) for propertyhubgh.com.
@@ -38,7 +39,7 @@
 
 ## 4. First-push checklist
 - [x] GSC: property verified ("You are a verified owner"), sitemap Success (16 URLs), homepage indexed (2026-08-14)
-- [x] Bing: site added + verified, sitemap Success (16 URLs indexed) — IndexNow **closed** — sitemap polling suffices (see §2)
+- [x] Bing: site added + verified, sitemap Success (16 URLs indexed) — IndexNow **enabled** (2026-08-17): key file hosted at /e601750775e841c794c3a562dafb954e.txt; manual curl pings (see §2)
 - [x] GA4: `NEXT_PUBLIC_GA_MEASUREMENT_ID` = `G-16MWX98XYD` set on Vercel (all envs), gtag verified in live HTML (2026-08-14); confirm page_view in Realtime
 
 ## 5. Monthly AI-visibility review (≤1h)
