@@ -215,6 +215,9 @@ export async function fetchListingsPage(
   const search = buildSearchFilter(searchParams.search as string);
   if (search) query = query.or(search);
 
+  // Paid-tier placement first; the user's chosen sort stays secondary.
+  query = query.order('tier_rank', { ascending: false });
+
   if (sort === 'views') {
     query = query.order('views', { ascending: false });
   } else if (sort === 'price_asc') {

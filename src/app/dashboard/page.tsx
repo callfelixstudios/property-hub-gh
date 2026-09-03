@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import DashboardTabs from '@/components/dashboard/DashboardTabs';
+import { TIER_LIMITS, getEffectiveTier, getCreditBalance, ensureGrant } from '@/lib/subscription';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -31,6 +32,14 @@ export default async function DashboardPage() {
     .or(`landlord_id.eq.${user.id},tenant_id.eq.${user.id}`)
     .order('created_at', { ascending: false });
 
+  const tier = await getEffectiveTier(user.id);
+  const creditBalance = await getCreditBalance(user.id);
+  try {
+    await ensureGrant(user.id);
+  } catch (err) {
+    console.error('Monthly credit grant failed:', err);
+  }
+
   return (
     <DashboardTabs 
       initialListings={listings || []} 
@@ -38,6 +47,9 @@ export default async function DashboardPage() {
       initialSafemoveTransactions={safemoveTransactions || []}
       userId={user.id}
       userEmail={user.email || ''}
+      initialTier={tier}
+      tierLimit={TIER_LIMITS[tier]}
+      creditBalance={creditBalance}
     />
   );
 }

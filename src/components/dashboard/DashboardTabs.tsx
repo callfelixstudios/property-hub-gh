@@ -11,6 +11,7 @@ import { fetchTimeframeAnalytics } from '@/app/actions/analytics';
 import { SidebarProfile } from './SidebarProfile';
 import MatchingRequestsTab from './MatchingRequestsTab';
 import NotificationsTab from './NotificationsTab';
+import type { TierSlug } from '@/lib/tiers';
 
 interface Listing {
   id: string;
@@ -31,6 +32,8 @@ interface Profile {
   contact_phone?: string;
   whatsapp_link?: string;
   avatar_url?: string;
+  membership_tier?: string;
+  is_verified_agent?: boolean;
   [key: string]: unknown;
 }
 
@@ -74,7 +77,10 @@ export default function DashboardTabs({
   userId,
   userEmail,
   activeTabOverride,
-  children
+  children,
+  initialTier = 'free',
+  tierLimit = 2,
+  creditBalance,
 }: {
   initialListings?: Listing[];
   initialProfile?: Profile;
@@ -83,6 +89,9 @@ export default function DashboardTabs({
   userEmail?: string;
   activeTabOverride?: string;
   children?: React.ReactNode;
+  initialTier?: TierSlug;
+  tierLimit?: number;
+  creditBalance?: number;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -339,7 +348,7 @@ export default function DashboardTabs({
     router.refresh();
   };
 
-  const ACTIVE_LISTING_LIMIT = 2;
+  const tierLabel = initialTier.charAt(0).toUpperCase() + initialTier.slice(1);
 
   const handleRenewListing = async (listingId: string) => {
     setRestoreError(null);
@@ -360,9 +369,9 @@ export default function DashboardTabs({
       return;
     }
 
-    if ((activeListings?.length ?? 0) >= ACTIVE_LISTING_LIMIT) {
+    if ((activeListings?.length ?? 0) >= tierLimit) {
       setRestoreError(
-        `Limit reached. You can only have ${ACTIVE_LISTING_LIMIT} active listings at a time as a free user. ` +
+        `${tierLabel} plan allows ${tierLimit} active listings — upgrade for more. ` +
         `Archive or delete an existing listing before renewing this one.`
       );
       return;
@@ -409,6 +418,16 @@ export default function DashboardTabs({
     const newStatus = currentStatus === 'active' 
       ? (transactionType === 'rent' ? 'rented' : 'sold') 
       : 'active';
+
+    // ── Relist cap guard (sold/rented → active) ─────────────────────────
+    if (newStatus === 'active') {
+      const activeCount = listings.filter(l => l.status === 'active').length;
+      if (activeCount >= tierLimit) {
+        alert(`${tierLabel} plan allows ${tierLimit} active listings — upgrade for more.`);
+        return;
+      }
+    }
+    // ───────────────────────────────────────────────────────────────────
 
     const { error } = await supabase
       .from('listings')
@@ -676,6 +695,9 @@ export default function DashboardTabs({
           userEmail={userEmail}
           isUploading={isUploadingAvatar}
           onAvatarClick={() => fileInputRef.current?.click()}
+          tier={initialTier}
+          isVerifiedAgent={profile.is_verified_agent}
+          creditBalance={creditBalance}
         />
         <nav className="flex md:flex-col gap-2 overflow-x-auto pb-4 md:pb-0 hide-scrollbar">
           {tabs.map((tab) => {
@@ -797,7 +819,12 @@ export default function DashboardTabs({
         {/* MY LISTINGS TAB */}
         {activeTab === 'listings' && (
           <div>
-            <h2 className="text-2xl font-bold text-navy-base mb-6">My Listings</h2>
+            <div className="flex items-baseline justify-between mb-6">
+              <h2 className="text-2xl font-bold text-navy-base">My Listings</h2>
+              <p className="text-sm text-gray-500">
+                {listings.filter(l => l.status === 'active').length} / {tierLimit} active listings
+              </p>
+            </div>
             {listings.filter(l => l.status !== 'archived').length === 0 ? (
               <p className="text-gray-500">You don&apos;t have any active listings yet.</p>
             ) : (

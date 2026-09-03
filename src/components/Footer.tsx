@@ -59,6 +59,7 @@ export default function Footer() {
               <li><Link href="/post-space" className="text-sm text-gray-400 hover:text-white transition-colors">List Your Property</Link></li>
               <li><Link href="/insights" className="text-sm text-gray-400 hover:text-white transition-colors">Market Insights</Link></li>
               <li><Link href="/request-space" className="text-sm text-gray-400 hover:text-white transition-colors">Request a Space</Link></li>
+              <li><Link href="/pricing" className="text-sm text-gray-400 hover:text-white transition-colors">Pricing</Link></li>
               <li><Link href="/requests" className="text-sm text-gray-400 hover:text-white transition-colors">Property Requests</Link></li>
               <li><Link href="/terms" className="text-sm text-gray-400 hover:text-white transition-colors">Terms of Service</Link></li>
             </ul>

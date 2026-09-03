@@ -109,7 +109,9 @@ export async function getLocationData(
     query = query.ilike('neighborhood', `%${ref.neighborhood}%`);
   }
 
-  const { data, error } = await query.order('created_at', { ascending: false });
+  const { data, error } = await query
+    .order('tier_rank', { ascending: false })
+    .order('created_at', { ascending: false });
   if (error) {
     console.error('Error fetching location listings:', error);
     return null;

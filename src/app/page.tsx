@@ -61,6 +61,7 @@ export default async function Home() {
       .select('id, title, transaction_type, category, neighborhood, region, base_rent, outright_price, currency, bedrooms, bathrooms, square_meters, image_url, media_urls, is_verified, safemove_active, views')
       .eq('status', 'active')
       .eq('moderation_status', 'approved')
+      .order('tier_rank', { ascending: false })
       .order('is_verified', { ascending: false })
       .order('views', { ascending: false })
       .limit(6),

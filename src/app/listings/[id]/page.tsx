@@ -72,6 +72,7 @@ interface PosterProfile {
   company_name?: string;
   whatsapp_link?: string;
   is_verified_agent?: boolean;
+  membership_tier?: string;
   avatar_url?: string | null;
 }
 
@@ -271,12 +272,28 @@ export default async function ListingDetailPage({
   const row = listing as ListingRow;
 
   const { data: poster } = await supabase
-    .from('profiles')
-    .select('id, full_name, company_name, whatsapp_link, is_verified_agent, avatar_url')
+    .from('poster_public')
+    .select('id, full_name, company_name, avatar_url, is_verified_agent, membership_tier')
     .eq('id', row.poster_id)
     .single();
 
-  const profile = (poster || {}) as PosterProfile;
+  // whatsapp_link is not exposed on the public view — best-effort fetch
+  // from profiles (may be blocked by RLS for non-owners; SellerCard
+  // tolerates undefined and renders a fallback).
+  let whatsappLink: string | undefined;
+  try {
+    const { data: contact } = await supabase
+      .from('profiles')
+      .select('whatsapp_link')
+      .eq('id', row.poster_id)
+      .single();
+    whatsappLink = (contact as { whatsapp_link?: string } | null)?.whatsapp_link;
+  } catch {
+    whatsappLink = undefined;
+  }
+
+  const profile = { ...(poster || {}), whatsapp_link: whatsappLink } as PosterProfile;
+  const isPaidTier = profile.membership_tier === 'pro' || profile.membership_tier === 'developer';
 
   // Increment view count via atomic RPC (fire-and-forget)
   supabase.rpc("increment_listing_views", { row_id: id }).then(() => {});
@@ -602,6 +619,7 @@ export default async function ListingDetailPage({
                 companyName={profile.company_name}
                 posterRole={row.poster_role}
                 isVerifiedAgent={profile.is_verified_agent}
+                isPaidTier={isPaidTier}
                 isAuthenticated={!!user}
                 cta={
                   user ? (

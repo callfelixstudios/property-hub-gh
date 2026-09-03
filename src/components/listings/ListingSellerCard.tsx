@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
+import { shouldShowAgentBadge } from "@/lib/tiers";
 
 interface ListingSellerCardProps {
   fullName?: string | null;
   companyName?: string | null;
   posterRole?: string | null;
   isVerifiedAgent?: boolean | null;
+  isPaidTier?: boolean;
   isAuthenticated: boolean;
   cta: ReactNode;
 }
@@ -14,9 +16,11 @@ export default function ListingSellerCard({
   companyName,
   posterRole,
   isVerifiedAgent,
+  isPaidTier,
   cta,
 }: ListingSellerCardProps) {
   const name = fullName || 'Property Agent';
+  const showVerifiedBadge = shouldShowAgentBadge(!!isVerifiedAgent, isPaidTier ? 'pro' : 'free');
 
   return (
     <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
@@ -44,7 +48,7 @@ export default function ListingSellerCard({
           {companyName && (
             <p className="text-xs text-slate-500">{companyName}</p>
           )}
-          {isVerifiedAgent && (
+          {showVerifiedBadge && (
             <div className="flex items-center gap-1 mt-0.5">
               <svg className="w-3.5 h-3.5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />

@@ -16,11 +16,11 @@ const nextConfig: NextConfig = {
 
     const cspDirectives = [
       "default-src 'self'",
-      `script-src 'self' 'unsafe-inline' https://www.googletagmanager.com${isDev ? " 'unsafe-eval'" : ''}`,
+      `script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://js.paystack.co https://*.paystack.co${isDev ? " 'unsafe-eval'" : ''}`,
       "style-src 'self' 'unsafe-inline' https://unpkg.com",
-      "img-src 'self' data: blob: https://lqitnsvtqhsowvmaxjio.supabase.co",
-      "connect-src 'self' https://www.google-analytics.com https://www.googletagmanager.com https://lqitnsvtqhsowvmaxjio.supabase.co wss://lqitnsvtqhsowvmaxjio.supabase.co",
-      "frame-src https://www.openstreetmap.org https://www.youtube.com https://player.vimeo.com",
+      "img-src 'self' data: blob: https://lqitnsvtqhsowvmaxjio.supabase.co https://*.paystack.co https://*.paystack.com",
+      "connect-src 'self' https://www.google-analytics.com https://www.googletagmanager.com https://lqitnsvtqhsowvmaxjio.supabase.co wss://lqitnsvtqhsowvmaxjio.supabase.co https://api.paystack.co https://checkout.paystack.com",
+      "frame-src https://www.openstreetmap.org https://www.youtube.com https://player.vimeo.com https://checkout.paystack.com https://standard.paystack.co https://*.paystack.co https://*.paystack.com",
       "font-src 'self' data:",
       "base-uri 'self'",
       "object-src 'none'",
@@ -42,7 +42,7 @@ const nextConfig: NextConfig = {
           { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
+            value: 'camera=(), microphone=(), geolocation=(), payment=*, usb=()',
           },
         ],
       },

@@ -26,8 +26,8 @@ export async function getSecureDocumentUrl(storagePath: string): Promise<string>
 
 /**
  * Approve a verification request:
- * - Escalates profile tier to 'developer'
- * - Sets verification_status to 'verified'
+ * - Sets verification_status to 'verified' and flags is_verified_agent
+ * - (Tier is managed by the subscription/billing flow, not verification)
  * - Writes immutable delta record to admin_audit_logs
  * - (Stubbed) Fires Moolre/SMS approval notification
  */
@@ -37,7 +37,7 @@ export async function approveVerification(targetProfileId: string): Promise<void
   // Capture pre-commit state for delta audit log
   const { data: original } = await supabase
     .from('profiles')
-    .select('verification_status, membership_tier, full_name')
+    .select('verification_status, is_verified_agent, full_name')
     .eq('id', targetProfileId)
     .single();
 
@@ -45,7 +45,7 @@ export async function approveVerification(targetProfileId: string): Promise<void
     .from('profiles')
     .update({
       verification_status: 'verified',
-      membership_tier: 'developer', // Automatic tier escalation
+      is_verified_agent: true,
       rejection_reason: null,
     })
     .eq('id', targetProfileId);
@@ -58,7 +58,7 @@ export async function approveVerification(targetProfileId: string): Promise<void
     action_type: 'VERIFICATION_APPROVE',
     target_id: targetProfileId,
     previous_values: original as Record<string, unknown>,
-    new_values: { verification_status: 'verified', membership_tier: 'developer' },
+    new_values: { verification_status: 'verified', is_verified_agent: true },
   });
 
   // TODO: Trigger Moolre/Hubtel WhatsApp & SMS notification

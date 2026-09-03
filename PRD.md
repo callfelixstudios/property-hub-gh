@@ -65,8 +65,8 @@ If an agent uploads 50 properties during a paid month but fails to renew their s
 
 ## **6\. Admin Panel & Enterprise Security**
 
-* **Corporate Email Restriction:** Administrative access is completely restricted to users possessing verified emails ending strictly with the corporate domain domain @propertyhubgh.com.  
-* **Airtight Security Verification:** Next.js middleware guards the /admin web path, throwing a 404 error to unauthorized users. Simultaneously, Supabase Row Level Security (RLS) policies block data reading or writing on admin tables unless the user's database email domain explicitly matches @propertyhubgh.com.
+* **Role-Based Admin Access:** Administrative access is restricted to users whose account carries the platform_admin role in auth.users.app_metadata — no email-domain check.  
+* **Airtight Security Verification:** Next.js middleware guards the /admin web path, throwing a 404 error to unauthorized users. Simultaneously, Supabase Row Level Security (RLS) policies block data reading or writing on admin tables unless the user's JWT carries the platform_admin role claim.
 
 **Prompt 1: Database Schema & Security Architecture** 
 
@@ -78,7 +78,7 @@ If an agent uploads 50 properties during a paid month but fails to renew their s
 
 3\. Write a database constraint or Row Level Security (RLS) policy that checks a user's active listing count: if their subscription tier is 'free', block any attempt to insert a third listing.
 
-4\. Write an absolute RLS security rule for administrative tables that completely blocks all read, write, or modification privileges unless the authenticated user's email domain strictly ends with '@propertyhubgh.com'.
+4\. Write an absolute RLS security rule for administrative tables that completely blocks all read, write, or modification privileges unless the authenticated user's JWT carries the platform_admin role claim.
 
 **Prompt 2: Next.js Frontend Framework & Authentication** 
 
@@ -88,7 +88,7 @@ If an agent uploads 50 properties during a paid month but fails to renew their s
 
 2\. Create a post-registration step: the first time a user authenticates, show a clean onboarding screen that captures their profile name and primary WhatsApp number. Do not force them to pick a permanent role.
 
-3\. Code a Next.js middleware file that intercepts requests to paths beginning with '/admin'. Read the user's active session email; if the email does not end with '@propertyhubgh.com', instantly return a 404 page, hiding the route entirely.
+3\. Code a Next.js middleware file that intercepts requests to paths beginning with '/admin'. Read the user's active session; if the user lacks the platform_admin role, instantly return a 404 page, hiding the route entirely.
 
 4\. Implement a responsive navbar that displays a universal '\[ \+ Post a Space \]' button, leading to a multi-step property upload wizard matching the PRD specifications.
 
