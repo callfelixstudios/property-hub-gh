@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mapBoostError } from './boostActions';
+import { mapBoostError } from '@/lib/boostErrors';
 
 describe('mapBoostError', () => {
   it('maps insufficient credits to the pricing hint', () => {
