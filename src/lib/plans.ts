@@ -6,7 +6,15 @@ export interface Plan {
   features: string[];
   highlighted?: boolean;
   cta: string;
+  active_listing_cap: number;
+  archive_after_days: number;
 }
+
+export const PLAN_CAPS: Record<Plan['slug'], { active_listing_cap: number; archive_after_days: number }> = {
+  free: { active_listing_cap: 2, archive_after_days: 30 },
+  pro: { active_listing_cap: 15, archive_after_days: 60 },
+  developer: { active_listing_cap: 50, archive_after_days: 90 },
+};
 
 export const PLANS: Plan[] = [
   {
@@ -22,6 +30,8 @@ export const PLANS: Plan[] = [
       'Standard email support',
     ],
     cta: 'Start for free',
+    active_listing_cap: 2,
+    archive_after_days: 30,
   },
   {
     slug: 'pro',
@@ -40,6 +50,8 @@ export const PLANS: Plan[] = [
       'Priority email support',
     ],
     cta: 'Subscribe to Pro',
+    active_listing_cap: 15,
+    archive_after_days: 60,
   },
   {
     slug: 'developer',
@@ -59,6 +71,8 @@ export const PLANS: Plan[] = [
       'Dedicated WhatsApp support',
     ],
     cta: 'Subscribe to Developer',
+    active_listing_cap: 50,
+    archive_after_days: 90,
   },
 ];
 

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import crypto from 'node:crypto';
 import { createClient } from '@/utils/supabase/server';
 import { hasPaystackConfig, initializeTransaction, priceToKobo } from '@/utils/paystack';
-import { getPlanBySlug } from '@/lib/plans';
+import { getPlansPricing } from '@/lib/plansPricing';
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -25,10 +25,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Payments not configured' }, { status: 503 });
   }
 
-  const plan = getPlanBySlug(planSlug);
+  const plans = await getPlansPricing();
+  const plan = plans.find((p) => p.slug === planSlug);
   if (!plan) {
     return NextResponse.json({ error: 'Plan not found' }, { status: 400 });
   }
+
+  const amountKobo = priceToKobo(plan.price_ghs);
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -44,12 +47,14 @@ export async function POST(request: Request) {
   try {
     const { authorization_url, access_code } = await initializeTransaction({
       email: user.email ?? '',
-      amountKobo: priceToKobo(plan.price_ghs),
+      amountKobo,
       reference,
       metadata: {
+        kind: 'subscription',
         user_id: user.id,
         plan_slug: plan.slug,
         plan_name: plan.name,
+        expected_amount_kobo: amountKobo,
       },
       channels: ['card', 'mobile_money'],
       callback_url,
