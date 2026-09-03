@@ -40,17 +40,7 @@ export default function ConfigManager({
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
-      <div className="flex border-b border-gray-200">
-        <div
-          className="flex-1 py-4 text-sm font-medium border-b-2 border-navy-base text-navy-base text-center"
-        >
-          Amenities & Features
-        </div>
-      </div>
-
-      <div className="p-6">
-        <div className="space-y-8">
+    <div className="space-y-8">
           {/* Add Amenity */}
           <div className="flex gap-4">
             <input
@@ -103,8 +93,6 @@ export default function ConfigManager({
               </div>
             ))}
           </div>
-        </div>
-      </div>
     </div>
   );
 }

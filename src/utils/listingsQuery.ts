@@ -74,6 +74,7 @@ interface ListingRow {
   safemove_active: boolean | null;
   is_verified: boolean | null;
   viewing_fee: number | null;
+  boosted_until: string | null;
   has_flood_resilience: boolean | null;
   has_solar_backup: boolean | null;
   has_borehole_system: boolean | null;
@@ -89,6 +90,7 @@ function formatCategory(cat?: string) {
 
 function mapRowToCard(row: ListingRow): PropertyCardProps {
   const isRent = row.transaction_type === 'rent';
+  const isBoosted = !!row.boosted_until && new Date(row.boosted_until).getTime() > Date.now();
   return {
     id: row.id,
     imageSrc: row.media_urls?.[0] || '/property-1.png',
@@ -103,9 +105,10 @@ function mapRowToCard(row: ListingRow): PropertyCardProps {
     beds: row.bedrooms || 0,
     baths: row.bathrooms || 0,
     area: row.square_meters != null ? String(row.square_meters) : undefined,
-    badge: row.safemove_active ? 'safemove' : undefined,
+    badge: isBoosted ? 'boosted' : row.safemove_active ? 'safemove' : undefined,
     category: row.category || 'Apartment',
     isVerified: row.is_verified || false,
+    isBoosted,
     is_rental: isRent,
     base_rent: row.base_rent ?? undefined,
     outright_price: row.outright_price ?? undefined,
@@ -215,7 +218,8 @@ export async function fetchListingsPage(
   const search = buildSearchFilter(searchParams.search as string);
   if (search) query = query.or(search);
 
-  // Paid-tier placement first; the user's chosen sort stays secondary.
+  // Boosted listings first, then paid-tier placement; the user's chosen sort stays secondary.
+  query = query.order('boosted_until', { ascending: false, nullsFirst: false });
   query = query.order('tier_rank', { ascending: false });
 
   if (sort === 'views') {

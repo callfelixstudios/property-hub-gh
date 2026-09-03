@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Camera, Check, Loader2 } from 'lucide-react';
 import { shouldShowAgentBadge, type TierSlug } from '@/lib/tiers';
+import CreditPurchaseButton from '@/components/CreditPurchaseButton';
 
 export function SidebarProfile({
   avatarUrl,
@@ -13,6 +14,9 @@ export function SidebarProfile({
   tier,
   isVerifiedAgent,
   creditBalance,
+  creditPriceGhs,
+  creditMinQty,
+  creditMaxQty,
 }: {
   avatarUrl?: string | null;
   fullName?: string | null;
@@ -22,6 +26,9 @@ export function SidebarProfile({
   tier?: TierSlug;
   isVerifiedAgent?: boolean;
   creditBalance?: number;
+  creditPriceGhs?: number;
+  creditMinQty?: number;
+  creditMaxQty?: number;
 }) {
   const displayName = fullName || userEmail || 'User';
   const initials = displayName.charAt(0).toUpperCase();
@@ -95,14 +102,25 @@ export function SidebarProfile({
             Upgrade
           </Link>
         )}
-        <button
-          type="button"
-          disabled
-          title="Extra credit top-ups are coming soon"
-          className="mt-1 text-xs font-semibold text-slate-400 border border-slate-200 rounded-md px-3 py-1.5 cursor-not-allowed"
-        >
-          Buy credits — coming soon
-        </button>
+        {creditPriceGhs !== undefined &&
+        creditMinQty !== undefined &&
+        creditMaxQty !== undefined ? (
+          <div className="mt-1">
+            <CreditPurchaseButton
+              creditPriceGhs={creditPriceGhs}
+              minQty={creditMinQty}
+              maxQty={creditMaxQty}
+              compact
+            />
+          </div>
+        ) : (
+          <Link
+            href="/pricing#credits"
+            className="mt-1 text-xs font-semibold text-navy-base border border-navy-base rounded-md px-3 py-1.5 hover:bg-navy-base hover:text-white transition-colors"
+          >
+            Buy credits
+          </Link>
+        )}
       </div>
     </div>
   );

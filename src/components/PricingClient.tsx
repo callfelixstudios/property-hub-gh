@@ -3,11 +3,30 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Check, Lock, Zap, Star } from 'lucide-react';
-import type { Plan } from '@/lib/plans';
+import type { PlanPricing } from '@/lib/plansPricing';
 
 interface PricingClientProps {
-  plans: Plan[];
+  plans: PlanPricing[];
   isAuthed: boolean;
+}
+
+function ctaFor(plan: PlanPricing): string {
+  if (plan.slug === 'free') return 'Start for free';
+  return `Subscribe to ${plan.name}`;
+}
+
+function billingNoteFor(plan: PlanPricing): string {
+  if (plan.price_ghs === 0) return 'Free forever';
+  switch (plan.billing_cycle) {
+    case 'quarterly':
+      return 'per quarter, billed quarterly';
+    case 'yearly':
+      return 'per year, billed yearly';
+    case 'one_time':
+      return 'one-time payment';
+    default:
+      return 'per month, billed monthly';
+  }
 }
 
 export default function PricingClient({ plans, isAuthed }: PricingClientProps) {
@@ -32,24 +51,21 @@ export default function PricingClient({ plans, isAuthed }: PricingClientProps) {
     }
   }, []);
 
-  // Check URL query parameters for Paystack redirect callback
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const urlParams = new URLSearchParams(window.location.search);
     const ref = urlParams.get('reference') || urlParams.get('trxref');
     if (ref) {
-      // Clean up URL query parameters without reloading
       const cleanUrl = window.location.pathname;
       window.history.replaceState({}, document.title, cleanUrl);
 
-      // Verify asynchronously
       void (async () => {
         await confirmPayment(ref);
       })();
     }
   }, [confirmPayment]);
 
-  async function handleSubscribe(plan: Plan) {
+  async function handleSubscribe(plan: PlanPricing) {
     setBusySlug(plan.slug);
     setErrorMsg(null);
     setSuccessRef(null);
@@ -87,7 +103,6 @@ export default function PricingClient({ plans, isAuthed }: PricingClientProps) {
 
   return (
     <div className="py-6 sm:py-8 lg:py-10">
-      {/* Status banners */}
       {successRef && (
         <div role="status" className="mb-8 rounded-2xl bg-emerald-50 border border-emerald-200 px-5 py-4 text-sm text-emerald-800 shadow-sm flex items-center gap-3">
           <span className="text-emerald-600 font-bold">✓</span>
@@ -107,10 +122,10 @@ export default function PricingClient({ plans, isAuthed }: PricingClientProps) {
         </div>
       )}
 
-      {/* Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-stretch">
         {plans.map((plan) => {
-          const isDark = plan.highlighted;
+          const isDark = plan.slug === 'developer';
+          const cta = ctaFor(plan);
 
           return (
             <div
@@ -125,14 +140,12 @@ export default function PricingClient({ plans, isAuthed }: PricingClientProps) {
                   : 'hover:-translate-y-1 hover:shadow-ambient',
               ].join(' ')}
             >
-              {/* Pro plan top accent bar */}
               {plan.slug === 'pro' && (
                 <div className="absolute top-0 inset-x-0 h-1.5 bg-navy-base rounded-t-2xl" />
               )}
 
-              {/* Badge row */}
               <div className="mb-5 flex items-center gap-2">
-                {plan.highlighted ? (
+                {plan.slug === 'developer' ? (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-gold text-navy-base text-xs font-extrabold px-3.5 py-1 tracking-wide shadow-sm">
                     <Star className="w-3.5 h-3.5 fill-current" />
                     Most popular
@@ -149,12 +162,10 @@ export default function PricingClient({ plans, isAuthed }: PricingClientProps) {
                 )}
               </div>
 
-              {/* Plan name */}
               <p className={`text-xs font-bold uppercase tracking-widest mb-1.5 ${isDark ? 'text-accent-gold/80' : 'text-slate-400'}`}>
                 {plan.name} Plan
               </p>
 
-              {/* Price */}
               <div className="flex items-end gap-1.5 mb-1">
                 <span className={`text-sm font-bold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>GHS</span>
                 <span className={`text-4xl lg:text-5xl font-extrabold leading-none tracking-tight ${isDark ? 'text-white' : 'text-navy-base'}`}>
@@ -162,13 +173,11 @@ export default function PricingClient({ plans, isAuthed }: PricingClientProps) {
                 </span>
               </div>
               <p className={`text-xs sm:text-sm mb-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                {plan.price_ghs === 0 ? 'Free forever' : 'per month, billed monthly'}
+                {billingNoteFor(plan)}
               </p>
 
-              {/* Divider */}
               <div className={`border-t mb-6 ${isDark ? 'border-white/15' : 'border-slate-200'}`} />
 
-              {/* Features list */}
               <ul className="space-y-3.5 flex-1 mb-8">
                 {plan.features.map((feature) => (
                   <li key={feature} className="flex items-start gap-3">
@@ -186,7 +195,6 @@ export default function PricingClient({ plans, isAuthed }: PricingClientProps) {
                 ))}
               </ul>
 
-              {/* CTA button */}
               <div className="mt-auto pt-2">
                 {plan.slug === 'free' ? (
                   isAuthed ? (
@@ -201,7 +209,7 @@ export default function PricingClient({ plans, isAuthed }: PricingClientProps) {
                       href="/register"
                       className="block w-full text-center rounded-xl border-2 border-navy-base text-navy-base bg-transparent font-bold py-3 px-4 hover:bg-navy-base hover:text-white transition-all duration-200 text-sm"
                     >
-                      {plan.cta}
+                      {cta}
                     </Link>
                   )
                 ) : !isAuthed ? (
@@ -226,7 +234,7 @@ export default function PricingClient({ plans, isAuthed }: PricingClientProps) {
                         : 'bg-navy-base text-white hover:bg-navy-light'
                     }`}
                   >
-                    {busySlug === plan.slug ? 'Starting checkout...' : plan.cta}
+                    {busySlug === plan.slug ? 'Starting checkout...' : cta}
                   </button>
                 )}
               </div>
@@ -235,7 +243,6 @@ export default function PricingClient({ plans, isAuthed }: PricingClientProps) {
         })}
       </div>
 
-      {/* Security footer note */}
       <p className="mt-12 text-center text-xs sm:text-sm text-slate-500 flex items-center justify-center gap-2">
         <Lock className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
         Subscriptions renew monthly. Cancel anytime.
@@ -243,4 +250,3 @@ export default function PricingClient({ plans, isAuthed }: PricingClientProps) {
     </div>
   );
 }
-

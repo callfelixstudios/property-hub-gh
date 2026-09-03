@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
 import DashboardTabs from '@/components/dashboard/DashboardTabs';
 import { TIER_LIMITS, getEffectiveTier, getCreditBalance, ensureGrant } from '@/lib/subscription';
+import { getCreditConfig } from '@/lib/plansPricing';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -34,6 +35,7 @@ export default async function DashboardPage() {
 
   const tier = await getEffectiveTier(user.id);
   const creditBalance = await getCreditBalance(user.id);
+  const creditConfig = await getCreditConfig();
   try {
     await ensureGrant(user.id);
   } catch (err) {
@@ -50,6 +52,7 @@ export default async function DashboardPage() {
       initialTier={tier}
       tierLimit={TIER_LIMITS[tier]}
       creditBalance={creditBalance}
+      creditConfig={creditConfig}
     />
   );
 }

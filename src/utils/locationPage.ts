@@ -19,6 +19,7 @@ interface LocationListingRow {
   media_urls: string[] | null;
   is_verified: boolean | null;
   safemove_active: boolean | null;
+  boosted_until: string | null;
 }
 
 export interface LocationListing {
@@ -32,9 +33,10 @@ export interface LocationListing {
   beds?: number;
   baths?: number;
   area?: string;
-  badge?: 'verified' | 'new' | 'safemove';
+  badge?: 'verified' | 'new' | 'safemove' | 'boosted';
   category?: string;
   isVerified?: boolean;
+  isBoosted?: boolean;
   is_rental: boolean;
 }
 
@@ -95,7 +97,7 @@ export async function getLocationData(
   let query = supabase
     .from('listings')
     .select(
-      'id, title, transaction_type, category, neighborhood, region, base_rent, outright_price, currency, bedrooms, bathrooms, square_meters, image_url, media_urls, is_verified, safemove_active'
+      'id, title, transaction_type, category, neighborhood, region, base_rent, outright_price, currency, bedrooms, bathrooms, square_meters, image_url, media_urls, is_verified, safemove_active, boosted_until'
     )
     .eq('transaction_type', transactionType)
     .eq('status', 'active')
@@ -110,6 +112,7 @@ export async function getLocationData(
   }
 
   const { data, error } = await query
+    .order('boosted_until', { ascending: false, nullsFirst: false })
     .order('tier_rank', { ascending: false })
     .order('created_at', { ascending: false });
   if (error) {
@@ -121,24 +124,29 @@ export async function getLocationData(
   if (rows.length === 0) return null;
 
   const isRent = transactionType === 'rent';
-  const listings: LocationListing[] = rows.map((row) => ({
-    id: row.id,
-    imageSrc: row.image_url || row.media_urls?.[0] || '/property-1.webp',
-    title:
-      row.title ||
-      `${formatCategory(row.category)} in ${row.neighborhood || formatRegion(row.region) || 'Ghana'}`,
-    rawPrice: (isRent ? row.base_rent : row.outright_price) ?? undefined,
-    currency: row.currency || 'GHS',
-    priceSuffix: isRent ? '/mo' : undefined,
-    location: [row.neighborhood, formatRegion(row.region)].filter(Boolean).join(', '),
-    beds: row.bedrooms ?? undefined,
-    baths: row.bathrooms ?? undefined,
-    area: row.square_meters != null ? String(row.square_meters) : undefined,
-    badge: row.is_verified ? 'verified' : row.safemove_active ? 'safemove' : undefined,
-    category: row.category || 'Apartment',
-    isVerified: !!row.is_verified,
-    is_rental: isRent,
-  }));
+  const now = Date.now();
+  const listings: LocationListing[] = rows.map((row) => {
+    const isBoosted = !!row.boosted_until && new Date(row.boosted_until).getTime() > now;
+    return {
+      id: row.id,
+      imageSrc: row.image_url || row.media_urls?.[0] || '/property-1.webp',
+      title:
+        row.title ||
+        `${formatCategory(row.category)} in ${row.neighborhood || formatRegion(row.region) || 'Ghana'}`,
+      rawPrice: (isRent ? row.base_rent : row.outright_price) ?? undefined,
+      currency: row.currency || 'GHS',
+      priceSuffix: isRent ? '/mo' : undefined,
+      location: [row.neighborhood, formatRegion(row.region)].filter(Boolean).join(', '),
+      beds: row.bedrooms ?? undefined,
+      baths: row.bathrooms ?? undefined,
+      area: row.square_meters != null ? String(row.square_meters) : undefined,
+      badge: isBoosted ? 'boosted' : row.is_verified ? 'verified' : row.safemove_active ? 'safemove' : undefined,
+      category: row.category || 'Apartment',
+      isVerified: !!row.is_verified,
+      isBoosted,
+      is_rental: isRent,
+    };
+  });
 
   const prices = rows
     .map((row) => Number(isRent ? row.base_rent : row.outright_price))

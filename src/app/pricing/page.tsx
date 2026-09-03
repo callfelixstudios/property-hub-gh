@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
-import { PLANS } from '@/lib/plans';
+import { getCreditConfig, getPlansPricing } from '@/lib/plansPricing';
 import PricingClient from '@/components/PricingClient';
+import CreditPurchaseButton from '@/components/CreditPurchaseButton';
 import Footer from '@/components/Footer';
 
 export async function generateMetadata() {
@@ -21,10 +22,12 @@ export default async function PricingPage() {
   } = await supabase.auth.getUser();
   const isAuthed = !!user;
 
+  const [plans, credit] = await Promise.all([getPlansPricing(), getCreditConfig()]);
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
-    itemListElement: PLANS.map((plan, index) => ({
+    itemListElement: plans.map((plan, index) => ({
       '@type': 'ListItem',
       position: index + 1,
       item: {
@@ -45,7 +48,6 @@ export default async function PricingPage() {
     <div className="min-h-screen bg-surface-primary flex flex-col">
       <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
 
-      {/* Hero */}
       <section className="relative bg-navy-base pt-32 pb-24 sm:pt-40 sm:pb-32 lg:pt-44 lg:pb-36 overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-accent-gold/5 rounded-full blur-3xl" />
@@ -72,11 +74,9 @@ export default async function PricingPage() {
         </div>
       </section>
 
-      {/* Pricing cards */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-1 -mt-10 sm:-mt-14 lg:-mt-16 relative z-10 pb-24 sm:pb-32">
-        <PricingClient plans={PLANS} isAuthed={isAuthed} />
+        <PricingClient plans={plans} isAuthed={isAuthed} />
 
-        {/* Boost Credits */}
         <section
           id="credits"
           className="mt-16 sm:mt-20 lg:mt-24 bg-navy-base rounded-2xl p-6 sm:p-8 lg:p-10 border-l-4 border-accent-gold shadow-ambient"
@@ -97,14 +97,16 @@ export default async function PricingPage() {
                 </h2>
               </div>
               <p className="text-slate-300 leading-relaxed max-w-xl text-xs sm:text-sm md:text-base">
-                1 credit = 1 seven-day top placement. Pro includes 1&nbsp;/&nbsp;month,
-                Developer 3&nbsp;/&nbsp;month. Extra credit top-ups are coming soon.
+                1 credit = 1 {credit.boost_duration_days}-day top placement. GHS{' '}
+                {credit.credit_price_ghs} per credit.
               </p>
             </div>
             <div className="shrink-0 w-full sm:w-auto">
-              <span className="inline-block w-full sm:w-auto text-center px-4 py-2 bg-white/10 rounded-xl text-xs font-bold text-white border border-white/10 tracking-wide">
-                &#x26A1; Up to 5x more inquiries
-              </span>
+              <CreditPurchaseButton
+                creditPriceGhs={credit.credit_price_ghs}
+                minQty={credit.credit_min_qty}
+                maxQty={credit.credit_max_qty}
+              />
             </div>
           </div>
         </section>

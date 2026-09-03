@@ -4,6 +4,7 @@ import { getPlanBySlug } from './plans';
 import { CREDIT_DEFAULTS, type CreditConfig } from './creditPurchase';
 
 export interface PlanPricing {
+  id: string;
   slug: string;
   name: string;
   price_ghs: number;
@@ -15,6 +16,7 @@ export interface PlanPricing {
 }
 
 interface PlanRow {
+  id?: unknown;
   slug?: unknown;
   name?: unknown;
   price_ghs?: unknown;
@@ -43,6 +45,7 @@ export function mergePlansWithFallback(rows: PlanRow[]): PlanPricing[] {
     const row = bySlug.get(slug);
     return {
       slug,
+      id: typeof row?.id === 'string' ? row.id : '',
       name: typeof row?.name === 'string' ? row.name : (fallback?.name ?? slug),
       price_ghs: toNumber(row?.price_ghs, fallback?.price_ghs ?? 0),
       billing_cycle: typeof row?.billing_cycle === 'string' ? row.billing_cycle : 'monthly',
@@ -78,7 +81,7 @@ export async function getPlansPricing(): Promise<PlanPricing[]> {
     const { data, error } = await supabase
       .from('subscription_plans')
       .select(
-        'slug, name, price_ghs, billing_cycle, features, active_listing_cap, archive_after_days, is_active'
+        'id, slug, name, price_ghs, billing_cycle, features, active_listing_cap, archive_after_days, is_active'
       )
       .order('sort_order', { ascending: true });
     if (error || !data) return mergePlansWithFallback([]);

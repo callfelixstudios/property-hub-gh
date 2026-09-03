@@ -3,20 +3,25 @@
 import React, { useState, useEffect, useRef, useTransition } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import EditListingModal from '@/components/listings/EditListingModal';
 import imageCompression from 'browser-image-compression';
-import { Heart, Camera, Loader2, CheckCircle2, AlertCircle, Bell } from 'lucide-react';
+import { Heart, Camera, Loader2, CheckCircle2, AlertCircle, Bell, Zap } from 'lucide-react';
 import TimeframeSelector, { TimeframePeriod } from './TimeframeSelector';
 import { fetchTimeframeAnalytics } from '@/app/actions/analytics';
+import { boostListing } from '@/app/actions/boostActions';
 import { SidebarProfile } from './SidebarProfile';
 import MatchingRequestsTab from './MatchingRequestsTab';
 import NotificationsTab from './NotificationsTab';
 import type { TierSlug } from '@/lib/tiers';
+import type { CreditConfig } from '@/lib/creditPurchase';
 
 interface Listing {
   id: string;
   title: string;
   status: string;
+  moderation_status?: string;
+  boosted_until?: string | null;
   transaction_type: 'rent' | 'sale';
   base_rent?: number;
   outright_price?: number;
@@ -81,6 +86,7 @@ export default function DashboardTabs({
   initialTier = 'free',
   tierLimit = 2,
   creditBalance,
+  creditConfig,
 }: {
   initialListings?: Listing[];
   initialProfile?: Profile;
@@ -92,6 +98,7 @@ export default function DashboardTabs({
   initialTier?: TierSlug;
   tierLimit?: number;
   creditBalance?: number;
+  creditConfig?: CreditConfig;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -143,6 +150,8 @@ export default function DashboardTabs({
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [profileMessage, setProfileMessage] = useState('');
   const [restoreError, setRestoreError] = useState<string | null>(null);
+  const [boostingId, setBoostingId] = useState<string | null>(null);
+  const [boostMsg, setBoostMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const handleTimeframeChange = (newPeriod: TimeframePeriod) => {
     setPeriod(newPeriod);
@@ -444,10 +453,26 @@ export default function DashboardTabs({
     router.refresh();
   };
 
+  const handleBoostListing = async (listingId: string) => {
+    setBoostingId(listingId);
+    setBoostMsg(null);
+    try {
+      await boostListing(listingId);
+      const days = creditConfig?.boost_duration_days ?? 7;
+      const boostedUntil = new Date(new Date().getTime() + days * 86400000).toISOString();
+      setListings(prev => prev.map(l => l.id === listingId ? { ...l, boosted_until: boostedUntil } : l));
+      setBoostMsg({ type: 'success', text: 'Listing boosted.' });
+      router.refresh();
+    } catch (err) {
+      setBoostMsg({ type: 'error', text: err instanceof Error ? err.message : 'Boost failed.' });
+    } finally {
+      setBoostingId(null);
+    }
+  };
+
   const openEditModal = (listing: Listing) => {
     setEditingListing(listing);
   };
-
   const closeEditModal = () => {
     setEditingListing(null);
   };
@@ -698,6 +723,9 @@ export default function DashboardTabs({
           tier={initialTier}
           isVerifiedAgent={profile.is_verified_agent}
           creditBalance={creditBalance}
+          creditPriceGhs={creditConfig?.credit_price_ghs}
+          creditMinQty={creditConfig?.credit_min_qty}
+          creditMaxQty={creditConfig?.credit_max_qty}
         />
         <nav className="flex md:flex-col gap-2 overflow-x-auto pb-4 md:pb-0 hide-scrollbar">
           {tabs.map((tab) => {
@@ -819,17 +847,42 @@ export default function DashboardTabs({
         {/* MY LISTINGS TAB */}
         {activeTab === 'listings' && (
           <div>
-            <div className="flex items-baseline justify-between mb-6">
+            <div className="flex items-baseline justify-between mb-2">
               <h2 className="text-2xl font-bold text-navy-base">My Listings</h2>
               <p className="text-sm text-gray-500">
                 {listings.filter(l => l.status === 'active').length} / {tierLimit} active listings
               </p>
             </div>
+            {creditBalance !== undefined && (
+              <p className="text-xs text-slate-500 mb-4">
+                Boost credits: {creditBalance} • 1 credit = 1 {creditConfig?.boost_duration_days ?? 7}-day top placement
+              </p>
+            )}
+            {boostMsg && (
+              <div
+                role={boostMsg.type === 'success' ? 'status' : 'alert'}
+                className={`mb-4 rounded-md px-4 py-3 text-sm font-medium ${
+                  boostMsg.type === 'success'
+                    ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
+                    : 'bg-red-50 border border-red-200 text-red-800'
+                }`}
+              >
+                {boostMsg.text}
+                {boostMsg.type === 'error' && boostMsg.text.includes('Insufficient credits') && (
+                  <Link href="/pricing#credits" className="ml-2 font-bold underline">
+                    Buy credits
+                  </Link>
+                )}
+              </div>
+            )}
             {listings.filter(l => l.status !== 'archived').length === 0 ? (
               <p className="text-gray-500">You don&apos;t have any active listings yet.</p>
             ) : (
               <div className="space-y-4">
-                {listings.filter(l => l.status !== 'archived').map((listing) => (
+                {listings.filter(l => l.status !== 'archived').map((listing) => {
+                  const boosted = !!listing.boosted_until && new Date(String(listing.boosted_until)) > new Date();
+                  const boostable = listing.status === 'active' && (listing.moderation_status === undefined || listing.moderation_status === 'approved');
+                  return (
                   <div key={listing.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-md border border-gray-200 hover:border-gray-300 transition-colors bg-slate-50">
                     <div className="mb-4 sm:mb-0">
                       <div className="flex items-center gap-3 mb-1">
@@ -837,6 +890,12 @@ export default function DashboardTabs({
                         <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${listing.status === 'active' ? 'bg-accent-emerald/10 text-accent-emerald' : 'bg-gray-200 text-gray-600'}`}>
                           {listing.status ? listing.status.charAt(0).toUpperCase() + listing.status.slice(1) : 'Active'}
                         </span>
+                        {boosted && (
+                          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-bold bg-accent-gold text-navy-base">
+                            <Zap className="w-3 h-3 fill-current" />
+                            Boosted
+                          </span>
+                        )}
                       </div>
                       <p className="text-sm text-gray-600">
                         {listing.transaction_type === 'rent' ? 'For Rent' : 'For Sale'} • 
@@ -844,8 +903,27 @@ export default function DashboardTabs({
                           ₵{listing.transaction_type === 'rent' ? listing.base_rent : listing.outright_price}
                         </span>
                       </p>
+                      {boosted && listing.boosted_until && (
+                        <p className="text-xs font-semibold text-amber-700 mt-1">
+                          Boosted until {new Date(String(listing.boosted_until)).toLocaleDateString()}
+                        </p>
+                      )}
                     </div>
-                    <div className="flex gap-2 w-full sm:w-auto mt-4 sm:mt-0">
+                    <div className="flex gap-2 w-full sm:w-auto mt-4 sm:mt-0 flex-wrap">
+                      {boostable && (
+                        <button
+                          onClick={() => handleBoostListing(listing.id)}
+                          disabled={boostingId === listing.id}
+                          className="inline-flex items-center gap-1 bg-accent-gold hover:brightness-105 text-navy-base text-sm font-bold py-2 px-4 rounded-md transition-colors flex-1 sm:flex-none disabled:opacity-50"
+                        >
+                          {boostingId === listing.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Zap className="w-4 h-4 fill-current" />
+                          )}
+                          {boostingId === listing.id ? 'Boosting...' : 'Boost'}
+                        </button>
+                      )}
                       <button
                         onClick={() => handleStatusToggle(listing.id, listing.status || 'active', listing.transaction_type)}
                         className={`text-sm font-bold py-2 px-4 rounded-md transition-colors flex-1 sm:flex-none border ${
@@ -878,7 +956,8 @@ export default function DashboardTabs({
                       </button>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
