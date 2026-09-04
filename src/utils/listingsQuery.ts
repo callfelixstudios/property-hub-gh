@@ -124,7 +124,7 @@ function mapRowToCard(row: ListingRow): PropertyCardProps {
 
 export async function fetchListingsPage(
   searchParams: { [key: string]: string | string[] | undefined },
-  opts: { fixedType?: 'rent' | 'sale'; displayCurrency: string }
+  opts: { fixedType?: 'rent' | 'sale'; displayCurrency: string; fxRate: number }
 ): Promise<ListingsPageResult> {
   const mode = resolveMode(opts.fixedType, searchParams.type as string | undefined);
   const page = clampPage(searchParams.page);
@@ -143,8 +143,8 @@ export async function fetchListingsPage(
     query = query.eq('transaction_type', mode);
   }
 
-  const minPriceGhs = convertFilterPriceToDb(searchParams.minPrice, opts.displayCurrency);
-  const maxPriceGhs = convertFilterPriceToDb(searchParams.maxPrice, opts.displayCurrency);
+  const minPriceGhs = convertFilterPriceToDb(searchParams.minPrice, opts.displayCurrency, opts.fxRate);
+  const maxPriceGhs = convertFilterPriceToDb(searchParams.maxPrice, opts.displayCurrency, opts.fxRate);
 
   if (mode === 'all') {
     const { rent, sale } = buildPriceClauses(minPriceGhs, maxPriceGhs);

@@ -3,20 +3,20 @@ import { createContext, useContext, useState, useRef, ReactNode, useEffect } fro
 import { createClient } from '@/utils/supabase/client';
 import type { Currency } from '@/utils/currency-cookie';
 import { getClientCurrency, setClientCurrency } from '@/utils/currency-cookie';
-import { USD_TO_GHS_RATE } from '@/utils/currency';
 
 interface CurrencyContextType {
   displayCurrency: Currency;
   toggleCurrency: () => void;
   exchangeRate: number;
+  rateDate: string;
   formatPrice: (amount: number, fromCurrency: string) => string;
 }
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
 
-export function CurrencyProvider({ children, initialCurrency }: { children: ReactNode; initialCurrency: Currency }) {
+export function CurrencyProvider({ children, initialCurrency, initialRate, initialRateDate }: { children: ReactNode; initialCurrency: Currency; initialRate: number; initialRateDate: string }) {
   const [displayCurrency, setDisplayCurrency] = useState<Currency>(initialCurrency);
-  const exchangeRate = USD_TO_GHS_RATE;
+  const [exchangeRate] = useState<number>(initialRate);
   const hasInteracted = useRef(false);
 
   // On mount: sync the source of truth into state (unless user already toggled)
@@ -88,6 +88,12 @@ export function CurrencyProvider({ children, initialCurrency }: { children: Reac
   };
 
   const formatPrice = (amount: number, fromCurrency: string) => {
+    // No usable server rate (NaN on FX outage/offline): never convert,
+    // always render the raw GHS amount so the UI degrades to GHS-only.
+    if (!Number.isFinite(exchangeRate) || exchangeRate <= 0) {
+      return `₵${amount.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+    }
+
     let convertedAmount = amount;
     
     const normalizedFromCurrency = fromCurrency?.toUpperCase() === 'USD' ? 'USD' : 'GHS';
@@ -104,7 +110,7 @@ export function CurrencyProvider({ children, initialCurrency }: { children: Reac
   };
 
   return (
-    <CurrencyContext.Provider value={{ displayCurrency, toggleCurrency, exchangeRate, formatPrice }}>
+    <CurrencyContext.Provider value={{ displayCurrency, toggleCurrency, exchangeRate, rateDate: initialRateDate, formatPrice }}>
       {children}
     </CurrencyContext.Provider>
   );

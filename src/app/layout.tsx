@@ -4,6 +4,8 @@ import "./globals.css";
 import NavigationHeader from "@/components/NavigationHeader";
 import ImpersonationBanner from "@/components/admin/ImpersonationBanner";
 import { Providers } from "@/components/Providers";
+import { getUsdToGhsRate } from "@/lib/fx";
+import { createClient } from "@/utils/supabase/server";
 import Analytics from "@/components/Analytics";
 import ConsentBanner from "@/components/ConsentBanner";
 import { JsonLd, getOrganizationSchema, getWebSiteSchema } from "@/components/seo/JsonLd";
@@ -70,6 +72,47 @@ export default async function RootLayout({
   const cookieStore = await cookies();
   const initialCurrency = cookieStore.get('property_hub_currency')?.value === 'USD' ? 'USD' : 'GHS';
 
+  // Server-provided FX rate (no hardcoded fallback). On outage/offline the
+  // rate stays NaN and CurrencyContext degrades to GHS-only formatting.
+  let initialRate = NaN;
+  let initialRateDate = '';
+  try {
+    const fx = await getUsdToGhsRate();
+    initialRate = fx.rate;
+    initialRateDate = fx.date;
+  } catch (fxError) {
+    console.error('[layout] FX fetch failed, trying fx_rates fallback:', fxError);
+    try {
+      const supabase = await createClient();
+      let row: { rate?: unknown; as_of?: unknown; date?: unknown; created_at?: unknown } | null = null;
+      // Column names are not guaranteed (table may not exist yet) — try
+      // candidate "latest" orderings, then fall back to any latest row.
+      for (const orderCol of ['as_of', 'date', 'created_at']) {
+        try {
+          const { data, error } = await supabase
+            .from('fx_rates')
+            .select('*')
+            .order(orderCol, { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (!error && data) {
+            row = data as { rate?: unknown; as_of?: unknown; date?: unknown; created_at?: unknown };
+            break;
+          }
+        } catch {
+          // try the next candidate column
+        }
+      }
+      const rate = Number(row?.rate);
+      if (Number.isFinite(rate) && rate > 0) {
+        initialRate = rate;
+        initialRateDate = String(row?.as_of ?? row?.date ?? row?.created_at ?? '');
+      }
+    } catch {
+      // fx_rates unavailable — keep NaN + empty date (GHS-only UI).
+    }
+  }
+
   return (
     <html
       lang="en"
@@ -80,7 +123,7 @@ export default async function RootLayout({
         <JsonLd data={getWebSiteSchema()} />
       </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
-        <Providers initialCurrency={initialCurrency}>
+        <Providers initialCurrency={initialCurrency} initialRate={initialRate} initialRateDate={initialRateDate}>
           <ImpersonationBanner />
           <NavigationHeader />
           <main className="flex-grow">

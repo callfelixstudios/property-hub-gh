@@ -10,6 +10,7 @@ import {
   resolveMode,
   resolveSort,
 } from '@/utils/listingsQuery';
+import { getUsdToGhsRate } from '@/lib/fx';
 
 interface ListingsBrowserProps {
   searchParams: { [key: string]: string | string[] | undefined };
@@ -26,9 +27,18 @@ export default async function ListingsBrowser({
   const displayCurrency = cookieStore.get('property_hub_currency')?.value || 'GHS';
   const mode = resolveMode(fixedType, searchParams.type as string | undefined);
   const sort = resolveSort(searchParams.sort as string | undefined, mode);
+  // Live server rate for USD filter conversion. NaN on FX outage → USD
+  // price bounds are dropped (fail-open), GHS filters unaffected.
+  let fxRate = Number.NaN;
+  try {
+    fxRate = (await getUsdToGhsRate()).rate;
+  } catch {
+    fxRate = Number.NaN;
+  }
   const { listings, total, page, pageCount } = await fetchListingsPage(searchParams, {
     fixedType,
     displayCurrency,
+    fxRate,
   });
 
   const sortOptions: SortOption[] = [

@@ -12,7 +12,21 @@ import { AuthModal } from "@/components/auth/AuthModal";
 export default function NavigationHeader() {
   const router = useRouter();
   const pathname = usePathname();
-  const { displayCurrency, toggleCurrency } = useCurrency();
+  const { displayCurrency, toggleCurrency, exchangeRate, rateDate } = useCurrency();
+
+  // Expat-friendly fx hint, e.g. "1 USD = 12.40 GHS · Sep 4". Null when rate is invalid.
+  const rateHint: string | null = (() => {
+    if (typeof exchangeRate !== 'number' || !Number.isFinite(exchangeRate)) return null;
+    const formattedRate = exchangeRate.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    let dateSuffix = '';
+    if (rateDate) {
+      const parsed = new Date(rateDate);
+      if (!Number.isNaN(parsed.getTime())) {
+        dateSuffix = ` · ${parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+      }
+    }
+    return `1 USD = ${formattedRate} GHS${dateSuffix}`;
+  })();
 
   const supabase = useMemo(() => createClient(), []);
   const [session, setSession] = useState<Session | null>(null);
@@ -141,12 +155,18 @@ export default function NavigationHeader() {
 
           {/* Desktop Auth & CTA */}
           <div className="hidden xl:flex items-center space-x-3">
-            <button
-              onClick={toggleCurrency}
-              className="mr-2 px-3 py-1.5 rounded-full text-xs font-bold border border-gray-200 text-navy-base hover:bg-gray-100 transition-colors"
-            >
-              {displayCurrency === 'GHS' ? '₵ GHS' : '$ USD'}
-            </button>
+            <div className="mr-2 flex items-center gap-1.5">
+              <button
+                onClick={toggleCurrency}
+                title={rateHint ?? 'Toggle currency'}
+                className="px-3 py-1.5 rounded-full text-xs font-bold border border-gray-200 text-navy-base hover:bg-gray-100 transition-colors"
+              >
+                {displayCurrency === 'GHS' ? '₵ GHS' : '$ USD'}
+              </button>
+              {rateHint && (
+                <span className="text-[11px] text-slate-500 whitespace-nowrap">{rateHint}</span>
+              )}
+            </div>
 
             {session ? (
               <div className="relative group mr-2">
@@ -312,6 +332,9 @@ export default function NavigationHeader() {
               >
                 Currency: {displayCurrency === 'GHS' ? '₵ GHS' : '$ USD'}
               </button>
+              {rateHint && (
+                <p className="mt-1 px-1 text-xs text-slate-500">{rateHint}</p>
+              )}
             </div>
 
             {session ? (
