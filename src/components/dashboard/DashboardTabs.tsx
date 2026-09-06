@@ -185,6 +185,10 @@ export default function DashboardTabs({
   // via double-clicks and show spinners for both async phases.
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  // Diagnostics: when the code was last (re)sent and how many challenges were
+  // issued this session. Proves whether a failed code was stale/superseded.
+  const [reauthSentAt, setReauthSentAt] = useState<number | null>(null);
+  const [reauthSendCount, setReauthSendCount] = useState(0);
 
   const [spaceRequests, setSpaceRequests] = useState<SpaceRequest[]>([]);
   const [srLoading, setSrLoading] = useState(false);
@@ -580,6 +584,8 @@ export default function DashboardTabs({
         setReauthMsg({ type: 'error', text: error.message || 'Failed to start verification.' });
         return;
       }
+      setReauthSentAt(Date.now());
+      setReauthSendCount((c) => c + 1);
       setReauthPending(pendingAction);
     } finally {
       setIsSendingCode(false);
@@ -621,6 +627,8 @@ export default function DashboardTabs({
           status: (error as { status?: unknown }).status,
           code: (error as { code?: unknown }).code,
           message: error.message,
+          elapsedSecSinceCodeSent: reauthSentAt ? Math.round((Date.now() - reauthSentAt) / 1000) : null,
+          challengesIssuedThisSession: reauthSendCount,
         });
         setReauthMsg({ type: 'error', text: error.message || 'Invalid verification code.' });
         return false;
@@ -700,6 +708,8 @@ export default function DashboardTabs({
     if (!ok) return;
     setReauthMsg(null);
     setReauthToken('');
+    setReauthSentAt(null);
+    setReauthSendCount(0);
     setReauthPending(null);
     if (reauthPending === 'email') {
       await performEmailUpdate();
@@ -1532,7 +1542,7 @@ export default function DashboardTabs({
                       </button>
                       <button
                         type="button"
-                        onClick={() => { setReauthPending(null); setReauthToken(''); setReauthMsg(null); }}
+                        onClick={() => { setReauthPending(null); setReauthToken(''); setReauthMsg(null); setReauthSentAt(null); setReauthSendCount(0); }}
                         disabled={isVerifying}
                         className="bg-gray-100 hover:bg-gray-200 disabled:bg-gray-100 text-gray-700 font-bold py-2 px-5 rounded-md transition-colors"
                       >
@@ -1654,7 +1664,7 @@ export default function DashboardTabs({
                       </button>
                       <button
                         type="button"
-                        onClick={() => { setReauthPending(null); setReauthToken(''); setReauthMsg(null); }}
+                        onClick={() => { setReauthPending(null); setReauthToken(''); setReauthMsg(null); setReauthSentAt(null); setReauthSendCount(0); }}
                         disabled={isVerifying}
                         className="bg-gray-100 hover:bg-gray-200 disabled:bg-gray-100 text-gray-700 font-bold py-2 px-5 rounded-md transition-colors"
                       >
