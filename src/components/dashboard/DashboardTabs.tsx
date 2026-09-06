@@ -180,6 +180,11 @@ export default function DashboardTabs({
   const [reauthPending, setReauthPending] = useState<'email' | 'password' | null>(null);
   const [reauthToken, setReauthToken] = useState('');
   const [reauthMsg, setReauthMsg] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+  // Separate locks: sending (reauthenticate) vs verifying (verifyOtp). Each new
+  // OTP invalidates the previous one, so these prevent accidental invalidation
+  // via double-clicks and show spinners for both async phases.
+  const [isSendingCode, setIsSendingCode] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   const [spaceRequests, setSpaceRequests] = useState<SpaceRequest[]>([]);
   const [srLoading, setSrLoading] = useState(false);
@@ -563,31 +568,53 @@ export default function DashboardTabs({
   };
 
   const startReauth = async (pendingAction: 'email' | 'password') => {
+    // Guard: each reauthenticate() call invalidates the previous OTP, so never
+    // fire while a send is in flight.
+    if (isSendingCode) return;
+    setIsSendingCode(true);
     setReauthMsg(null);
-    const { error } = await supabase.auth.reauthenticate();
-    if (error) {
-      setReauthMsg({ type: 'error', text: error.message || 'Failed to start verification.' });
-      return;
+    setReauthToken('');
+    try {
+      const { error } = await supabase.auth.reauthenticate();
+      if (error) {
+        setReauthMsg({ type: 'error', text: error.message || 'Failed to start verification.' });
+        return;
+      }
+      setReauthPending(pendingAction);
+    } finally {
+      setIsSendingCode(false);
     }
-    setReauthPending(pendingAction);
   };
 
   const confirmReauth = async (): Promise<boolean> => {
+    // Guard against double-submit: one verify request at a time.
+    if (isVerifying) return false;
+    // Clear stale errors at the start of every attempt.
+    setReauthMsg(null);
     if (!reauthToken.trim()) {
       setReauthMsg({ type: 'error', text: 'Please enter the verification code.' });
       return false;
     }
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return false;
-    const payload = user.email
-      ? { email: user.email, token: reauthToken.trim(), type: 'reauthentication' as const }
-      : { phone: user.phone ?? '', token: reauthToken.trim(), type: 'reauthentication' as const };
-    const { error } = await supabase.auth.verifyOtp(payload);
-    if (error) {
-      setReauthMsg({ type: 'error', text: error.message || 'Invalid verification code.' });
-      return false;
+    setIsVerifying(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+      // NOTE: this OTP was issued by reauthenticate() to the CURRENT email/phone,
+      // so it must be verified as type 'reauthentication' against user.email —
+      // never as 'email_change' against the new address (that confirmation comes
+      // later, via updateUser, to the new inbox).
+      const payload = user.email
+        ? { email: user.email, token: reauthToken.trim(), type: 'reauthentication' as const }
+        : { phone: user.phone ?? '', token: reauthToken.trim(), type: 'reauthentication' as const };
+      const { error } = await supabase.auth.verifyOtp(payload);
+      if (error) {
+        setReauthMsg({ type: 'error', text: error.message || 'Invalid verification code.' });
+        return false;
+      }
+      return true;
+    } finally {
+      setIsVerifying(false);
     }
-    return true;
   };
 
   const performEmailUpdate = async () => {
@@ -1441,11 +1468,11 @@ export default function DashboardTabs({
                   <button
                     type="button"
                     onClick={handleUpdateEmail}
-                    disabled={isUpdatingEmail || !newEmail.trim()}
+                    disabled={isUpdatingEmail || isSendingCode || reauthPending === 'email' || !newEmail.trim()}
                     className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white font-bold py-2 px-5 rounded-md transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
                   >
-                    {isUpdatingEmail ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                    {isUpdatingEmail ? 'Sending...' : 'Update Email'}
+                    {isUpdatingEmail || isSendingCode ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                    {isUpdatingEmail ? 'Updating...' : isSendingCode ? 'Sending...' : 'Update Email'}
                   </button>
                 </div>
                 {emailMsg && (
@@ -1467,26 +1494,40 @@ export default function DashboardTabs({
                       onChange={(e) => setReauthToken(e.target.value.replace(/\D/g, ''))}
                       placeholder="123456"
                       autoFocus
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 text-gray-900 transition-shadow"
+                      disabled={isVerifying}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 text-gray-900 transition-shadow disabled:bg-gray-100"
                     />
                     <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
                         onClick={handleConfirmReauthAction}
-                        disabled={isUpdatingEmail}
+                        disabled={isUpdatingEmail || isVerifying}
                         className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white font-bold py-2 px-5 rounded-md transition-colors flex items-center justify-center gap-2"
                       >
-                        {isUpdatingEmail ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                        {isUpdatingEmail ? 'Verifying...' : 'Verify & Update Email'}
+                        {isUpdatingEmail || isVerifying ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                        {isVerifying ? 'Verifying...' : isUpdatingEmail ? 'Updating...' : 'Verify & Update Email'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => startReauth('email')}
+                        disabled={isSendingCode || isVerifying}
+                        className="bg-white hover:bg-gray-50 disabled:bg-gray-100 text-gray-700 font-bold py-2 px-5 rounded-md transition-colors border border-gray-300 flex items-center justify-center gap-2"
+                      >
+                        {isSendingCode ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                        {isSendingCode ? 'Sending...' : 'Resend code'}
                       </button>
                       <button
                         type="button"
                         onClick={() => { setReauthPending(null); setReauthToken(''); setReauthMsg(null); }}
-                        className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-5 rounded-md transition-colors"
+                        disabled={isVerifying}
+                        className="bg-gray-100 hover:bg-gray-200 disabled:bg-gray-100 text-gray-700 font-bold py-2 px-5 rounded-md transition-colors"
                       >
                         Cancel
                       </button>
                     </div>
+                    <p className="text-[11px] text-gray-500">
+                      Each resend invalidates the previous code — always use the newest email.
+                    </p>
                     {reauthMsg && (
                       <div className={`flex items-center gap-1.5 text-sm font-medium ${reauthMsg.type === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>
                         {reauthMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 flex-shrink-0" />}
@@ -1547,15 +1588,15 @@ export default function DashboardTabs({
               </div>
 
               <div>
-                <button
-                  type="button"
-                  onClick={handleUpdatePassword}
-                  disabled={isUpdatingPassword || !newPassword.trim() || !confirmPassword.trim()}
-                  className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white font-bold py-2.5 px-6 rounded-md transition-colors flex items-center justify-center gap-2"
-                >
-                  {isUpdatingPassword ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                  {isUpdatingPassword ? 'Updating...' : 'Update Password'}
-                </button>
+                  <button
+                    type="button"
+                    onClick={handleUpdatePassword}
+                    disabled={isUpdatingPassword || isSendingCode || reauthPending === 'password' || !newPassword.trim() || !confirmPassword.trim()}
+                    className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white font-bold py-2.5 px-6 rounded-md transition-colors flex items-center justify-center gap-2"
+                  >
+                    {isUpdatingPassword || isSendingCode ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                    {isUpdatingPassword ? 'Updating...' : isSendingCode ? 'Sending...' : 'Update Password'}
+                  </button>
                 {passwordMsg && (
                   <div className={`mt-2 flex items-center gap-1.5 text-sm font-medium animate-fade-in ${passwordMsg.type === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>
                     {passwordMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 flex-shrink-0" />}
@@ -1575,26 +1616,40 @@ export default function DashboardTabs({
                       onChange={(e) => setReauthToken(e.target.value.replace(/\D/g, ''))}
                       placeholder="123456"
                       autoFocus
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 text-gray-900 transition-shadow"
+                      disabled={isVerifying}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 text-gray-900 transition-shadow disabled:bg-gray-100"
                     />
                     <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
                         onClick={handleConfirmReauthAction}
-                        disabled={isUpdatingPassword}
+                        disabled={isUpdatingPassword || isVerifying}
                         className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white font-bold py-2 px-5 rounded-md transition-colors flex items-center justify-center gap-2"
                       >
-                        {isUpdatingPassword ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                        {isUpdatingPassword ? 'Verifying...' : 'Verify & Update Password'}
+                        {isUpdatingPassword || isVerifying ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                        {isVerifying ? 'Verifying...' : isUpdatingPassword ? 'Updating...' : 'Verify & Update Password'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => startReauth('password')}
+                        disabled={isSendingCode || isVerifying}
+                        className="bg-white hover:bg-gray-50 disabled:bg-gray-100 text-gray-700 font-bold py-2 px-5 rounded-md transition-colors border border-gray-300 flex items-center justify-center gap-2"
+                      >
+                        {isSendingCode ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                        {isSendingCode ? 'Sending...' : 'Resend code'}
                       </button>
                       <button
                         type="button"
                         onClick={() => { setReauthPending(null); setReauthToken(''); setReauthMsg(null); }}
-                        className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-5 rounded-md transition-colors"
+                        disabled={isVerifying}
+                        className="bg-gray-100 hover:bg-gray-200 disabled:bg-gray-100 text-gray-700 font-bold py-2 px-5 rounded-md transition-colors"
                       >
                         Cancel
                       </button>
                     </div>
+                    <p className="text-[11px] text-gray-500">
+                      Each resend invalidates the previous code — always use the newest email.
+                    </p>
                     {reauthMsg && (
                       <div className={`flex items-center gap-1.5 text-sm font-medium ${reauthMsg.type === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>
                         {reauthMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 flex-shrink-0" />}
