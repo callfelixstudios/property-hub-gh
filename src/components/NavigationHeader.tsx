@@ -155,7 +155,7 @@ export default function NavigationHeader() {
 
           {/* Desktop Auth & CTA */}
           <div className="hidden xl:flex items-center space-x-3">
-            <div className="mr-2 flex items-center gap-1.5">
+            <div className="mr-2 flex items-center">
               <button
                 onClick={toggleCurrency}
                 title={rateHint ?? 'Toggle currency'}
@@ -163,9 +163,6 @@ export default function NavigationHeader() {
               >
                 {displayCurrency === 'GHS' ? '₵ GHS' : '$ USD'}
               </button>
-              {rateHint && (
-                <span className="text-[11px] text-slate-500 whitespace-nowrap">{rateHint}</span>
-              )}
             </div>
 
             {session ? (
