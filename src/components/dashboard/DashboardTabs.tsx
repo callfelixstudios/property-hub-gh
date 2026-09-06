@@ -597,17 +597,31 @@ export default function DashboardTabs({
     }
     setIsVerifying(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return false;
+      // Fresh session first: verifyOtp binds the OTP to the active session JWT.
+      // A stale/dropped session makes GoTrue issue-then-reject the challenge.
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        setReauthMsg({ type: 'error', text: 'No active session found. Please log back in.' });
+        return false;
+      }
       // NOTE: this OTP was issued by reauthenticate() to the CURRENT email/phone,
-      // so it must be verified as type 'reauthentication' against user.email —
+      // so it must be verified as type 'reauthentication' against the session email —
       // never as 'email_change' against the new address (that confirmation comes
       // later, via updateUser, to the new inbox).
-      const payload = user.email
-        ? { email: user.email, token: reauthToken.trim(), type: 'reauthentication' as const }
-        : { phone: user.phone ?? '', token: reauthToken.trim(), type: 'reauthentication' as const };
+      const sessionUser = session.user;
+      const payload = sessionUser.email
+        ? { email: sessionUser.email, token: reauthToken.trim(), type: 'reauthentication' as const }
+        : { phone: sessionUser.phone ?? '', token: reauthToken.trim(), type: 'reauthentication' as const };
       const { error } = await supabase.auth.verifyOtp(payload);
       if (error) {
+        // Raw metadata for GoTrue diagnosis (see error-codes docs): distinguishes
+        // 'reauthentication_not_valid' (token mismatch) from 'otp_expired' (server-side
+        // expiry / session-footprint mismatch).
+        console.log('Raw Supabase Auth Error Object:', {
+          status: (error as { status?: unknown }).status,
+          code: (error as { code?: unknown }).code,
+          message: error.message,
+        });
         setReauthMsg({ type: 'error', text: error.message || 'Invalid verification code.' });
         return false;
       }
